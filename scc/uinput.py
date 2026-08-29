@@ -221,7 +221,7 @@ class UInput(object):
 		self._ff_events = None
 		if rumble:
 			self._ff_events = (POINTER(FeedbackEvent) * MAX_FEEDBACK_EFFECTS)()
-			for i in xrange(MAX_FEEDBACK_EFFECTS):
+			for i in range(MAX_FEEDBACK_EFFECTS):
 				self._ff_events[i].contents = FeedbackEvent()
 		
 		try:
@@ -229,9 +229,12 @@ class UInput(object):
 				raise Exception()
 		except:
 			import sys
-			print >>sys.stderr, "Invalid native module version. Please, recompile 'libuinput.so'"
-			print >>sys.stderr, "If you are running sc-controller from source, you can do this by removing 'build' directory"
-			print >>sys.stderr, "and runinng 'python setup.py build' or 'run.sh' script"
+			print("Invalid native module version. Please, recompile 'libuinput.so'", file=sys.stderr)
+
+			print("If you are running sc-controller from source, you can do this by removing 'build' directory", file=sys.stderr)
+
+			print("and runinng 'python setup.py build' or 'run.sh' script", file=sys.stderr)
+
 			raise Exception("Invalid native module version")
 		
 		c_k		= (ctypes.c_uint16 * len(self._k))(*self._k)
@@ -246,7 +249,7 @@ class UInput(object):
 		c_version  = ctypes.c_uint16(version)
 		c_keyboard = ctypes.c_int(keyboard)
 		c_rumble = ctypes.c_int(MAX_FEEDBACK_EFFECTS if rumble else 0)
-		c_name = ctypes.c_char_p(name.encode("utf-8"))
+		c_name = ctypes.c_char_p(name.encode("utf-8") if isinstance(name, str) else name)
 		
 		self._fd = self._lib.uinput_init(ctypes.c_int(len(self._k)),
 										 c_k,

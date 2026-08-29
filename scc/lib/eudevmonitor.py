@@ -169,7 +169,7 @@ class Enumerator:
 		if self._enumeration_started:
 			raise RuntimeError("Cannot add match after enumeration is started")
 		fn = getattr(self._eudev._lib, "udev_enumerate_add_" + whichone)
-		pars = [ ctypes.c_char_p(p) for p in pars ]
+		pars = [ ctypes.c_char_p(p.encode("utf-8") if isinstance(p, str) else p) for p in pars ]
 		self._keep_in_mem += pars
 		err = fn(self._enumerator, *pars)
 		if err < 0:
@@ -211,7 +211,9 @@ class Enumerator:
 		if rv is None:
 			raise OSError("udev_list_entry_get_name failed")
 		self._next = self._eudev._lib.udev_list_entry_get_next(self._next)
-		return str(rv)
+		return rv.decode("utf-8") if isinstance(rv, bytes) else rv
+	
+	__next__ = next
 
 
 class Monitor:
@@ -245,7 +247,7 @@ class Monitor:
 			# Already done
 			return self
 		fn = getattr(self._eudev._lib, "udev_monitor_filter_add_" + whichone)
-		pars = [ ctypes.c_char_p(p) for p in pars ]
+		pars = [ ctypes.c_char_p(p.encode("utf-8") if isinstance(p, str) else p) for p in pars ]
 		self._keep_in_mem += pars
 		err = fn(self._monitor, *pars)
 		if err < 0:
@@ -327,10 +329,12 @@ if __name__ == "__main__":
 	udev = Eudev()
 	en = udev.enumerate().match_subsystem("hidraw")
 	for i in en:
-		print i
+		print(i)
+
 	
 	m = udev.monitor().match_subsystem("hidraw").start()
 	while True:
 		d = m.receive_device()
 		if d:
-			print os.major(d.devnum), os.minor(d.devnum), d
+			print(os.major(d.devnum), os.minor(d.devnum), d)
+

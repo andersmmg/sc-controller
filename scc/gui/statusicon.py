@@ -42,11 +42,11 @@ class StatusIcon(GObject.GObject):
 	TRAY_TITLE     = _("SC-Controller")
 	
 	__gsignals__ = {
-		b"clicked": (GObject.SignalFlags.RUN_FIRST, None, ()),
+		"clicked": (GObject.SignalFlags.RUN_FIRST, None, ()),
 	}
 	
 	__gproperties__ = {
-		b"active": (
+		"active": (
 			GObject.TYPE_BOOLEAN,
 			"is the icon user-visible?",
 			"does the icon back-end think that anything is might be shown to the user?",
@@ -312,7 +312,7 @@ class StatusIconProxy(StatusIcon):
 		try:
 			# Try loading GTK native status icon
 			self._status_gtk = StatusIconGTK3(*args, **kwargs)
-			self._status_gtk.connect(b"clicked",        self._on_click)
+			self._status_gtk.connect("clicked",        self._on_click)
 			self._status_gtk.connect(b"notify::active", self._on_notify_active_gtk)
 			self._on_notify_active_gtk()
 			
@@ -322,7 +322,7 @@ class StatusIconProxy(StatusIcon):
 			self._load_fallback()
 	
 	def _on_click(self, *args):
-		self.emit(b"clicked")
+		self.emit("clicked")
 	
 	def _on_notify_active_gtk(self, *args):
 		if self._status_fb:
@@ -350,7 +350,7 @@ class StatusIconProxy(StatusIcon):
 			for StatusIconBackend in status_icon_backends:
 				try:
 					self._status_fb = StatusIconBackend(*self._arguments[0], **self._arguments[1])
-					self._status_fb.connect(b"clicked",        self._on_click)
+					self._status_fb.connect("clicked",        self._on_click)
 					self._status_fb.connect(b"notify::active", self._on_notify_active_fb)
 					self._on_notify_active_fb()
 					

@@ -16,7 +16,7 @@ from scc.constants import STICK_PAD_MAX, DEFAULT
 from scc.actions import Action, NoAction, SpecialAction, ButtonAction
 from scc.actions import HapticEnabledAction, OSDEnabledAction
 from scc.actions import MOUSE_BUTTONS
-from scc.tools import strip_gesture, nameof, clamp
+from scc.tools import strip_gesture, nameof, clamp, string_escape, string_unescape
 from scc.modifiers import Modifier, NameModifier
 from difflib import get_close_matches
 from math import sqrt
@@ -24,6 +24,8 @@ from math import sqrt
 import sys, time, logging
 log = logging.getLogger("SActions")
 _ = lambda x : x
+
+unicode = str  # Python 2 compatibility alias
 
 
 class ChangeProfileAction(Action, SpecialAction):
@@ -49,7 +51,7 @@ class ChangeProfileAction(Action, SpecialAction):
 	
 	def to_string(self, multiline=False, pad=0):
 		return (" " * pad) + "%s('%s')" % (self.COMMAND,
-				self.profile.encode('utf-8').encode('string_escape'))
+				string_escape(self.profile))
 	
 	
 	def button_release(self, mapper):
@@ -67,7 +69,7 @@ class ShellCommandAction(Action, SpecialAction):
 	SA = COMMAND = "shell"
 	
 	def __init__(self, command):
-		if type(command) == str:
+		if isinstance(command, bytes):
 			command = command.decode("unicode_escape")
 		assert type(command) == unicode
 		Action.__init__(self, command)
@@ -84,7 +86,7 @@ class ShellCommandAction(Action, SpecialAction):
 	
 	
 	def to_string(self, multiline=False, pad=0):
-		return (" " * pad) + "%s('%s')" % (self.COMMAND, self.parameters[0].encode('unicode_escape'))
+		return (" " * pad) + "%s('%s')" % (self.COMMAND, string_escape(self.parameters[0]))
 	
 	
 	def button_press(self, mapper):
@@ -233,7 +235,7 @@ class OSDAction(Action, SpecialAction):
 		if self.action:
 			parameters.append(self.action.to_string(multiline=multiline, pad=pad))
 		else:
-			parameters.append("'%s'" % (str(self.text).encode('string_escape'),))
+			parameters.append("'%s'" % (string_escape(str(self.text)),))
 		return (" " * pad) + "%s(%s)" % (self.COMMAND, ",".join(parameters))
 	
 	
@@ -537,7 +539,7 @@ class DialogAction(Action, SpecialAction):
 			rv += "%s, " % (nameof(self.confirm_with),)
 			if self.cancel_with != DEFAULT:
 				rv += "%s, " % (nameof(self.cancel_with),)
-		rv += "'%s', " % (self.text.encode('string_escape'),)
+		rv += "'%s', " % (string_escape(self.text),)
 		if multiline:
 			rv += "\n%s" % (" " * (pad + 2))
 		for option in self.options:
@@ -677,7 +679,7 @@ class GesturesAction(Action, OSDEnabledAction, SpecialAction):
 			for gstr in self.gestures:
 				a_str = self.gestures[gstr].to_string(True).split("\n")
 				a_str[0] = (" " * pad) + "  '" + (gstr + "',").ljust(11) + a_str[0]	# Key has to be one of SCButtons
-				for i in xrange(1, len(a_str)):
+				for i in range(1, len(a_str)):
 					a_str[i] = (" " * pad) + "  " + a_str[i]
 				a_str[-1] = a_str[-1] + ","
 				rv += a_str

@@ -31,6 +31,7 @@ from scc.osd.osk_actions import OSKCursorAction
 import scc.osd.osk_actions
 
 import re, sys, os, json, logging, traceback
+unicode = str  # Python 2 compatibility alias
 log = logging.getLogger("GS")
 
 class GlobalSettings(Editor, UserDataManager, ComboSetter):
@@ -488,15 +489,15 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		
 		# Build condition
 		data = {}
-		if cbMatchTitle.get_active() and entTitle.get_text().decode("utf-8"):
+		if cbMatchTitle.get_active() and entTitle.get_text():
 			if cbExactTitle.get_active():
-				data['exact_title'] = entTitle.get_text().decode("utf-8")
+				data['exact_title'] = entTitle.get_text()
 			elif cbRegExp.get_active():
-				data['regexp'] = entTitle.get_text().decode("utf-8")
+				data['regexp'] = entTitle.get_text()
 			else:
-				data['title'] = entTitle.get_text().decode("utf-8")
-		if cbMatchClass.get_active() and entClass.get_text().decode("utf-8"):
-			data['wm_class'] = entClass.get_text().decode("utf-8")
+				data['title'] = entTitle.get_text()
+		if cbMatchClass.get_active() and entClass.get_text():
+			data['wm_class'] = entClass.get_text()
 		condition = Condition(**data)
 		
 		# Grab selected action
@@ -631,14 +632,14 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		btSave = self.builder.get_object("btSave")
 		cbMatchTitle = self.builder.get_object("cbMatchTitle")
 		# Ensure that 'Match Title' checkbox is checked if its entry gets text
-		if ent.get_text().decode("utf-8"):
+		if ent.get_text():
 			cbMatchTitle.set_active(True)
 		if cbRegExp.get_active():
 			# If regexp combobox is active, try to compile expression typed
 			# in field and don't allow user to save unless expression is valid
 			try:
-				re.compile(ent.get_text().decode("utf-8"))
-			except Exception, e:
+				re.compile(ent.get_text())
+			except Exception as e:
 				log.error(e)
 				btSave.set_sensitive(False)
 				return
@@ -718,7 +719,7 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 				GuiActionParser())
 			index = int(widget.get_name().split("_")[-1])
 			instance = GlobalSettings._make_mi_instance(index)
-		except Exception, e:
+		except Exception as e:
 			log.error(traceback.format_exc())
 			self._recursing = True
 			widget.set_active(not widget.get_active())
@@ -770,13 +771,13 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		"""
 		try:
 			data = MenuData.from_fileobj(open(find_menu("Default.menu"), "r"))
-		except Exception, e:
+		except Exception as e:
 			# Shouldn't really happen
 			log.error(traceback.format_exc())
 			return
 		self._recursing = True
 		
-		for index in xrange(0, len(GlobalSettings.DEFAULT_MENU_OPTIONS)):
+		for index in range(0, len(GlobalSettings.DEFAULT_MENU_OPTIONS)):
 			id = "cbMI_%s" % (index,)
 			instance = GlobalSettings._make_mi_instance(index)
 			present = ( instance.describe().strip(" >")
@@ -817,7 +818,7 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 			path = model[iter][0]
 			try:
 				os.unlink(path)
-			except Exception, e:
+			except Exception as e:
 				log.exception(e)
 			self._needs_restart()
 			self.load_controllers()

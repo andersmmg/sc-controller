@@ -17,6 +17,7 @@ from scc.paths import get_controller_icons_path, get_default_controller_icons_pa
 from scc.tools import find_profile, find_controller_icon
 
 import os, random, logging
+unicode = str  # Python 2 compatibility alias
 log = logging.getLogger("PS")
 
 class ProfileSwitcher(Gtk.EventBox, UserDataManager):
@@ -39,12 +40,12 @@ class ProfileSwitcher(Gtk.EventBox, UserDataManager):
 	"""
 	
 	__gsignals__ = {
-			b"changed"				: (GObject.SignalFlags.RUN_FIRST, None, (object, object)),
-			b"new-clicked"			: (GObject.SignalFlags.RUN_FIRST, None, (object,)),
-			b"right-clicked"		: (GObject.SignalFlags.RUN_FIRST, None, ()),
-			b"save-clicked"			: (GObject.SignalFlags.RUN_FIRST, None, ()),
-			b"switch-to-clicked"	: (GObject.SignalFlags.RUN_FIRST, None, ()),
-			b"unknown-profile"		: (GObject.SignalFlags.RUN_FIRST, None, (object,)),
+			"changed"				: (GObject.SignalFlags.RUN_FIRST, None, (object, object)),
+			"new-clicked"			: (GObject.SignalFlags.RUN_FIRST, None, (object,)),
+			"right-clicked"		: (GObject.SignalFlags.RUN_FIRST, None, ()),
+			"save-clicked"			: (GObject.SignalFlags.RUN_FIRST, None, ()),
+			"switch-to-clicked"	: (GObject.SignalFlags.RUN_FIRST, None, ()),
+			"unknown-profile"		: (GObject.SignalFlags.RUN_FIRST, None, (object,)),
 	}
 	
 	SEND_TIMEOUT = 100	# How many ms should switcher wait before sending event
@@ -161,9 +162,7 @@ class ProfileSwitcher(Gtk.EventBox, UserDataManager):
 		self._model.clear()
 		i, current_index = 0, 0
 		for f in sorted(lst, key=lambda f: f.get_basename()):
-			name = f.get_basename().decode("utf-8")
-			if type(name) is str:
-				name = name.decode("utf-8")
+			name = f.get_basename()
 			if name.endswith(".mod"):
 				continue
 			if name.startswith("."):

@@ -18,6 +18,7 @@ from scc.modifiers import DoubleclickModifier
 from scc.profile import Profile
 from scc.tools import nameof
 import os, sys, logging
+unicode = str  # Python 2 compatibility alias
 
 log = logging.getLogger("ControllerWidget")
 

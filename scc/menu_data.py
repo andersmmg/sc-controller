@@ -9,6 +9,7 @@ from scc.tools import _, set_logging_level
 from scc.actions import Action
 
 import json, os
+unicode = str  # Python 2 compatibility alias
 
 class MenuData(object):
 	""" Contains list of menu items. Indexable """
@@ -98,7 +99,7 @@ class MenuData(object):
 		# Rearange data into list of pair tuples
 		data = [
 			(data[i * 2], data[(i * 2) + 1])
-			for i in xrange(0, len(data) / 2)
+			for i in range(0, len(data) / 2)
 		]
 		
 		# Parse data

@@ -129,7 +129,7 @@ class ControllerRegistration(Editor):
 		# Search in database
 		try:
 			db = open(os.path.join(get_share_path(), "gamecontrollerdb.txt"), "r")
-		except Exception, e:
+		except Exception as e:
 			log.error('Failed to load gamecontrollerdb')
 			log.exception(e)
 			return False
@@ -283,7 +283,7 @@ class ControllerRegistration(Editor):
 			
 			return rv
 		
-		for code, target in self._mappings.iteritems():
+		for code, target in self._mappings.items():
 			if target in SCButtons:
 				config['buttons'][code] = nameof(target)
 			elif isinstance(target, DPadEmuData):
@@ -328,7 +328,7 @@ class ControllerRegistration(Editor):
 			os.makedirs(os.path.join(get_config_path(), "devices"))
 		except: pass
 		
-		filename = self._evdevice.name.decode("utf-8").strip().replace("/","")
+		filename = self._evdevice.name.strip().replace("/","")
 		if self._tester.driver == "hid":
 			filename = "%.4x:%.4x-%s" % (self._evdevice.info.vendor,
 				self._evdevice.info.product, filename)
@@ -351,7 +351,7 @@ class ControllerRegistration(Editor):
 		try:
 			json.loads(jsondata)
 			btNext.set_sensitive(True)
-		except Exception, e:
+		except Exception as e:
 			# User can modify generated json code before hitting save,
 			# but if he writes something unparsable, save button is disabled
 			btNext.set_sensitive(False)

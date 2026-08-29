@@ -138,7 +138,7 @@ class KeyboardImage(Gtk.DrawingArea):
 		bpp = 4 if buf.get_has_alpha() else 3
 		w, h = buf.get_width(), buf.get_height()
 		stride = buf.get_rowstride()
-		for i in xrange(0, len(pixels), bpp):
+		for i in range(0, len(pixels), bpp):
 			if pixels[i + 3] > 64:
 				pixels[i + 0] = 255 - pixels[i + 0]
 				pixels[i + 1] = 255 - pixels[i + 1]

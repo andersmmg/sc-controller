@@ -136,7 +136,7 @@ class Config(object):
 		""" (Re)loads configuration. Works as load(), but handles exceptions """
 		try:
 			self.load()
-		except Exception, e:
+		except Exception as e:
 			log.warning("Failed to load configuration; Creating new one.")
 			log.warning("Reason: %s", (e,))
 			self.create()

@@ -9,6 +9,7 @@ from scc.gui.editor import ComboSetter
 from scc.tools import ensure_size
 
 import os, logging
+unicode = str  # Python 2 compatibility alias
 log = logging.getLogger("AE")
 
 class AEComponent(ComboSetter):

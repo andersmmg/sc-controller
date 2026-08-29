@@ -14,7 +14,7 @@ class VDFFZProfile(VDFProfile):
 	def load(self, filename):
 		try:
 			data = json.loads(open(filename, "r").read())
-		except Exception, e:
+		except Exception as e:
 			raise ValueError("Failed to parse JSON")
 		if 'ConfigData' not in data:
 			raise ValueError("ConfigData missing in JSON")

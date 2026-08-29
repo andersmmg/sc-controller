@@ -94,7 +94,7 @@ class UserDataManager(object):
 		# Number is increased when list is loaded until it reaches 2
 		data = [ None ] * len(paths)
 		
-		for i in xrange(0, len(paths)):
+		for i in range(0, len(paths)):
 			f = Gio.File.new_for_path(paths[i])
 			f.enumerate_children_async(
 				pattern,
@@ -111,7 +111,7 @@ class UserDataManager(object):
 		"""
 		try:
 			data[i] = pdir, pdir.enumerate_children_finish(res)
-		except Exception, e:
+		except Exception as e:
 			# Usually when directory doesn't exists
 			log.warning("enumerate_children_finish for %s failed: %s",  pdir.get_path(), e)
 			data[i] = None, []
@@ -121,10 +121,10 @@ class UserDataManager(object):
 				for pdir, enumerator in data:
 					if pdir is not None:
 						for finfo in enumerator:
-							name = finfo.get_name().decode("utf-8")
+							name = finfo.get_name()
 							if name and not name.endswith("~"):
 								files[name] = pdir.get_child(name)
-			except Exception, e:
+			except Exception as e:
 				# https://github.com/kozec/sc-controller/issues/50
 				log.warning("enumerate_children_async failed: %s", e)
 				files = self._sync_load([ pdir for pdir, enumerator in data
@@ -146,7 +146,7 @@ class UserDataManager(object):
 		files = {}
 		for pdir in pdirs:
 			for name in os.listdir(pdir.get_path()):
-				files[name.decode("utf-8")] = pdir.get_child(name)
+				files[name] = pdir.get_child(name)
 		return files
 	
 	

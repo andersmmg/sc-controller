@@ -31,6 +31,7 @@ from scc.gui.dwsnc import headerbar
 from scc.gui.ae import AEComponent
 from scc.gui.editor import Editor
 import os, logging, math, importlib, types
+unicode = str  # Python 2 compatibility alias
 log = logging.getLogger("ActionEditor")
 
 
@@ -324,7 +325,7 @@ class ActionEditor(Editor):
 	def get_name(self):
 		""" Returns action name as set in editor entry """
 		entName = self.builder.get_object("entName")
-		return entName.get_text().decode("utf-8").strip(" \t")
+		return entName.get_text().strip(" \t")
 	
 	
 	def get_current_page(self):
@@ -335,7 +336,7 @@ class ActionEditor(Editor):
 	def _set_title(self):
 		""" Copies title from text entry into action instance """
 		entName = self.builder.get_object("entName")
-		name = entName.get_text().decode("utf-8").strip(" \t\r\n")
+		name = entName.get_text().strip(" \t\r\n")
 		if len(name) < 1:
 			self._action.name = None
 		elif not self._action:
@@ -559,7 +560,7 @@ class ActionEditor(Editor):
 			set_action = True
 		
 		# Sensitivity
-		for i in xrange(0, len(self.sens)):
+		for i in range(0, len(self.sens)):
 			target = self.sens_widgets[i][0].get_value()
 			if self.sens_widgets[i][3].get_active():
 				target = -target
@@ -576,12 +577,12 @@ class ActionEditor(Editor):
 			self.feedback_position = feedback_position
 			set_action = True
 		
-		for i in xrange(0, len(self.feedback)):
+		for i in range(0, len(self.feedback)):
 			if self.feedback[i] != self.feedback_widgets[i][0].get_value():
 				self.feedback[i] = self.feedback_widgets[i][0].get_value()
 				set_action = True
 		
-		for i in xrange(0, len(self.feedback)):
+		for i in range(0, len(self.feedback)):
 			if self.feedback[i] != self.feedback_widgets[i][0].get_value():
 				self.feedback[i] = self.feedback_widgets[i][0].get_value()
 				set_action = True
@@ -593,7 +594,7 @@ class ActionEditor(Editor):
 			self.deadzone_mode = mode
 			set_action = True
 		
-		for i in xrange(0, len(self.deadzone)):
+		for i in range(0, len(self.deadzone)):
 			if self.deadzone[i] != self.deadzone_widgets[i][1].get_value():
 				self.deadzone[i] = self.deadzone_widgets[i][1].get_value()
 				set_action = True
@@ -773,7 +774,7 @@ class ActionEditor(Editor):
 				action = action.action
 			if isinstance(action, SensitivityModifier):
 				if index < 0:
-					for i in xrange(0, len(self.sens)):
+					for i in range(0, len(self.sens)):
 						self.sens[i] = action.speeds[i]
 				else:
 					self.sens[index] = action.speeds[0]
@@ -786,7 +787,7 @@ class ActionEditor(Editor):
 		cbRequireClick.set_active(self.click)
 		cbOSD.set_active(self.osd)
 		sclRotation.set_value(self.rotation_angle)
-		for i in xrange(0, len(self.sens)):
+		for i in range(0, len(self.sens)):
 			self.sens_widgets[i][3].set_active(self.sens[i] < 0)
 			self.sens_widgets[i][0].set_value(abs(self.sens[i]))
 		# Feedback
@@ -796,7 +797,7 @@ class ActionEditor(Editor):
 			cbFeedback = self.builder.get_object("cbFeedback")
 			cbFeedbackSide.set_active(FEEDBACK_SIDES.index(self.feedback_position))
 			cbFeedback.set_active(True)
-			for i in xrange(0, len(self.feedback)):
+			for i in range(0, len(self.feedback)):
 				self.feedback_widgets[i][0].set_value(self.feedback[i])
 		for grp in self.feedback_widgets:
 			for w in grp[0:-1]:
@@ -808,7 +809,7 @@ class ActionEditor(Editor):
 		cbSmoothing = self.builder.get_object("cbSmoothing")
 		if self.smoothing:
 			cbSmoothing.set_active(True)
-			for i in xrange(0, len(self.smoothing_widgets)):
+			for i in range(0, len(self.smoothing_widgets)):
 				self.smoothing_widgets[i][1].set_value(self.smoothing[i])
 		for grp in self.smoothing_widgets:
 			for w in grp[0:-1]:
@@ -833,7 +834,7 @@ class ActionEditor(Editor):
 			cbDeadzone = self.builder.get_object("cbDeadzone")
 			cbDeadzone.set_active(True)
 			cbDeadzoneMode.set_active(DEADZONE_MODES.index(self.deadzone_mode))
-			for i in xrange(0, len(self.deadzone)):
+			for i in range(0, len(self.deadzone)):
 				self.deadzone_widgets[i][1].set_value(self.deadzone[i])
 		
 		for grp in self.deadzone_widgets:
@@ -1009,7 +1010,7 @@ class ActionEditor(Editor):
 		""" Sets sensitivity for edited action """
 		self._recursing = True
 		xyz = [ x, y, z ]
-		for i in xrange(0, len(self.sens)):
+		for i in range(0, len(self.sens)):
 			self.sens[i] = xyz[i]
 			self.sens_widgets[i][3].set_active(self.sens[i] < 0)
 			self.sens_widgets[i][0].set_value(abs(self.sens[i]))

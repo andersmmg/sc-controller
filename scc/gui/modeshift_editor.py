@@ -21,6 +21,7 @@ from scc.tools import nameof
 
 from gi.repository import Gtk, Gdk, GLib
 import os, logging
+unicode = str  # Python 2 compatibility alias
 log = logging.getLogger("ModeshiftEditor")
 
 
@@ -175,7 +176,7 @@ class ModeshiftEditor(Editor):
 		cbButtonChooser = self.builder.get_object("cbButtonChooser")
 		model = cbButtonChooser.get_model()
 		# Remove requested action from the list
-		for i in xrange(0, len(self.actions[index])):
+		for i in range(0, len(self.actions[index])):
 			if self.actions[index][i][0] == button:
 				button, action, l, b, clearb = self.actions[index][i]
 				for w in (l, b, clearb): grActions.remove(w)
@@ -183,11 +184,11 @@ class ModeshiftEditor(Editor):
 				break
 		# Move everything after that action one position up
 		# - remove it
-		for j in xrange(i, len(self.actions[index])):
+		for j in range(i, len(self.actions[index])):
 			button, action, l, b, clearb = self.actions[index][j]
 			for w in (l, b, clearb): grActions.remove(w)
 		# - add it again
-		for j in xrange(i, len(self.actions[index])):
+		for j in range(i, len(self.actions[index])):
 			button, action, l, b, clearb = self.actions[index][j]
 			grActions.attach(l,			0, j + 1, 1, 1)
 			grActions.attach(b,			1, j + 1, 1, 1)

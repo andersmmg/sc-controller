@@ -8,13 +8,14 @@ one or more Action instances.
 from __future__ import unicode_literals
 from tokenize import generate_tokens, TokenError
 from collections import namedtuple
+from io import StringIO
 
 from scc.constants import SCButtons, HapticPos, PARSER_CONSTANTS, STICK
 from scc.actions import Action, RangeOP, NoAction, MultiAction
 from scc.special_actions import OSDAction
 from scc.uinput import Keys, Axes, Rels
 from scc.macros import Macro
-from scc.tools import nameof
+from scc.tools import nameof, string_unescape
 import scc.aliases
 
 import token as TokenType
@@ -106,7 +107,7 @@ class ActionParser(object):
 			self.tokens = [
 				ActionParser.Token(type, string)
 				for (type, string, trash, trash, trash)
-				in generate_tokens( iter([string]).next )
+				in generate_tokens( StringIO(string).readline )
 				if type != TokenType.ENDMARKER
 			]
 		except TokenError:
@@ -193,7 +194,7 @@ class ActionParser(object):
 			return self._parse_number()
 		
 		if t.type == TokenType.STRING:
-			return t.value[1:-1].decode('string_escape')
+			return string_unescape(t.value[1:-1])
 		
 		raise ParseError("Expected parameter, got '%s'" % (t.value,))
 
@@ -253,10 +254,11 @@ class ActionParser(object):
 	def _create_action(self, cls, *pars):
 		try:
 			return cls(*pars)
-		except ValueError, e:
-			raise ParseError(unicode(e))
-		except TypeError, e:
-			print >>sys.stderr, e
+		except ValueError as e:
+			raise ParseError(str(e))
+		except TypeError as e:
+			print(e, file=sys.stderr)
+
 			raise ParseError("Invalid number of parameters for '%s'" % (cls.COMMAND))
 	
 	
@@ -367,5 +369,6 @@ class TalkingActionParser(ActionParser):
 		"""
 		try:
 			return ActionParser.parse(self)
-		except ParseError, e:
-			print >>sys.stderr, "Warning: Failed to parse '%s':" % (self.string,), e
+		except ParseError as e:
+			print("Warning: Failed to parse '%s':" % (self.string,), e, file=sys.stderr)
+

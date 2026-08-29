@@ -175,7 +175,7 @@ class StickGrabber(TriggerGrabber):
 		else:
 			if number != self.grabbed[X]:
 				self.grabbed[Y] = number
-				for i in xrange(len(self.grabbed)):
+				for i in range(len(self.grabbed)):
 					self.what[i].reset()
 					self.set_mapping(self.grabbed[i], self.what[i])
 				self.parent.generate_unassigned()

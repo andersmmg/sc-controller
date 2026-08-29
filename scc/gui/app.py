@@ -30,7 +30,8 @@ from scc.profile import Profile
 from scc.config import Config
 
 import scc.osd.menu_generators
-import os, sys, platform, re, json, urllib, logging
+import os, sys, platform, re, json, logging
+from urllib.parse import unquote as url_unquote
 log = logging.getLogger("App")
 
 class App(Gtk.Application, UserDataManager, BindingEditor):
@@ -500,7 +501,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		clp = Gtk.Clipboard.get_default(Gdk.Display.get_default())
 		text = clp.wait_for_text()
 		if text:
-			a = GuiActionParser().restart(text.decode('utf-8')).parse()
+			a = GuiActionParser().restart(text).parse()
 			if not isinstance(a, InvalidAction):
 				self.on_action_chosen(self.context_menu_for, a)
 	
@@ -574,7 +575,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 			self.current.clear()
 		else:
 			self.current.is_template = False
-		self.new_profile(self.current, txNewProfile.get_text().decode("utf-8"))
+		self.new_profile(self.current, txNewProfile.get_text())
 		dlg.hide()
 	
 	
@@ -605,8 +606,8 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		if update_ui:
 			self.profile_switchers[0].set_profile_modified(True, self.current.is_template)
 		
-		if not self.current_file.get_path().decode("utf-8").endswith(".mod"):
-			mod = self.current_file.get_path().decode("utf-8") + ".mod"
+		if not self.current_file.get_path().endswith(".mod"):
+			mod = self.current_file.get_path() + ".mod"
 			self.current_file = Gio.File.new_for_path(mod)
 		
 		self.save_profile(self.current_file, self.current)
@@ -617,7 +618,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		self.current_file = giofile
 		self.recursing = True
 		self.profile_switchers[0].set_profile_modified(False, self.current.is_template)
-		self.builder.get_object("txProfileFilename").set_text(giofile.get_path().decode("utf-8"))
+		self.builder.get_object("txProfileFilename").set_text(giofile.get_path())
 		self.builder.get_object("txProfileDescription").get_buffer().set_text(self.current.description)
 		self.builder.get_object("cbProfileIsTemplate").set_active(self.current.is_template)
 		for b in self.button_widgets.values():
@@ -629,18 +630,18 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		if ps == self.profile_switchers[0]:
 			self.load_profile(giofile)
 		if ps.get_controller():
-			ps.get_controller().set_profile(giofile.get_path().decode("utf-8"))
+			ps.get_controller().set_profile(giofile.get_path())
 	
 	
 	def on_unknown_profile(self, ps, name):
 		log.warn("Daemon reported unknown profile: '%s'; Overriding.", name)
 		if self.current_file is not None:
-			ps.get_controller().set_profile(self.current_file.get_path().decode("utf-8"))
+			ps.get_controller().set_profile(self.current_file.get_path())
 	
 	
 	def on_save_clicked(self, *a):
-		if self.current_file.get_path().decode("utf-8").endswith(".mod"):
-			orig = self.current_file.get_path().decode("utf-8")[0:-4]
+		if self.current_file.get_path().endswith(".mod"):
+			orig = self.current_file.get_path()[0:-4]
 			self.current_file = Gio.File.new_for_path(orig)
 		
 		if self.current.is_template:
@@ -692,19 +693,19 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		"""
 		if self.osd_mode:
 			# Special case, profile shouldn't be changed while in osd_mode
-			if not giofile.get_path().decode("utf-8").endswith(".mod"):
+			if not giofile.get_path().endswith(".mod"):
 				self.profile_switchers[0].set_profile_modified(False, self.current.is_template)
 			return
 		
-		if giofile.get_path().decode("utf-8").endswith(".mod"):
+		if giofile.get_path().endswith(".mod"):
 			# Special case, this one is saved only to be sent to daemon
 			# and user doesn't need to know about it
 			if self.dm.is_alive():
 				controller = self.profile_switchers[0].get_controller()
 				if controller:
-					controller.set_profile(giofile.get_path().decode("utf-8"))
+					controller.set_profile(giofile.get_path())
 				else:
-					self.dm.set_profile(giofile.get_path().decode("utf-8"))
+					self.dm.set_profile(giofile.get_path())
 			return
 		
 		self.profile_switchers[0].set_profile_modified(False, self.current.is_template)
@@ -714,8 +715,8 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 				if controller:
 					active = controller.get_profile()
 					if active.endswith(".mod"): active = active[0:-4]
-					if active == giofile.get_path().decode("utf-8"):
-						controller.set_profile(giofile.get_path().decode("utf-8"))
+					if active == giofile.get_path():
+						controller.set_profile(giofile.get_path())
 		
 		self.current_file = giofile	
 	
@@ -880,7 +881,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		if self.osd_mode:
 			self.enable_osd_mode()
 		elif self.profile_switchers[0].get_file() is not None and not self.just_started:
-			self.dm.set_profile(self.current_file.get_path().decode("utf-8"))
+			self.dm.set_profile(self.current_file.get_path())
 		GLib.timeout_add_seconds(1, self.check)
 		self.enable_test_mode()
 	
@@ -907,7 +908,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 				self.remove_switcher(s)
 		
 		# Assign controllers to widgets
-		for i in xrange(0, count):
+		for i in range(0, count):
 			c = self.dm.get_controllers()[i]
 			self.profile_switchers[i].set_controller(c)
 		
@@ -1143,11 +1144,12 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 				else:
 					self.hilights[App.OBSERVE_COLOR].remove(what)
 				self._update_background()
-			except KeyError, e:
+			except KeyError as e:
 				# Non fatal
 				pass
 		else:
-			print "event", what
+			print("event", what)
+
 	
 	
 	def on_profile_right_clicked(self, ps):
@@ -1215,7 +1217,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 	
 	
 	def on_txRename_changed(self, tx):
-		name = tx.get_text().decode("utf-8")
+		name = tx.get_text()
 		btRenameProfile = self.builder.get_object("btRenameProfile")
 		btRenameProfile.set_sensitive(find_profile(name) is None)
 	
@@ -1224,7 +1226,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		dlg = self.builder.get_object("dlgRenameProfile")
 		txRename = self.builder.get_object("txRename")
 		old_name = dlg._name
-		new_name = txRename.get_text().decode("utf-8")
+		new_name = txRename.get_text()
 		old_fname = os.path.join(get_profiles_path(), old_name + ".sccprofile")
 		new_fname = os.path.join(get_profiles_path(), new_name + ".sccprofile")
 		try:
@@ -1235,7 +1237,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 				except:
 					# non-existing .mod file is expected
 					pass
-		except Exception, e:
+		except Exception as e:
 			log.error("Failed to rename %s: %s", old_fname, e)
 		
 		controllers = list(self.dm.get_controllers())
@@ -1277,7 +1279,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 					pass
 				for ps in self.profile_switchers:
 					ps.refresh_profile_path(name)
-			except Exception, e:
+			except Exception as e:
 				log.error("Failed to remove %s: %s", fname, e)
 		d.destroy()
 	
@@ -1548,7 +1550,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 					stream.read_bytes_async(102400, 0, None, stream_ready, buffer)
 				else:
 					self.on_got_release_notes(buffer.decode("utf-8"))
-			except Exception, e:
+			except Exception as e:
 				log.warning("Failed to read release notes")
 				log.exception(e)
 				return
@@ -1558,7 +1560,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 				stream = f.read_finish(task)
 				assert stream
 				stream.read_bytes_async(102400, 0, None, stream_ready, buffer)
-			except Exception, e:
+			except Exception as e:
 				log.warning("Failed to read release notes")
 				log.exception(e)
 				log.warning("(above error is not fatal and can be ignored)")
@@ -1638,7 +1640,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 						.replace("https://github.com/", "https://raw.githubusercontent.com/")
 						.replace("/blob/", "/")
 					)
-				name = urllib.unquote(".".join(uri.split("/")[-1].split(".")[0:-1]))
+				name = url_unquote(".".join(uri.split("/")[-1].split(".")[0:-1]))
 				remote = Gio.File.new_for_uri(uri)
 				tmp, stream = Gio.File.new_tmp("%s.XXXXXX" % (name,))
 				stream.close()
@@ -1650,7 +1652,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 					# Failed. Just do nothing
 					return
 			if giofile.get_path():
-				path = giofile.get_path().decode("utf-8")
+				path = giofile.get_path()
 				filetype = Dialog.determine_type(path)
 				if filetype:
 					log.info("Importing '%s'..." % (filetype))
@@ -1670,7 +1672,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		"""
 		from scc.parser import ActionParser
 		to_convert = {}
-		for name in [ x.decode("utf-8") for x in os.listdir(get_profiles_path()) ]:
+		for name in os.listdir(get_profiles_path()):
 			if name.endswith("~"):
 				# Ignore backups - https://github.com/kozec/sc-controller/issues/440
 				continue
@@ -1694,7 +1696,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 					os.rename("%s/%s.convert" % (get_profiles_path(), name),
 							"%s/%s" % (get_profiles_path(), name))
 					log.warning("Converted %s (from v%s)", name, to_convert[name].original_version)
-				except Exception, e:
+				except Exception as e:
 					log.warning("Failed to convert %s: %s", name, e)
 
 

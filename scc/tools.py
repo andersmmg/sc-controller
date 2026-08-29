@@ -12,14 +12,10 @@ from scc.paths import get_profiles_path, get_default_profiles_path
 from scc.paths import get_menus_path, get_default_menus_path
 from scc.paths import get_button_images_path
 from math import pi as PI, sin, cos, atan2, sqrt
-import os, sys, ctypes, importlib as imp, shlex, gettext, logging
-import importlib.util
-spec = importlib.util.find_spec('modulename')
-if spec is None:
-    print("Modul nicht gefunden")
-else:
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+import os, sys, ctypes, shlex, gettext, logging
+from importlib import machinery as importlib_machinery
+
+unicode = str  # Python 2 compatibility alias
 
 
 HAVE_POSIX1E = False
@@ -58,10 +54,10 @@ def init_logging(prefix="", suffix=""):
 	old_log = logging.Logger._log
 	def _log(self, level, msg, args, exc_info=None, extra=None):
 		args = tuple([
-			(c.decode("utf-8") if isinstance(c, bytes) else str(c))
+			(c.decode("utf-8") if isinstance(c, bytes) else c)
 			for c in args
 		])
-		msg = msg if type(msg) is unicode else str(msg).decode("utf-8")
+		msg = msg if isinstance(msg, str) else str(msg)
 		old_log(self, level, msg, args, exc_info, extra)
 	logging.Logger._log = _log
 
@@ -130,21 +126,43 @@ def nameof(e):
 
 
 def shjoin(lst):
-	""" Joins list into shell-escaped, utf-8 encoded string """
-	s = [ unicode(x).encode("utf-8") for x in lst ]
+	""" Joins list into shell-escaped, utf-8 encoded byte string """
+	s = [ str(x).encode("utf-8") for x in lst ]
 	#   - escape quotes
-	s = [ x.encode('string_escape') if (b'"' in x or b"'" in x) else x for x in s ]
+	s = [ x.replace(b'"', b'\\"').replace(b"'", b"\\'") if (b'"' in x or b"'" in x) else x for x in s ]
 	#   - quote strings with spaces
 	s = [ b"'%s'" % (x,) if b" " in x else x for x in s ]
 	return b" ".join(s)
 
 
 def shsplit(s):
-	""" Returs original list from what shjoin returned """
+	""" Returns original list from what shjoin returned """
+	if isinstance(s, bytes):
+		s = s.decode("utf-8")
 	lex = shlex.shlex(s, posix=True)
-	lex.escapedquotes = b'"\''
+	lex.escapedquotes = '"\''
 	lex.whitespace_split = True
-	return [ x.decode('utf-8') for x in list(lex) ]
+	return list(lex)
+
+
+def string_escape(s):
+	"""
+	Reimplementation of Python 2 'string_escape' codec for str objects.
+	Returns escaped ASCII string.
+	"""
+	if isinstance(s, bytes):
+		s = s.decode("utf-8")
+	return s.encode("unicode_escape").decode("ascii")
+
+
+def string_unescape(s):
+	"""
+	Reimplementation of Python 2 'string_escape' codec (decode side)
+	for str objects. Reverses string_escape().
+	"""
+	if isinstance(s, bytes):
+		s = s.decode("utf-8")
+	return s.encode("latin-1", "backslashreplace").decode("unicode_escape")
 
 
 def static_vars(**kwargs):
@@ -331,8 +349,7 @@ def find_library(libname):
 	"""
 	base_path = os.path.dirname(__file__)
 	lib, search_paths = None, []
-	so_extensions = [ ext for ext, _, typ in imp.get_suffixes()
-			if typ == imp.C_EXTENSION ]
+	so_extensions = importlib_machinery.EXTENSION_SUFFIXES
 	for extension in so_extensions:
 		search_paths += [
 			os.path.abspath(os.path.normpath(

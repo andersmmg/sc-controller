@@ -59,15 +59,17 @@ def eval_expr(expr):
 	""" Eval and expression inside a #define using a suppart of python grammar """
 
 	def _eval(node):
-		if isinstance(node, ast.Num):
-			return node.n
+		if isinstance(node, ast.Constant):
+			return node.value
 		elif isinstance(node, ast.BinOp):
 			return OPERATORS[type(node.op)](_eval(node.left), _eval(node.right))
 		elif isinstance(node, ast.UnaryOp):
 			return OPERATORS[type(node.op)](_eval(node.operand))
 		elif isinstance(node, ast.BoolOp):
-			values = [_eval(x) for x in node.values]
-			return OPERATORS[type(node.op)](**values)
+			total = _eval(node.values[0])
+			for x in node.values[1:]:
+				total = OPERATORS[type(node.op)](total, _eval(x))
+			return total
 		else:
 			raise TypeError(node)
 

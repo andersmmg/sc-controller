@@ -30,8 +30,10 @@ def load_custom_module(log, who_calls="daemon"):
 		log.warning("Also try removing it if %s crashes "
 			"shortly after this message." % (who_calls,))
 		
-		import imp
-		imp.load_source("custom", filename)
+		import importlib.util
+		spec = importlib.util.spec_from_file_location("custom", filename)
+		module = importlib.util.module_from_spec(spec)
+		spec.loader.exec_module(module)
 		log.warning("=" * 60)
 		return True
 	return False

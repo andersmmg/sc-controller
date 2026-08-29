@@ -13,9 +13,20 @@ from xml.etree import ElementTree as ET
 from math import sin, cos, pi as PI
 from collections import OrderedDict
 import os, sys, re, logging
+unicode = str  # Python 2 compatibility alias
 
 log = logging.getLogger("Background")
 ET.register_namespace('', "http://www.w3.org/2000/svg")
+
+
+class _Element(ET.Element):
+	""" Element subclass that keeps track of parent elements,
+	something that's impossible with plain xml.etree Element in Python 3. """
+	def __init__(self, tag, attrib=None, **extra):
+		ET.Element.__init__(self, tag, attrib if attrib is not None else {}, **extra)
+		self.parent = None
+
+XML_PARSER = lambda: ET.XMLParser(target=ET.TreeBuilder(element_factory=_Element))
 
 
 class SVGWidget(Gtk.EventBox):
@@ -24,11 +35,11 @@ class SVGWidget(Gtk.EventBox):
 	
 	__gsignals__ = {
 			# Raised when mouse is over defined area
-			b"hover"	: (GObject.SignalFlags.RUN_FIRST, None, (object,)),
+			"hover"	: (GObject.SignalFlags.RUN_FIRST, None, (object,)),
 			# Raised when mouse leaves all defined areas
-			b"leave"	: (GObject.SignalFlags.RUN_FIRST, None, ()),
+			"leave"	: (GObject.SignalFlags.RUN_FIRST, None, ()),
 			# Raised user clicks on defined area
-			b"click"	: (GObject.SignalFlags.RUN_FIRST, None, (object,)),
+			"click"	: (GObject.SignalFlags.RUN_FIRST, None, (object,)),
 	}
 	
 	
@@ -66,7 +77,7 @@ class SVGWidget(Gtk.EventBox):
 		This area list is later used to determine over which button is mouse
 		hovering.
 		"""
-		tree = ET.fromstring(self.current_svg.encode("utf-8"))
+		tree = ET.fromstring(self.current_svg.encode("utf-8"), parser=XML_PARSER())
 		SVGWidget.find_areas(tree, None, self.areas)
 		self.image_width =  float(tree.attrib["width"])
 		self.image_height = float(tree.attrib["height"])
@@ -120,7 +131,7 @@ class SVGWidget(Gtk.EventBox):
 		if prefix == "AREA_":
 			return self.areas
 		lst = []
-		tree = ET.fromstring(self.current_svg.encode("utf-8"))
+		tree = ET.fromstring(self.current_svg.encode("utf-8"), parser=XML_PARSER())
 		SVGWidget.find_areas(tree, None, lst, prefix=prefix)
 		return lst
 	
@@ -166,7 +177,7 @@ class SVGWidget(Gtk.EventBox):
 		element can be specified by it's id.
 		"""
 		if type(element) in (str, unicode):
-			tree = ET.fromstring(self.current_svg.encode("utf-8"))
+			tree = ET.fromstring(self.current_svg.encode("utf-8"), parser=XML_PARSER())
 			SVGEditor.update_parents(tree)
 			element = SVGEditor.get_element(tree, element)
 		width, height = 0, 0
@@ -200,7 +211,7 @@ class SVGWidget(Gtk.EventBox):
 				svg = Rsvg.Handle.new_from_data(self.current_svg.encode("utf-8"))
 			else:
 				# 1st, parse source as XML
-				tree = ET.fromstring(self.current_svg.encode("utf-8"))
+				tree = ET.fromstring(self.current_svg.encode("utf-8"), parser=XML_PARSER())
 				# 2nd, change colors of some elements
 				for button in buttons:
 					el = SVGEditor.find_by_id(tree, button)
@@ -211,7 +222,7 @@ class SVGWidget(Gtk.EventBox):
 				xml = ET.tostring(tree)
 				
 				# ... and now, parse that as XML again......
-				svg = Rsvg.Handle.new_from_data(xml.encode("utf-8"))
+				svg = Rsvg.Handle.new_from_data(xml.encode("utf-8") if isinstance(xml, str) else xml)
 			while len(self.cache) >= self.CACHE_SIZE:
 				self.cache.popitem(False)
 			if self.size_override:
@@ -271,13 +282,13 @@ class SVGEditor(object):
 	def __init__(self, svgw):
 		if type(svgw) == str:
 			self._svgw = None
-			self._tree = ET.fromstring(svgw)
+			self._tree = ET.fromstring(svgw, parser=XML_PARSER())
 		elif type(svgw) == unicode:
 			self._svgw = None
-			self._tree = ET.fromstring(svgw.encode("utf-8"))
+			self._tree = ET.fromstring(svgw.encode("utf-8"), parser=XML_PARSER())
 		else:
 			self._svgw = svgw
-			self._tree = ET.fromstring(svgw.current_svg.encode("utf-8"))
+			self._tree = ET.fromstring(svgw.current_svg.encode("utf-8"), parser=XML_PARSER())
 	
 	
 	def commit(self):
@@ -286,7 +297,7 @@ class SVGEditor(object):
 		
 		Return self.
 		"""
-		self._svgw.current_svg = ET.tostring(self._tree)
+		self._svgw.current_svg = ET.tostring(self._tree).decode("utf-8")
 		self._svgw.cache = OrderedDict()
 		self._svgw.hilight({})
 		
@@ -676,5 +687,5 @@ class SVGEditor(object):
 	
 	@staticmethod
 	def load_from_file(filename):
-		tree = ET.fromstring(open(filename, "r").read())
+		tree = ET.fromstring(open(filename, "r").read(), parser=XML_PARSER())
 		return SVGEditor.find_by_tag(tree, "g")

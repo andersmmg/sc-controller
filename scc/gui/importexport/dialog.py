@@ -37,7 +37,7 @@ class Dialog(Editor, ComboSetter, Export, ImportVdf, ImportSccprofile):
 		"""
 		try:
 			f = file(filename, 'rb').read(1024)
-		except Exception, e:
+		except Exception as e:
 			# File not readable
 			log.error(traceback.format_exc())
 			return None
