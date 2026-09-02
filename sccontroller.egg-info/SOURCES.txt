@@ -91,6 +91,7 @@ images/remotepad.json
 images/sc-config.json
 images/sc-controller-small.svg
 images/sc-controller.svg
+images/sc2.config.json
 images/scc-alive.svg
 images/scc-dead.svg
 images/scc-error.svg
@@ -226,6 +227,8 @@ images/controller-icons/sc-3.svg
 images/controller-icons/sc-4.svg
 images/controller-icons/sc-5.svg
 images/controller-icons/sc-6.svg
+images/controller-icons/sc2-0.svg
+images/controller-icons/sc2-1.svg
 images/controller-icons/scbt-0.svg
 images/controller-icons/scbt-1.svg
 images/controller-icons/scbt-2.svg
@@ -240,6 +243,7 @@ images/controller-images/ps1.svg
 images/controller-images/psx.svg
 images/controller-images/remotepad.svg
 images/controller-images/sc.svg
+images/controller-images/sc2.svg
 images/controller-images/snes.svg
 images/controller-images/x360.svg
 images/menu-icons/buttons/1.png
@@ -378,6 +382,7 @@ scc/drivers/sc_by_bt.py
 scc/drivers/sc_by_cable.py
 scc/drivers/sc_dongle.py
 scc/drivers/steamdeck.py
+scc/drivers/tritondrv.py
 scc/drivers/usb.py
 scc/foreign/__init__.py
 scc/foreign/vdf.py

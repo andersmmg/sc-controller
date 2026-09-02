@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: sccontroller
 Version: 0.4.8
 Summary: Standalone controller maping tool
@@ -6,3 +6,8 @@ Author: kozec
 License: GPL2
 Platform: Linux
 License-File: LICENSE
+Dynamic: author
+Dynamic: license
+Dynamic: license-file
+Dynamic: platform
+Dynamic: summary
