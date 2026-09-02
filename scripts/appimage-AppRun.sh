@@ -9,13 +9,14 @@ export PYTHONPATH=${APPDIR}/usr/lib/python3.14/site-packages
 export PYTHONPATH=${APPDIR}/usr/lib64/python3.14/site-packages:$PYTHONPATH
 export SCC_SHARED=${APPDIR}/usr/share/scc
 export PYTHON=${APPDIR}/usr/bin/python3
+export XDG_DATA_DIRS=${APPDIR}/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}
 
 
 function dependency_check_failed() {
 	# This checks 4 different ways to open error message in addition to
 	# throwing it to screen directly
 	>&2 cat /tmp/scc.depcheck.$$.txt
-	
+
 	[ -e /usr/bin/zenity ] && run_and_die /usr/bin/zenity --error --no-wrap --text "$(cat /tmp/scc.depcheck.$$.txt)"
 	[ -e /usr/bin/yad ] && run_and_die /usr/bin/yad --error --text "$(cat /tmp/scc.depcheck.$$.txt)"
 	[ -e /usr/bin/Xdialog ] && run_and_die /usr/bin/Xdialog --textbox "/tmp/scc.depcheck.$$.txt" 10 100

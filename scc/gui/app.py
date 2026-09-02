@@ -348,8 +348,9 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 
 
 	def destroy_statusicon(self):
-		self.statusicon.destroy()
-		self.statusicon = None
+		if self.statusicon is not None:
+			self.statusicon.destroy()
+			self.statusicon = None
 
 
 	def check(self):
