@@ -12,6 +12,7 @@ from scc.gui.controller_widget import TRIGGERS, PADS, STICKS, BUTTONS, GYROS
 from scc.gui.daemon_manager import DaemonManager, ControllerManager
 from scc.gui.parser import GuiActionParser, InvalidAction
 from scc.gui.controller_image import ControllerImage
+from scc.gui.svg_widget import SVGWidget
 from scc.gui.profile_switcher import ProfileSwitcher
 from scc.gui.userdata_manager import UserDataManager
 from scc.gui.binding_editor import BindingEditor
@@ -207,6 +208,16 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		if background is not None:
 			background.set_inverted(dark, brightness)
 		self.refresh_side_icons()
+		self.refresh_daemon_status_icon()
+
+	def refresh_daemon_status_icon(self):
+		""" Re-render the daemon status menu button icon to match current inversion """
+		if getattr(self, "status", None):
+			icon = os.path.join(self.imagepath, "scc-%s.svg" % (self.status,))
+			imgDaemonStatus = self.builder.get_object("imgDaemonStatus")
+			if imgDaemonStatus is not None and os.path.exists(icon):
+				inverted, brightness = self.get_svg_invert()
+				imgDaemonStatus.set_from_pixbuf(SVGWidget.render_svg_file(icon, inverted, brightness))
 
 
 	def load_gui_config_for_controller(self, controller, first):
@@ -1504,7 +1515,9 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		btDaemon = self.builder.get_object("btDaemon")
 		mnuEmulationEnabled = self.builder.get_object("mnuEmulationEnabled")
 		mnuEmulationEnabledTray = self.builder.get_object("mnuEmulationEnabledTray")
-		imgDaemonStatus.set_from_file(icon)
+		if os.path.exists(icon):
+			inverted, brightness = self.get_svg_invert()
+			imgDaemonStatus.set_from_pixbuf(SVGWidget.render_svg_file(icon, inverted, brightness))
 		mnuEmulationEnabled.set_sensitive(True)
 		mnuEmulationEnabledTray.set_sensitive(True)
 		self.window.set_icon_from_file(icon)
