@@ -1,7 +1,6 @@
-# SC Controller [![Build Status](https://travis-ci.org/kozec/sc-controller.svg?branch=master)](https://travis-ci.org/kozec/sc-controller)
+# SC Controller
 
-
-User-mode driver, mapper and GTK3 based GUI for Steam Controller, DS4 and similar controllers.
+An updated and maintained fork of [kozec/sc-controller](https://github.com/kozec/sc-controller); a user-mode driver and GTK3 based GUI for Steam Controller and other devices
 
 [![screenshot1](docs/screenshot1-tn.png?raw=true)](docs/screenshot1.png?raw=true)
 [![screenshot2](docs/screenshot2-tn.png?raw=true)](docs/screenshot2.png?raw=true)
@@ -22,16 +21,13 @@ Based on [Standalone Steam Controller Driver](https://github.com/ynsta/steamcont
 
 ## Like what I'm doing?
 
-[![Help me become filthy rich on Liberapay](https://img.shields.io/badge/Help%20me%20become%20filthy%20rich%20on-Liberapay-yellow.svg)](https://liberapay.com/kozec) <sup>or</sup> [![donate anything with PayPal](https://img.shields.io/badge/donate_anything_with-Paypal-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=77DQD3L9K8RPU&lc=SK&item_name=kozec&item_number=scc&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted)
+Contributions are welcome! Whether it's code, bug reports, or feature suggestions, your input is appreciated. Feel free to open an issue or submit a pull request.
+
+I will consider allowing donations in the future depending on my available free time.
 
 ## Packages
 
- - **Ubuntu (deb-based distros):** Found in [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Akozec&package=sc-controller).
- - **Fedora, SUSE (rpm-based distros):** Found in [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Akozec&package=sc-controller).
- - **Arch, Manjaro (arch-based distros):** Found in [AUR](https://aur.archlinux.org/packages/sc-controller-git/)
- - **Solus:** Search for `sc-controller` in Software Center or run `sudo eopkg it sc-controller` from a terminal.
- - **Exherbo:** Found in [hardware](https://git.exherbo.org/summer/packages/input/sc-controller)
- - **Void Linux:** Run `xbps-install -S sc-controller` in a terminal.
+Packaging is not yet ready, AUR is planned first.
 
 
 ## Building the package by yourself
