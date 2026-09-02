@@ -134,6 +134,18 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 				.set_active(self.app.config['gui']['autokill_daemon']))
 		(self.builder.get_object("cbNewRelease")
 				.set_active(self.app.config['gui']['news']['enabled']))
+		mode = self.app.config['gui'].get('svg_invert_mode', 'system')
+		if mode not in ('system', 'inverted', 'normal'):
+			mode = 'system'
+		(self.builder.get_object("cbSvgInvertMode")
+				.set_active(('system', 'inverted', 'normal').index(mode)))
+		try:
+			brightness = float(self.app.config['gui'].get(
+				'svg_invert_brightness', 0.8))
+		except (TypeError, ValueError):
+			brightness = 0.8
+		self.builder.get_object("sclSvgInvertBrightness").set_value(
+			max(40, min(100, brightness * 100)))
 		self._recursing = False
 		
 		try:
@@ -338,6 +350,10 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		self.app.config['gui']['minimize_on_start'] = self.builder.get_object("cbMinimizeOnStart").get_active()
 		self.app.config['gui']['autokill_daemon'] = self.builder.get_object("cbAutokillDaemon").get_active()
 		self.app.config['gui']['news']['enabled'] = self.builder.get_object("cbNewRelease").get_active()
+		self.app.config['gui']['svg_invert_mode'] = ('system', 'inverted', 'normal')[
+			self.builder.get_object("cbSvgInvertMode").get_active()]
+		self.app.config['gui']['svg_invert_brightness'] = (
+			self.builder.get_object("sclSvgInvertBrightness").get_value() / 100.0)
 		
 		# Save
 		self.app.save_config()
@@ -346,6 +362,31 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 	def on_cbShowOSD_toggled(self, cb):
 		if self._recursing: return
 		self.save_config()
+	
+	
+	def on_cbSvgInvertMode_changed(self, cb):
+		if self._recursing: return
+		mode = ('system', 'inverted', 'normal')[cb.get_active()]
+		self.app.config['gui']['svg_invert_mode'] = mode
+		self.app.save_config()
+		self.app.apply_svg_invert_mode()
+	
+	
+	def on_cbSvgInvertMode_changed(self, cb):
+		if self._recursing: return
+		mode = ('system', 'inverted', 'normal')[cb.get_active()]
+		self.app.config['gui']['svg_invert_mode'] = mode
+		self.app.save_config()
+		if self.app._dark_mode_settings is not None:
+			self.app.on_dark_mode_changed(self.app._dark_mode_settings, None)
+	
+	
+	def on_sclSvgInvertBrightness_value_changed(self, scale):
+		if self._recursing: return
+		self.app.config['gui']['svg_invert_brightness'] = scale.get_value() / 100.0
+		self.schedule_save_config()
+		if self.app._dark_mode_settings is not None:
+			self.app.on_dark_mode_changed(self.app._dark_mode_settings, None)
 	
 	
 	def on_btRestartEmulation_clicked(self, *a):
@@ -650,7 +691,7 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		theme = cb.get_model().get_value(cb.get_active_iter(), 0)
 		if theme in (None, "None"): return
 		filename = os.path.join(get_share_path(), "osd-styles", theme)
-		data = json.loads(file(filename, "r").read())
+		data = json.loads(open(filename, "r").read())
 		
 		# Transfer values from json to config
 		for grp in ("osd_colors", "osk_colors"):
@@ -665,10 +706,10 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 	
 	
 	def on_cbOSDStyle_changed(self, cb):
-		color_keys = self.app.config['osk_colors'].keys() + self.app.config['osd_colors'].keys()
+		color_keys = list(self.app.config['osk_colors'].keys()) + list(self.app.config['osd_colors'].keys())
 		osd_style = cb.get_model().get_value(cb.get_active_iter(), 0)
 		css_file = os.path.join(get_share_path(), "osd-styles", osd_style)
-		first_line = file(css_file, "r").read().split("\n")[0]
+		first_line = open(css_file, "r").read().split("\n")[0]
 		used_colors = None				# None means "all"
 		if "Used colors:" in first_line:
 			used_colors = set(first_line.split(":", 1)[1].strip(" */").split(" "))

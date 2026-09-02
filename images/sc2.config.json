@@ -1,0 +1,21 @@
+{
+	"gui": {
+		"background": "sc2",
+		"buttons": [
+			"A", "B", "X", "Y", "BACK", "C", "START", "LB", "RB", "LT", "RT",
+			"STICK", "TOUCHPAD", "TOUCHPAD", "RGRIP", "LGRIP", "DOTS"
+		],
+		"no_glyph_buttons": [ "A", "B", "X", "Y", "BACK", "START", "DOTS", "C" ]
+	},
+	"buttons": [
+		"A", "B", "X", "Y", "DOTS", "BACK", "C", "START",
+		"LB", "RB", "LT", "RT", "STICKPRESS", "RSTICKPRESS",
+		"RPAD", "LPAD", "RGRIP", "LGRIP", "RGRIP2", "LGRIP2", "LPADPRESS", "RPADPRESS"
+	],
+	"axes": [
+		"stick_x", "stick_y", "rstick_x", "rstick_y",
+		"lpad_x", "lpad_x", "rpad_y", "rpad_y",
+		"dpad_x", "dpad_y", "ltrig", "rtrig"
+	],
+	"gyros": true
+}

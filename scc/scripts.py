@@ -224,15 +224,15 @@ def cmd_dependency_check(argv0, argv):
 def cmd_lock_inputs(argv0, argv, lock="Lock: "):
 	"""
 	Locks and prints pressed buttons, pads and sticks
-	
+
 	Locks controller inputs and prints buttons, pads and stick as they are
 	pressed or moved on controller.
-	
+
 	Usage: scc lock-inputs [button1] [stick1] [button2] ... [buttonN]
-	
+
 	Available button, sticks and pads:
 		A X B Y START C BACK RGRIP LGRIP   LB RB LT RT STICK LPAD RPAD
-	
+
 	Return codes:
 		-1  - failed to connect to daemon
 		-2  - failed to lock inputs
@@ -247,22 +247,18 @@ def cmd_lock_inputs(argv0, argv, lock="Lock: "):
 			if line == "":
 				return -3
 			elif line.startswith("Ready."):
-				print(lock + " ".join([ x.upper() for x in argv ]), file=s)
-
+				s.write((lock + " ".join([ x.upper() for x in argv ]) + "\n").encode())
 				s.flush()
 			elif line.startswith("Error:"):
 				print(line.strip(), file=sys.stderr)
-
 				return -4
 			elif line.startswith("Fail:"):
 				print(line.strip(), file=sys.stderr)
-
 				return -2
 			elif line.startswith("Event:"):
 				data = line.strip().split(" ")
 				try:
 					print(" ".join(data[2:]), file=sys.stdout)
-
 					sys.stdout.flush()
 				except IOError:
 					# Output closed, bail out
@@ -292,6 +288,32 @@ def cmd_print_inputs(argv0, argv, lock="Lock: "):
 	return cmd_lock_inputs(argv0, argv, lock="Observe: ")
 
 
+class DaemonSocket:
+	"""Wrapper for bidirectional socket communication."""
+	def __init__(self, rfile, wfile):
+		self.rfile = rfile
+		self.wfile = wfile
+
+	def readline(self):
+		return self.rfile.readline().decode('utf-8')
+
+	def write(self, data):
+		if isinstance(data, str):
+			data = data.encode('utf-8')
+		return self.wfile.write(data)
+
+	def writelines(self, lines):
+		for line in lines:
+			self.write(line)
+
+	def flush(self):
+		return self.wfile.flush()
+
+	def close(self):
+		self.rfile.close()
+		self.wfile.close()
+
+
 def connect_to_daemon():
 	"""
 	Returns socket connected to daemon or None if connection failed.
@@ -302,11 +324,13 @@ def connect_to_daemon():
 	try:
 		s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 		s.connect(get_daemon_socket())
+		rfile = s.makefile('rb')
+		wfile = s.makefile('wb')
 	except Exception as e:
 		print("Connection to scc-daemon failed: %s" % (e, ), file=sys.stderr)
 
 		return None
-	return s.makefile()
+	return DaemonSocket(rfile, wfile)
 
 
 def check_error(s):

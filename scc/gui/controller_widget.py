@@ -14,6 +14,7 @@ from gi.repository import Gtk, Gdk, Pango
 from scc.constants import SCButtons, STICK, RSTICK, GYRO, LEFT, RIGHT
 from scc.actions import Action, XYAction, MultiAction
 from scc.gui.ae.gyro_action import is_gyro_enable
+from scc.gui.svg_widget import SVGWidget
 from scc.modifiers import DoubleclickModifier
 from scc.profile import Profile
 from scc.tools import nameof
@@ -44,7 +45,10 @@ class ControllerWidget:
 		
 		self.label = Gtk.Label()
 		self.label.set_ellipsize(Pango.EllipsizeMode.END)
-		self.icon = Gtk.Image.new_from_file(self.get_image()) if use_icon else None
+		self.icon = None
+		if use_icon:
+			self.icon = Gtk.Image()
+			self.set_icon_file(self.get_image())
 		self.update()
 		
 		self.widget.connect('enter', self.on_cursor_enter)
@@ -55,6 +59,23 @@ class ControllerWidget:
 	
 	def get_image(self):
 		return os.path.join(self.app.imagepath, self.name + ".svg")
+	
+	
+	def set_icon_file(self, path):
+		""" Renders and sets the button icon, honoring the same SVG inversion
+		used by the controller preview. """
+		self._icon_path = path
+		if self.icon is None or not path:
+			return
+		if not os.path.exists(path):
+			return
+		get_invert = getattr(self.app, "get_svg_invert", None)
+		if get_invert is None:
+			inverted, brightness = False, 1.0
+		else:
+			inverted, brightness = get_invert()
+		self.icon.set_from_pixbuf(SVGWidget.render_svg_file(
+				path, inverted, brightness))
 	
 	
 	def update(self):
@@ -280,7 +301,7 @@ class ControllerGyro(ControllerWidget):
 	
 	def _set_label(self, action):
 		if is_gyro_enable(action):
-			action = action.mods.values()[0] or action.default
+			action = next(iter(action.mods.values())) or action.default
 		if isinstance(action, MultiAction):
 			rv = []
 			for a in action.actions:

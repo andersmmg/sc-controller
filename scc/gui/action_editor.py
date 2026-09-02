@@ -30,7 +30,7 @@ from scc.gui.ring_editor import RingEditor
 from scc.gui.dwsnc import headerbar
 from scc.gui.ae import AEComponent
 from scc.gui.editor import Editor
-import os, logging, math, importlib, types
+import os, logging, math, importlib
 unicode = str  # Python 2 compatibility alias
 log = logging.getLogger("ActionEditor")
 
@@ -176,7 +176,7 @@ class ActionEditor(Editor):
 		mod = importlib.import_module("scc.gui.ae.%s" % (class_name,))
 		for x in mod.__all__:
 			cls = getattr(mod, x)
-			if isinstance(cls, (type, types.ClassType)) and issubclass(cls, AEComponent):
+			if isinstance(cls, type) and issubclass(cls, AEComponent):
 				if cls is not AEComponent:
 					instance = cls(self.app, self)
 					self.loaded_components[class_name] = instance

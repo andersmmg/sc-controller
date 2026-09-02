@@ -13,7 +13,7 @@ from scc.uinput import Keys, Axes, Rels
 
 AREA_TO_ACTION = {
 	# Values in tuples: ActionClass, param1, param2...
-	
+
 	# Buttons
 	'TL'				: (ButtonAction, Keys.BTN_TL),
 	'TR'				: (ButtonAction, Keys.BTN_TR),
@@ -26,7 +26,7 @@ AREA_TO_ACTION = {
 	'B'					: (ButtonAction, Keys.BTN_B),
 	'X'					: (ButtonAction, Keys.BTN_X),
 	'Y'					: (ButtonAction, Keys.BTN_Y),
-	
+
 	# Media keys
 	'KEY_PREVIOUSSONG'	: (ButtonAction, Keys.KEY_PREVIOUSSONG),
 	'KEY_STOP'			: (ButtonAction, Keys.KEY_STOP),
@@ -34,7 +34,7 @@ AREA_TO_ACTION = {
 	'KEY_NEXTSONG'		: (ButtonAction, Keys.KEY_NEXTSONG),
 	'KEY_VOLUMEDOWN'	: (ButtonAction, Keys.KEY_VOLUMEDOWN),
 	'KEY_VOLUMEUP'		: (ButtonAction, Keys.KEY_VOLUMEUP),
-	
+
 	# Dpad
 	'DPAD_LEFT'			: (HatLeftAction, Axes.ABS_HAT0X),
 	'DPAD_RIGHT'		: (HatRightAction, Axes.ABS_HAT0X),
@@ -58,7 +58,7 @@ AREA_TO_ACTION = {
 	'RSTICK_DOWN'		: (AxisAction, Axes.ABS_RY, 0, -32767),
 	'ABS_RX'			: (AxisAction, Axes.ABS_RX),
 	'ABS_RY'			: (AxisAction, Axes.ABS_RY),
-	
+
 	# Halves
 	'MINUSHALF_X'		: (AxisAction, Axes.ABS_X, 0, -32767),
 	'PLUSHALF_X'		: (AxisAction, Axes.ABS_X, 0, 32767),
@@ -68,11 +68,11 @@ AREA_TO_ACTION = {
 	'PLUSHALF_RX'		: (AxisAction, Axes.ABS_RX, 0, 32767),
 	'MINUSHALF_RY'		: (AxisAction, Axes.ABS_RY, 0, -32767),
 	'PLUSHALF_RY'		: (AxisAction, Axes.ABS_RY, 0, 32767),
-	
+
 	# Triggers
 	'ABS_Z'				: (AxisAction, Axes.ABS_Z),
 	'ABS_RZ'			: (AxisAction, Axes.ABS_RZ),
-	
+
 	# Mouse
 	'MOUSE_LEFT'		: (MouseAction, Rels.REL_X, -1),
 	'MOUSE_RIGHT'		: (MouseAction, Rels.REL_X, 1),
@@ -82,7 +82,7 @@ AREA_TO_ACTION = {
 	'MOUSE_Y'			: (MouseAction, Rels.REL_Y, 1),
 	'MOUSE_WHEEL'		: (MouseAction, Rels.REL_WHEEL, 1),
 	'MOUSE_HWHEEL'		: (MouseAction, Rels.REL_HWHEEL, 1),
-	
+
 	# Mouse buttons
 	'MOUSE1'			: (ButtonAction, Keys.BTN_LEFT),
 	'MOUSE2'			: (ButtonAction, Keys.BTN_MIDDLE),

@@ -200,7 +200,7 @@ class DaemonManager(GObject.GObject):
 				c = self.get_controller(controller_id, type)
 				c._connected = True
 				c._type = type
-				c._flags = long(flags)
+				c._flags = int(flags)
 				c._config_file = None if config_file in ("", "None") else config_file
 				while c in self._controllers:
 					self._controllers.remove(c)

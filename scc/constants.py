@@ -100,6 +100,10 @@ class SCButtons(IntEnum):
 	DOTS		= 0b000000000000000000000000000001000 # Deck only
 	RGRIP2		= 0b000000000000000000000000000100000 # Deck only
 	LGRIP2		= 0b000000000000000000000000000010000 # Deck only
+	RSTICKTOUCH	= 1 << 17	# Steam Controller 2 only
+	LSTICKTOUCH	= 1 << 16	# Steam Controller 2 only
+	RSENSE		= 1 << 19	# Steam Controller 2 only; right grip touch
+	LSENSE		= 1 << 29	# Steam Controller 2 only; left grip touch
 
 
 # If lpad and stick is used at once, this is sent as
@@ -130,6 +134,7 @@ class ControllerFlags(IntEnum):
 	HAS_DPAD =			1 << 4	# Controller has normal d-pad instead of touchpad
 	NO_GRIPS =			1 << 5	# Controller has no grips
 	IS_DECK =			1 << 6	# Very special case
+	IS_SC2 =			1 << 7	# Steam Controller 2
 
 
 STICK_PAD_MIN = -32768
@@ -146,4 +151,3 @@ TRIGGER_MIN = 0
 TRIGGER_HALF = 50
 TRIGGER_CLICK = 254 # Values under this are generated until trigger clicks
 TRIGGER_MAX = 255
-

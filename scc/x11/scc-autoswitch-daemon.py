@@ -5,6 +5,12 @@ SC-Controller - Autoswitch Daemon
 Observes active window and commands scc-daemon to change profiles as needed.
 """
 from __future__ import unicode_literals
+import os, sys
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _ROOT not in sys.path:
+	sys.path.insert(0, _ROOT)
+if not os.environ.get("SCC_SHARED") and os.path.isdir(os.path.join(_ROOT, "glade")):
+	os.environ["SCC_SHARED"] = _ROOT
 
 from scc.x11.autoswitcher import AutoSwitcher
 from scc.lib import xwrappers as X

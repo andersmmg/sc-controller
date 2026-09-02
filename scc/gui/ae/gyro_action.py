@@ -40,6 +40,10 @@ class GyroActionComponent(AEComponent):
 		(SCButtons.RPADTOUCH,	_('Right Pad Touched') ),
 		(SCButtons.LPAD,		_('Left Pad Pressed') ),
 		(SCButtons.RPAD,		_('Right Pad Pressed') ),
+		(SCButtons.LSTICKTOUCH,	_('Left Stick Touched') ),
+		(SCButtons.RSTICKTOUCH,	_('Right Stick Touched') ),
+		(SCButtons.LSENSE,		_('Left Grip Touched') ),
+		(SCButtons.RSENSE,		_('Right Grip Touched') ),
 		(None, None),
 		(SCButtons.LGRIP,		_('Left Grip') ),
 		(SCButtons.RGRIP,		_('Right Grip') ),
@@ -80,7 +84,7 @@ class GyroActionComponent(AEComponent):
 				self._recursing = True
 				self.builder.get_object("cbInvertGyro").set_active(bool(action.default))
 				self._recursing = False
-				b = action.mods.keys()[0]
+				b = next(iter(action.mods))
 				action = action.mods[b] or action.default
 				self.select_gyro_button(b)
 			else:
@@ -156,7 +160,7 @@ class GyroActionComponent(AEComponent):
 		if isinstance(action, NoAction):
 			return True
 		if is_gyro_enable(action):
-			action = action.mods.values()[0] or action.default
+			action = next(iter(action.mods.values())) or action.default
 			if isinstance(action, SensitivityModifier):
 				action = action.action
 		if isinstance(action, GyroAction):	# Takes GyroAbsAction as well
@@ -299,7 +303,7 @@ def is_gyro_enable(modemod):
 	if isinstance(modemod, ModeModifier):
 		if len(modemod.mods) != 1:
 			return False
-		action = modemod.mods.values()[0]
+		action = next(iter(modemod.mods.values()))
 		if modemod.default:
 			if not action:
 				# Possibly, default action is gyro and mode is NoAction.

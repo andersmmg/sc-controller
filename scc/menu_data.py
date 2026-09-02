@@ -169,7 +169,7 @@ class MenuData(object):
 		Loads menu from file.
 		Actions are parsed only if action_parser is set to ActionParser instance.
 		"""
-		return MenuData.from_fileobj(file(filename, "r"), action_parser)
+		return MenuData.from_fileobj(open(filename, "r"), action_parser)
 	
 	
 	@staticmethod

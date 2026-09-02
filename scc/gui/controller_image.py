@@ -13,6 +13,7 @@ from scc.constants import SCButtons
 from scc.tools import nameof
 
 import os, sys, copy, json, logging
+from xml.etree import ElementTree as ET
 log = logging.getLogger("ContImage")
 
 
@@ -23,14 +24,15 @@ class ControllerImage(SVGWidget):
 		SCButtons.BACK, SCButtons.C, SCButtons.START,
 		SCButtons.DOTS,
 	)
-	
+
 	DEFAULT_AXES = (
 		# Shared between DS4 and Steam Controller
 		"stick_x", "stick_y", "lpad_x", "lpad_x",
 		"rpad_y", "rpad_y", "ltrig", "rtrig",
 	)
-	
-	DEFAULT_BUTTONS = [ nameof(x) for x in BUTTONS_WITH_IMAGES ] + [
+
+	DEFAULT_BUTTONS = [ nameof(x) for x in BUTTONS_WITH_IMAGES
+			if x != SCButtons.DOTS ] + [
 		# Used only by Steam Controller
 		nameof(SCButtons.LB), nameof(SCButtons.RB),
 		nameof(SCButtons.LT), nameof(SCButtons.RT),
@@ -38,8 +40,8 @@ class ControllerImage(SVGWidget):
 		nameof(SCButtons.RPAD), nameof(SCButtons.LPAD),
 		nameof(SCButtons.LGRIP), nameof(SCButtons.RGRIP),
 	]
-	
-	
+
+
 	def __init__(self, app, config=None):
 		self.app = app
 		self.backup = None
@@ -48,20 +50,20 @@ class ControllerImage(SVGWidget):
 		SVGWidget.__init__(self, filename)
 		if config:
 			self._controller_image.use_config(config)
-	
-	
+
+
 	def _make_controller_image_path(self, img):
 		return os.path.join(self.app.imagepath,
 			"controller-images/%s.svg" % (img, ))
-	
-	
+
+
 	def get_config(self):
 		"""
 		Returns last used config
 		"""
 		return self.current
-	
-	
+
+
 	def _ensure_config(self, data, controller):
 		""" Ensure that required keys are present in config data """
 		data['gui'] = data.get('gui', {})
@@ -72,8 +74,8 @@ class ControllerImage(SVGWidget):
 		data['axes'] = data.get("axes") or ControllerImage.DEFAULT_AXES
 		data['gyros'] = data.get("gyros", data['gui']["background"] == "sc")
 		return data
-	
-	
+
+
 	@staticmethod
 	def get_names(dict_or_tuple):
 		"""
@@ -86,8 +88,8 @@ class ControllerImage(SVGWidget):
 			(x["axis"] if type(x) == dict else x)
 			for x in dict_or_tuple.values()
 		]
-	
-	
+
+
 	def use_config(self, config, backup=None, controller=None):
 		"""
 		Loads controller settings from provided config, adding default values
@@ -101,8 +103,8 @@ class ControllerImage(SVGWidget):
 			self._fill_button_images(self.current["gui"]["buttons"])
 		self.hilight({})
 		return self.current
-	
-	
+
+
 	def override_background(self, filename):
 		"""
 		Overrides background image setting. This changes config in place,
@@ -114,8 +116,8 @@ class ControllerImage(SVGWidget):
 			"%s.json" % (filename,)), "r").read())
 		self.current["gui"]["background"] = data["gui"]["background"]
 		self.use_config(self.current, self.backup)
-	
-	
+
+
 	def override_buttons(self, filename):
 		"""
 		Overrides button settings. This changes config in place,
@@ -128,14 +130,14 @@ class ControllerImage(SVGWidget):
 		self.current["gui"]["buttons"] = data["gui"]["buttons"]
 		self.current["buttons"] = data["buttons"]
 		self.use_config(self.current, self.backup)
-	
-	
+
+
 	def undo_override(self):
 		""" Undoes override_* changes """
 		if self.backup is not None:
 			self.use_config(self.backup, None)
-	
-	
+
+
 	def get_button_groups(self):
 		groups = json.loads(open(os.path.join(self.app.imagepath,
 			"button-images", "groups.json"), "r").read())
@@ -143,19 +145,26 @@ class ControllerImage(SVGWidget):
 			x['key'] : x['buttons'] for x in groups
 			if x['type'] == "buttons"
 		}
-	
-	
+
+
 	def _get_default_images(self):
 		return self.get_button_groups()[ControllerImage.DEFAULT]
-	
-	
+
+
 	def _fill_button_images(self, buttons):
 		e = self.edit()
 		SVGEditor.update_parents(e)
 		target = SVGEditor.get_element(e, "controller")
+		if target is None:
+			log.warning("Controller image has no 'controller' element; skipping button overlays")
+			e.commit()
+			return
 		target_x, target_y = SVGEditor.get_translation(target)
+		no_glyph = self.current["gui"].get("no_glyph_buttons", [])
 		for i in range(len(ControllerImage.BUTTONS_WITH_IMAGES)):
 			b = nameof(ControllerImage.BUTTONS_WITH_IMAGES[i])
+			if b in no_glyph:
+				continue
 			if b == "DOTS":
 				# How did I managed to create this kind of special case? -_-
 				i = 16
@@ -163,7 +172,10 @@ class ControllerImage(SVGWidget):
 			try:
 				elm = SVGEditor.get_element(e, "AREA_%s" % (b,))
 				if elm is None:
-					log.warning("Area for button %s not found", b)
+					if b in buttons:
+						log.warning("Area for button %s not found", b)
+					else:
+						log.debug("Area for %s not found (button not in config)", b)
 					continue
 				x, y = SVGEditor.get_translation(elm)
 				scale = 1.0
@@ -188,4 +200,3 @@ class ControllerImage(SVGWidget):
 				log.warning("Failed to add image for button %s (from %s)", b, path)
 				log.exception(err)
 		e.commit()
-

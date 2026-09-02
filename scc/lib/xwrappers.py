@@ -196,10 +196,18 @@ get_class_hint = libX11.XGetClassHint
 get_class_hint.argtypes = [ c_void_p, XID, POINTER(XClassHint) ]
 get_class_hint.restype = c_int
 
-intern_atom = libX11.XInternAtom
-intern_atom.__doc__ = "Returns integer ID for specified Atom name."
-intern_atom.argtypes = [ c_void_p, c_char_p, c_bool ]
-intern_atom.restype = Atom
+_intern_atom = libX11.XInternAtom
+_intern_atom.argtypes = [ c_void_p, c_char_p, c_bool ]
+_intern_atom.restype = Atom
+
+def intern_atom(dpy, name, only_if_exists):
+	"""
+	Returns integer ID for specified Atom name.
+	Accepts atom name as str (encoded to bytes for the C call).
+	"""
+	if isinstance(name, str):
+		name = name.encode("utf-8")
+	return _intern_atom(dpy, name, only_if_exists)
 
 create_pixmap = libX11.XCreatePixmap
 create_pixmap.argtypes = [ c_void_p, XID, c_uint, c_uint, c_uint ]

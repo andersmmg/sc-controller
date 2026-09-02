@@ -198,7 +198,7 @@ class SpecialActionComponent(AEComponent, MenuActionCofC):
 			0 if timeout > 60.0 else timeout,
 			size,
 			enOSDText.get_text()
-		)))
+		))
 	
 	
 	def on_exMenuControl_activate(self, ex, *a):

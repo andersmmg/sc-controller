@@ -70,10 +70,7 @@ class DeviceMonitor(Monitor):
 	
 	def _on_new_syspath(self, subsystem, syspath):
 		try:
-			if subsystem == "input":
-				vendor, product = None, None
-			else:
-				vendor, product = self.get_vendor_product(syspath, subsystem)
+			vendor, product = self.get_vendor_product(syspath, subsystem)
 		except (OSError, IOError):
 			# Cannot grab vendor & product, probably subdevice or bus itself
 			return
@@ -186,6 +183,19 @@ class DeviceMonitor(Monitor):
 			vendor  = int(open(os.path.join(syspath, "idVendor")).read().strip(), 16)
 			product = int(open(os.path.join(syspath, "idProduct")).read().strip(), 16)
 			return vendor, product
+		# Try reading PRODUCT= from uevent (works for uhid/input devices)
+		uevent = os.path.join(syspath, "uevent")
+		if os.path.exists(uevent):
+			try:
+				for line in open(uevent).read().split("\n"):
+					if line.startswith("PRODUCT="):
+						parts = line.split("=")[1].split("/")
+						if len(parts) >= 3:
+							vendor = int(parts[1], 16)
+							product = int(parts[2], 16)
+							return vendor, product
+			except (ValueError, IndexError):
+				pass
 		if subsystem is None:
 			subsystem = DeviceMonitor.get_subsystem(syspath)
 		if subsystem == "bluetooth":

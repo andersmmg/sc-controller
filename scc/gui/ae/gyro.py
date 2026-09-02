@@ -51,7 +51,7 @@ class GyroComponent(AEComponent):
 				self._recursing = True
 				self.builder.get_object("cbInvertGyro").set_active(bool(action.default))
 				self._recursing = False
-				b = action.mods.keys()[0]
+				b = next(iter(action.mods))
 				action = action.mods[b] or action.default
 				self.select_gyro_button(b)
 			else:
@@ -79,7 +79,7 @@ class GyroComponent(AEComponent):
 	
 	def handles(self, mode, action):
 		if is_gyro_enable(action):
-			action = action.mods.values()[0]
+			action = next(iter(action.mods.values()))
 		if isinstance(action, GyroAction):	# Takes GyroAbsAction as well
 			return True
 		if isinstance(action, MultiAction):

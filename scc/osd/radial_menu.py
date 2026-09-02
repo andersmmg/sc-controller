@@ -28,23 +28,23 @@ class RadialMenu(Menu):
 	RECOLOR_STROKES = ( "border", "menuitem_border" )
 	MIN_DISTANCE = 3000		# Minimal cursor distance from center (in px^2)
 	ICON_SIZE = 96
-	
+
 	def __init__(self,):
 		Menu.__init__(self, "osd-radial-menu")
 		self.angle = 0
 		self.rotation = 0
 		self.scale = 1.0
 		self.items_with_icon = []
-	
-	
+
+
 	def create_parent(self):
 		background = os.path.join(get_share_path(), "images", 'radial-menu.svg')
 		self.b = SVGWidget(background)
 		self.b.connect('size-allocate', self.on_size_allocate)
 		self.recolor()
 		return self.b
-	
-	
+
+
 	def recolor(self):
 		config = Config()
 		source_colors = {}
@@ -57,21 +57,21 @@ class RadialMenu(Menu):
 			log.warning(e)
 			return
 		editor = self.b.edit()
-		
+
 		for k in RadialMenu.RECOLOR_BACKGROUNDS:
 			if k in config['osd_colors'] and k in source_colors:
 				editor.recolor_background(source_colors[k], config['osd_colors'][k])
 		editor.recolor_background(source_colors["background"], config['osd_colors']["background"])
-		
+
 		for k in RadialMenu.RECOLOR_STROKES:
 			if k in config['osd_colors'] and k in source_colors:
 				print("REC", source_colors[k], config['osd_colors'][k])
 
 				editor.recolor_strokes(source_colors[k], config['osd_colors'][k])
-		
+
 		editor.commit()
-	
-	
+
+
 	def on_size_allocate(self, trash, allocation):
 		""" (Re)centers all icons when menu is displayed or size is changed """
 		cx = allocation.width * self.scale * 0.5
@@ -83,22 +83,22 @@ class RadialMenu(Menu):
 			x = x - (self.ICON_SIZE * self.scale * 0.5)
 			y = y - (self.ICON_SIZE * self.scale * 0.5)
 			i.icon_widget.get_parent().move(i.icon_widget, x, y)
-	
-	
+
+
 	def get_window_size(self):
 		w, h = Menu.get_window_size(self)
 		if self.scale != 1.0:
 			w = int(w * self.scale)
 			h = int(h * self.scale)
 		return w, h
-	
-	
+
+
 	def _add_arguments(self):
 		Menu._add_arguments(self)
 		self.argparser.add_argument('--rotation', type=float, default=0,
 			help="rotates input by angle (default: 0)")
-	
-	
+
+
 	def parse_argumets(self, argv):
 		self.editor = self.b.edit()
 		rv = Menu.parse_argumets(self, argv)
@@ -106,8 +106,8 @@ class RadialMenu(Menu):
 		if rv:
 			self.enable_cursor()
 		return rv
-	
-	
+
+
 	def generate_widget(self, item):
 		if isinstance(item, (Separator, Submenu)) or item.id is None:
 			# Labels and separators, radial menu can't show these
@@ -116,8 +116,8 @@ class RadialMenu(Menu):
 		SVGEditor.set_text(e, item.label)
 		e.attrib['id'] = "menuitem_" + item.id
 		return e
-	
-	
+
+
 	def pack_items(self, trash, items):
 		if self._size > 0 and self._size < 100:
 			self.scale = self._size / 100.0
@@ -127,7 +127,7 @@ class RadialMenu(Menu):
 		# Image width is not scaled as everything bellow operates
 		# in 'root' object coordinate space
 		image_width = pb.get_width()
-		
+
 		index = 0
 		item_offset = 360.0 / len(self.items)
 		a1 = (-90.0 - item_offset * 0.5) * PI / 180.0
@@ -184,47 +184,47 @@ class RadialMenu(Menu):
 					SVGEditor.set_text(l, label[line])
 			# Continue with next menu item
 			i.index = index
-			
+
 			index += 1
-		
+
 		self.editor.remove_element("menuitem_template")
 		self.editor.commit()
 		del self.editor
-	
-	
+
+
 	def show(self):
 		OSDWindow.show(self)
-		
+
 		from ctypes import byref
-		
+
 		pb = self.b.get_pixbuf()
 		win = X.XID(self.get_window().get_xid())
-		
+
 		width = int(pb.get_width() * self.scale * self.get_scale_factor())
 		height = int(pb.get_height() * self.scale * self.get_scale_factor())
 		pixmap = X.create_pixmap(self.xdisplay, win, width, height, 1)
 		self.f.move(self.cursor, int(width / 2), int(height / 2))
-		
+
 		gc = X.create_gc(self.xdisplay, pixmap, 0, None)
 		X.set_foreground(self.xdisplay, gc, 0)
 		X.fill_rectangle(self.xdisplay, pixmap, gc, 0, 0, width, height)
 		X.set_foreground(self.xdisplay, gc, 1)
 		X.set_background(self.xdisplay, gc, 1)
-		
+
 		r = int(width * 0.985)
-		x = (width - r) / 2
-		
+		x = int((width - r) / 2)
+
 		X.fill_arc(self.xdisplay, pixmap, gc,
 			x, x, r, r, 0, 360*64)
-		
+
 		X.flush_gc(self.xdisplay, gc)
 		X.flush(self.xdisplay)
-		
+
 		X.shape_combine_mask(self.xdisplay, win, X.SHAPE_BOUNDING, 0, 0, pixmap, X.SHAPE_SET)
-		
+
 		X.flush(self.xdisplay)
-	
-	
+
+
 	def select(self, i):
 		if type(i) == int:
 			i = self.items[i]
@@ -238,8 +238,8 @@ class RadialMenu(Menu):
 			"menuitem_" + i.id : "#" + self.config["osd_colors"]["menuitem_hilight"],
 			"text_" + i.id :  "#" + self.config["osd_colors"]["menuitem_hilight_text"],
 		})
-	
-	
+
+
 	def on_event(self, daemon, what, data):
 		if self._submenu:
 			return self._submenu.on_event(daemon, what, data)
@@ -249,21 +249,21 @@ class RadialMenu(Menu):
 			if self._cancel_with == STICK and self._control_with == STICK:
 				if self._control_equals_cancel(daemon, x, y):
 					return
-			
+
 			if self.rotation:
 				rx = x * cos(self.rotation) - y * sin(self.rotation)
 				ry = x * sin(self.rotation) + y * cos(self.rotation)
 				x, y = rx, ry
-			
+
 			max_w = self.get_allocation().width * self.scale - (self.cursor.get_allocation().width * 1.0)
 			max_h = self.get_allocation().height * self.scale - (self.cursor.get_allocation().height * 1.0)
 			cx = ((x * 0.75 / (STICK_PAD_MAX * 2.0)) + 0.5) * max_w
 			cy = (0.5 - (y * 0.75 / (STICK_PAD_MAX * 2.0))) * max_h
-			
+
 			cx -= self.cursor.get_allocation().width *  0.5
 			cy -= self.cursor.get_allocation().height *  0.5
 			self.f.move(self.cursor, int(cx), int(cy))
-			
+
 			if abs(x) + abs(y) > RadialMenu.MIN_DISTANCE:
 				angle = atan2(x, y) * 180.0 / PI
 				half_width = 180.0 / len(self.items)
@@ -282,11 +282,11 @@ if __name__ == "__main__":
 	gi.require_version('Gtk', '3.0')
 	gi.require_version('Rsvg', '2.0')
 	gi.require_version('GdkX11', '3.0')
-	
+
 	from scc.tools import init_logging
 	from scc.paths import get_share_path
 	init_logging()
-	
+
 	m = RadialMenu()
 	if not m.parse_argumets(sys.argv):
 		sys.exit(1)
@@ -295,4 +295,3 @@ if __name__ == "__main__":
 		print(m.get_selected_item_id())
 
 	sys.exit(m.get_exit_code())
-

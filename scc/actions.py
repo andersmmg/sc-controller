@@ -216,8 +216,8 @@ class Action(object):
 
 	def to_string(self, multiline=False, pad=0):
 		""" Converts action back to string """
-		return (" " * pad) + "%s(%s)" % (self.COMMAND, ", ".join([
-			x.to_string() if isinstance(x, Action) else str(x)
+		return (" " * pad) + "{}({})".format(self.COMMAND, ", ".join([
+			x.to_string() if isinstance(x, Action) else (x.name if hasattr(x, 'name') else str(x))
 			for x in self.parameters
 		]))
 
@@ -257,7 +257,7 @@ class Action(object):
 		Called when action is executed by pressing physical gamepad button.
 		'button_release' will be called later.
 		"""
-		log.warn("Action %s can't handle button press event", self.__class__.__name__)
+		log.warning("Action %s can't handle button press event", self.__class__.__name__)
 
 
 	def button_release(self, mapper):
@@ -265,7 +265,7 @@ class Action(object):
 		Called when action executed by pressing physical gamepad button is
 		expected to stop.
 		"""
-		log.warn("Action %s can't handle button release event", self.__class__.__name__)
+		log.warning("Action %s can't handle button release event", self.__class__.__name__)
 
 
 	def axis(self, mapper, position, what):
@@ -277,7 +277,7 @@ class Action(object):
 		'what' is one of LEFT, RIGHT or STICK (from scc.constants),
 		describing what is being updated
 		"""
-		log.warn("Action %s can't handle axis event", self.__class__.__name__)
+		log.warning("Action %s can't handle axis event", self.__class__.__name__)
 
 
 	def pad(self, mapper, position, what):
@@ -311,7 +311,7 @@ class Action(object):
 		'what' is one of LEFT, RIGHT, STICK (from scc.constants), describing what is
 		being updated
 		"""
-		log.warn("Action %s can't handle whole stick event", self.__class__.__name__)
+		log.warning("Action %s can't handle whole stick event", self.__class__.__name__)
 
 
 	def whole_blocked(self, mapper, x, y, what):
@@ -338,7 +338,7 @@ class Action(object):
 
 		'what' can be None.
 		"""
-		log.warn("Action %s can't handle incremental changes", self.__class__.__name__)
+		log.warning("Action %s can't handle incremental changes", self.__class__.__name__)
 
 
 	def cancel(self, mapper):
@@ -360,7 +360,7 @@ class Action(object):
 		if as_strings is set to True, all parameters are converted to apropriate
 		strings (x.name for enums, x.encode('string_escape') for strings,
 		"""
-		argspec = inspect.getargspec(self.__class__.__init__)
+		argspec = inspect.getfullargspec(self.__class__.__init__)
 		required_count = len(argspec.args) - len(argspec.defaults) - 1
 		d = list(argspec.defaults)
 		l = list(self.parameters)
@@ -398,7 +398,7 @@ class Action(object):
 		'position' contains current trigger position.
 		'old_position' contains last known trigger position.
 		"""
-		log.warn("Action %s can't handle trigger event", self.__class__.__name__)
+		log.warning("Action %s can't handle trigger event", self.__class__.__name__)
 
 
 class RangeOP(object):
@@ -627,13 +627,19 @@ class AxisAction(Action):
 		are localized and Negative/Positive may be switched over depending on
 		axis.
 		"""
+		if hasattr(id, 'name'):
+			name = id.name
+		elif isinstance(id, int):
+			name = str(id)
+		else:
+			name = str(id)
 		if id in Axes or id in Rels:
-			axis, neg, pos = "%s %s" % (id.name, _("Axis")), _("Negative"), _("Positive")
+			axis, neg, pos = "%s %s" % (name, _("Axis")), _("Negative"), _("Positive")
 			if id in AxisAction.AXIS_NAMES:
 				axis, neg, pos = [ _(x) for x in AxisAction.AXIS_NAMES[id] ]
 			if xy:
-				if id.name.endswith("X"): axis = _("%s X") % (axis,)
-				if id.name.endswith("Y"): axis = _("%s Y") % (axis,)
+				if name.endswith("X"): axis = _("%s X") % (axis,)
+				if name.endswith("Y"): axis = _("%s Y") % (axis,)
 			return axis, neg, pos
 		elif hasattr(id, "name"):
 			return _("Axis %s") % (id.name,), _("Negative"), _("Positive")
@@ -1975,12 +1981,18 @@ class DPadAction(MultichildAction, HapticEnabledAction):
 		if x*x + y*y > self.MIN_DISTANCE_P2:
 			# Compute angle from center of pad to finger position
 			angle = (atan2(x, y) * 180.0 / PI) + 180
+			angle = angle % 360
 			# Translate it to index
 			index = 0
 			for a1, a2, i in self.ranges:
-				if angle >= a1 and angle < a2:
-					index = i
-					break
+				if a1 <= a2:
+					if angle >= a1 and angle < a2:
+						index = i
+						break
+				else:
+					if angle >= a1 or angle < a2:
+						index = i
+						break
 			side = self.SIDES[index]
 		return side
 
@@ -2680,6 +2692,8 @@ class NoAction(Action):
 
 	def __nonzero__(self):
 		return False
+
+	__bool__ = __nonzero__
 
 
 	def encode(self):

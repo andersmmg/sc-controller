@@ -21,21 +21,21 @@ log = logging.getLogger("osd.menu_gen")
 class ProfileListMenuGenerator(MenuGenerator):
 	""" Generates list of all available profiles """
 	GENERATOR_NAME = "profiles"
-	
+
 	@staticmethod
 	def callback(menu, daemon, controller, menuitem):
 		controller.set_profile(menuitem.filename)
 		menu.hide()
 		def on_response(*a):
 			menu.quit(-2)
-		daemon.request(b"OSD: " + menuitem.label.encode("utf-8") + b"\n",
+		daemon.request("OSD: " + menuitem.label + "\n",
 			on_response, on_response)
-	
-	
+
+
 	def describe(self):
 		return _("[ All Profiles ]")
-	
-	
+
+
 	def generate(self, menuhandler):
 		# TODO: Cannot load directory content asynchronously here and I'm
 		# TODO: not happy about it
@@ -55,29 +55,29 @@ class ProfileListMenuGenerator(MenuGenerator):
 class RecentListMenuGenerator(MenuGenerator):
 	""" Generates list of X recently used profiles """
 	GENERATOR_NAME = "recent"
-	
+
 	def __init__(self, rows=5, **b):
 		MenuGenerator.__init__(self)
 		self.rows = rows
-	
-	
+
+
 	def generate(self, menuhandler):
 		return _("[ %s Recent Profiles ]") % (self.rows,)
-	
-	
+
+
 	def encode(self):
 		return { "generator" : self.GENERATOR_NAME, "rows" : self.rows }
-	
-	
+
+
 	def callback(self, menu, daemon, controller, menuitem):
 		controller.set_profile(menuitem.filename)
 		menu.hide()
 		def on_response(*a):
 			menu.quit(-2)
-		daemon.request(b"OSD: " + menuitem.label.encode("utf-8") + b"\n",
+		daemon.request("OSD: " + menuitem.label + "\n",
 			on_response, on_response)
-	
-	
+
+
 	def generate(self, menuhandler):
 		rv = []
 		for p in menuhandler.config['recent_profiles']:
@@ -96,15 +96,15 @@ class WindowListMenuGenerator(MenuGenerator):
 	""" Generates list of all windows """
 	GENERATOR_NAME = "windowlist"
 	MAX_LENGHT = 50
-	
+
 	def generate(self, menuhandler):
 		return _("[ Window Lists ]")
 
-	
+
 	def encode(self):
 		return { "generator" : self.GENERATOR_NAME }
-	
-	
+
+
 	@staticmethod
 	def callback(menu, daemon, controller, menuitem):
 		try:
@@ -116,13 +116,13 @@ class WindowListMenuGenerator(MenuGenerator):
 			log.error("Failed to activate window")
 			log.error(traceback.format_exc())
 		menu.quit(-2)
-	
-	
+
+
 	def generate(self, menuhandler):
 		rv = []
 		dpy = X.Display(hash(GdkX11.x11_get_default_xdisplay()))	# Magic
 		root = X.get_default_root_window(dpy)
-		
+
 		count, wlist = X.get_window_prop(dpy, root, "_NET_CLIENT_LIST", 1024)
 		skip_taskbar = X.intern_atom(dpy, "_NET_WM_STATE_SKIP_TASKBAR", True)
 		wlist = cast(wlist, POINTER(X.XID))[0:count]
@@ -142,23 +142,23 @@ class GameListMenuGenerator(MenuGenerator):
 	"""
 	GENERATOR_NAME = "games"
 	MAX_LENGHT = 50
-	
+
 	_games = None		# Static list of know games
-	
+
 	def generate(self, menuhandler):
 		return _("[ Games ]")
 
-	
+
 	def encode(self):
 		return { "generator" : self.GENERATOR_NAME }
-	
-	
+
+
 	@staticmethod
 	def callback(menu, daemon, controller, menuitem):
 		menuitem._desktop_file.launch()
 		menu.quit(-2)
-	
-	
+
+
 	def generate(self, menuhandler):
 		if GameListMenuGenerator._games is None:
 			GameListMenuGenerator._games = []

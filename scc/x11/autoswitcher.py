@@ -25,7 +25,7 @@ class AutoSwitcher(object):
 	INTERVAL = 1
 	
 	def __init__(self):
-		self.dpy = X.open_display(os.environ["DISPLAY"])
+		self.dpy = X.open_display(os.environ["DISPLAY"].encode("utf-8"))
 		self.lock = threading.Lock()
 		self.thread = threading.Thread(target=self.connect_daemon)
 		self.config = Config()
@@ -327,7 +327,7 @@ class AutoswitchOptsMenuGenerator(MenuGenerator):
 				} for c in self.conds
 			]
 			cfg.save()
-			daemon.request(b"Reconfigure.\n", on_response, on_response)
+			daemon.request("Reconfigure.\n", on_response, on_response)
 		else:
 			on_response()
 	
