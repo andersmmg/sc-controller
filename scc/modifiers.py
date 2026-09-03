@@ -630,7 +630,7 @@ class DeadzoneModifier(Modifier):
 			self._convert = self.mode_CUT
 
 		self.lower = int(params[0])
-		self.upper = int(params[1]) if len(params) == 2 else STICK_PAD_MAX
+		self.upper = int(params[1]) if len(params) == 2 else None
 
 
 	def mode_CUT(self, x, y, range):
@@ -639,9 +639,15 @@ class DeadzoneModifier(Modifier):
 		"""
 		if y == 0:
 			# Small optimalization for 1D input, for example trigger
-			return (0 if abs(x) < self.lower or abs(x) > self.upper else x), 0
+			if abs(x) < self.lower:
+				return 0, 0
+			if self.upper is not None and abs(x) > self.upper:
+				return 0, 0
+			return x, 0
 		distance = sqrt(x*x + y*y)
-		if distance < self.lower or distance > self.upper:
+		if distance < self.lower:
+			return 0, 0
+		if self.upper is not None and distance > self.upper:
 			return 0, 0
 		return x, y
 
@@ -654,13 +660,13 @@ class DeadzoneModifier(Modifier):
 		"""
 		if y == 0:
 			# Small optimalization for 1D input, for example trigger
-			if abs(x) > self.upper:
+			if self.upper is not None and abs(x) > self.upper:
 				return copysign(range, x), 0
 			return (0 if abs(x) < self.lower else x), 0
 		distance = sqrt(x*x + y*y)
 		if distance < self.lower:
 			return 0, 0
-		if distance > self.upper:
+		if self.upper is not None and distance > self.upper:
 			angle = atan2(x, y)
 			return range * sin(angle), range * cos(angle)
 		return x, y
@@ -671,17 +677,19 @@ class DeadzoneModifier(Modifier):
 		Input value is scaled, so entire output range is covered by
 		reduced input range of deadzone.
 		"""
+		# Upper bound is optional; when unset, scale up to full input range
+		upper = self.upper if self.upper is not None else STICK_PAD_MAX
 		if y == 0:
 			# Small optimalization for 1D input, for example trigger
 			return copysign(
 				clamp(
 					0,
-					((x - self.lower) / (self.upper - self.lower)) * range,
+					((x - self.lower) / (upper - self.lower)) * range,
 					range),
 				x
 			), 0
-		distance = clamp(self.lower, sqrt(x*x + y*y), self.upper)
-		distance = (distance - self.lower) / (self.upper - self.lower) * range
+		distance = clamp(self.lower, sqrt(x*x + y*y), upper)
+		distance = (distance - self.lower) / (upper - self.lower) * range
 
 		angle = atan2(x, y)
 		return distance * sin(angle), distance * cos(angle)
@@ -693,17 +701,20 @@ class DeadzoneModifier(Modifier):
 		Inversion of LINEAR; input value is scaled so entire input range is
 		mapped to range of deadzone.
 		"""
+		# Upper bound is optional; when unset, treat full input range as
+		# mapping into deadzone range
+		upper = self.upper if self.upper is not None else STICK_PAD_MAX
 		if y == 0:
 			# Small optimalization for 1D input, for example trigger
 			if abs(x) < DeadzoneModifier.JUMP_HARDCODED_LIMIT:
 				return 0, 0
 			return (copysign(
-						(float(abs(x)) / range * (self.upper - self.lower))
+						(float(abs(x)) / range * (upper - self.lower))
 						+ self.lower, x), 0)
 		distance = sqrt(x*x + y*y)
 		if distance < DeadzoneModifier.JUMP_HARDCODED_LIMIT:
 			return 0, 0
-		distance = (distance / range * (self.upper - self.lower)) + self.lower
+		distance = (distance / range * (upper - self.lower)) + self.lower
 
 		angle = atan2(x, y)
 		return distance * sin(angle), distance * cos(angle)
@@ -714,7 +725,7 @@ class DeadzoneModifier(Modifier):
 		return DeadzoneModifier(
 			data["deadzone"]["mode"] if "mode" in data["deadzone"] else CUT,
 			data["deadzone"]["lower"] if "lower" in data["deadzone"] else STICK_PAD_MIN,
-			data["deadzone"]["upper"] if "upper" in data["deadzone"] else STICK_PAD_MAX,
+			data["deadzone"]["upper"] if "upper" in data["deadzone"] else None,
 			a
 		)
 
@@ -758,7 +769,7 @@ class DeadzoneModifier(Modifier):
 		if self.mode != CUT:
 			params.append(self.mode)
 		params.append(str(self.lower))
-		if self.upper != STICK_PAD_MAX:
+		if self.upper is not None:
 			params.append(str(self.upper))
 		params.append(self.action.to_string(multiline))
 

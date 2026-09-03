@@ -14,7 +14,7 @@ from scc.modifiers import SmoothModifier, NameModifier, BallModifier
 from scc.modifiers import Modifier, ClickModifier, ModeModifier
 from scc.modifiers import SensitivityModifier, FeedbackModifier
 from scc.modifiers import DeadzoneModifier, RotateInputModifier
-from scc.constants import HapticPos, SCButtons
+from scc.constants import HapticPos, SCButtons, STICK_PAD_MAX
 from scc.constants import CUT, ROUND, LINEAR, MINIMUM
 from scc.controller import HapticData
 from scc.profile import Profile
@@ -97,6 +97,7 @@ class ActionEditor(Editor):
 		self.feedback = [0.0] * 3		# Feedback slider values, set later
 		self.deadzone = [0] * 2			# Deadzone slider values, set later
 		self.deadzone_mode = None		# None for 'disabled'
+		self.deadzone_upper_enabled = False	# Upper (maximum) bound is optional, off by default
 		self.feedback_position = None	# None for 'disabled'
 		self.smoothing = None			# None for 'disabled'
 		self.friction = -1				# -1 for 'disabled'
@@ -594,6 +595,16 @@ class ActionEditor(Editor):
 			self.deadzone_mode = mode
 			set_action = True
 		
+		# Upper (maximum) bound is optional; only applied when enabled
+		cbDZUpper = self.builder.get_object("cbDZUpper")
+		upper_enabled = mode is not None and cbDZUpper.get_active()
+		cbDZUpper.set_sensitive(mode is not None)
+		for w in self.deadzone_widgets[1][0:3]:
+			w.set_sensitive(upper_enabled)
+		if self.deadzone_upper_enabled != upper_enabled:
+			self.deadzone_upper_enabled = upper_enabled
+			set_action = True
+		
 		for i in range(0, len(self.deadzone)):
 			if self.deadzone[i] != self.deadzone_widgets[i][1].get_value():
 				self.deadzone[i] = self.deadzone_widgets[i][1].get_value()
@@ -692,7 +703,10 @@ class ActionEditor(Editor):
 		
 		if (cm & Action.MOD_DEADZONE) != 0:
 			if self.deadzone_mode is not None:
-				action = DeadzoneModifier(self.deadzone_mode, self.deadzone[0], self.deadzone[1], action)
+				params = [ self.deadzone_mode, self.deadzone[0] ]
+				if self.deadzone_upper_enabled:
+					params.append(self.deadzone[1])
+				action = DeadzoneModifier(*(params + [ action ]))
 		
 		if (cm & Action.MOD_ROTATE) != 0:
 			if self.rotation_angle != 0.0:
@@ -770,7 +784,8 @@ class ActionEditor(Editor):
 			if isinstance(action, DeadzoneModifier):
 				self.deadzone_mode = action.mode
 				self.deadzone[0] = action.lower
-				self.deadzone[1] = action.upper
+				self.deadzone_upper_enabled = action.upper is not None
+				self.deadzone[1] = action.upper if action.upper is not None else STICK_PAD_MAX
 				action = action.action
 			if isinstance(action, SensitivityModifier):
 				if index < 0:
@@ -842,6 +857,13 @@ class ActionEditor(Editor):
 				w.set_sensitive(self.deadzone_mode is not None)
 		lblDeadzoneMode.set_sensitive(self.deadzone_mode is not None)
 		cbDeadzoneMode.set_sensitive(self.deadzone_mode is not None)
+		# Upper (maximum) bound is optional and off by default
+		cbDZUpper = self.builder.get_object("cbDZUpper")
+		cbDZUpper.set_active(self.deadzone_upper_enabled)
+		cbDZUpper.set_sensitive(self.deadzone_mode is not None)
+		upper_sensitive = self.deadzone_mode is not None and self.deadzone_upper_enabled
+		for w in self.deadzone_widgets[1][0:3]:
+			w.set_sensitive(upper_sensitive)
 		
 		self._recursing = False
 		

@@ -112,10 +112,10 @@ class TestModifiers(object):
 		"""
 		Tests if DeadzoneModifier is parsed
 		"""
-		# Lower only
+		# Lower only; upper bound is optional and unset by default
 		a = _parse_compressed("deadzone(100, axis(ABS_X))")
 		assert isinstance(a, DeadzoneModifier)
-		assert a.lower == 100 and a.upper == STICK_PAD_MAX
+		assert a.lower == 100 and a.upper is None
 		assert isinstance(a.action, AxisAction)
 		assert a.action.id == Axes.ABS_X
 		# Lower and upper
