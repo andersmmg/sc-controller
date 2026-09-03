@@ -16,7 +16,7 @@ from scc.lib import xwrappers as X
 from scc.constants import STICK_PAD_MIN, STICK_PAD_MAX, STICK_PAD_MIN_HALF
 from scc.constants import STICK_PAD_MAX_HALF, TRIGGER_MIN, TRIGGER_HALF
 from scc.constants import HIPFIRE_NORMAL, HIPFIRE_SENSIBLE, HIPFIRE_EXCLUSIVE
-from scc.constants import LEFT, RIGHT, CPAD, STICK, PITCH, YAW, ROLL
+from scc.constants import LEFT, RIGHT, CPAD, STICK, RSTICK, PITCH, YAW, ROLL
 from scc.constants import PARSER_CONSTANTS, ControllerFlags
 from scc.constants import FE_STICK, FE_TRIGGER, FE_PAD
 from scc.constants import TRIGGER_CLICK, TRIGGER_MAX
@@ -917,10 +917,11 @@ class MouseAction(WholeHapticAction, Action):
 
 
 	def whole(self, mapper, x, y, what):
-		if what == STICK:
+		if what in (STICK, RSTICK):
 			mapper.mouse_move(x * self.speed[0] * 0.01, y * self.speed[1] * 0.01)
 			mapper.force_event.add(FE_STICK)
-		elif what == RIGHT and mapper.controller_flags() & ControllerFlags.HAS_RSTICK:
+		elif what == RIGHT and mapper.controller_flags() & ControllerFlags.HAS_RSTICK \
+				and not mapper.controller_flags() & ControllerFlags.HAS_TOUCHPADS:
 			mapper.mouse_move(x * self.speed[0] * 0.01, y * self.speed[1] * 0.01)
 			mapper.force_event.add(FE_PAD)
 		else:	# left or right pad
@@ -928,10 +929,10 @@ class MouseAction(WholeHapticAction, Action):
 				if self._old_pos and mapper.was_touched(what):
 					dx, dy = x - self._old_pos[0], self._old_pos[1] - y
 					self.change(mapper, dx, dy, what)
-				self._old_pos = x, y
-			else:
-				# Pad just released
-				self._old_pos = None
+					self._old_pos = x, y
+				else:
+					# Pad just released
+					self._old_pos = None
 
 
 	def gyro(self, mapper, pitch, yaw, roll, *a):
@@ -1610,7 +1611,7 @@ class ButtonAction(HapticEnabledAction, Action):
 
 
 	def whole(self, mapper, x, y, what):
-		if what == STICK:
+		if what in (STICK, RSTICK):
 			# Stick used used as one big button (probably as part of ring bindings)
 			if abs(x) < ButtonAction.STICK_DEADZONE and abs(y) < ButtonAction.STICK_DEADZONE:
 				if self._pressed_key == self.button:
@@ -2300,7 +2301,8 @@ class XYAction(WholeHapticAction, Action):
 			else:
 				self._old_pos = None
 
-		if mapper.controller_flags() & ControllerFlags.HAS_RSTICK and what == RIGHT:
+		if what == RIGHT and mapper.controller_flags() & ControllerFlags.HAS_RSTICK \
+				and not mapper.controller_flags() & ControllerFlags.HAS_TOUCHPADS:
 			self.x.axis(mapper, x, what)
 			self.y.axis(mapper, y, what)
 			mapper.force_event.add(FE_PAD)

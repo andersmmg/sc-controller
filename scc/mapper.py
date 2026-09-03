@@ -421,7 +421,7 @@ class Mapper(object):
 				if FE_STICK in fe or self.old_state.lpad_x != state.lpad_x or self.old_state.lpad_y != state.lpad_y \
 						or (btn_add & SCButtons.LSTICKTOUCH) or (btn_rem & SCButtons.LSTICKTOUCH):
 					self.profile.stick.whole(self, state.lpad_x, state.lpad_y, STICK)
-			if self.controller.flags & (ControllerFlags.IS_DECK | ControllerFlags.IS_SC2):
+			if self.controller.flags & ControllerFlags.HAS_RSTICK and hasattr(state, "rstick_x"):
 				if FE_STICK in fe or self.old_state.rstick_x != state.rstick_x or self.old_state.rstick_y != state.rstick_y \
 						or (btn_add & SCButtons.RSTICKTOUCH) or (btn_rem & SCButtons.RSTICKTOUCH):
 					self.profile.rstick.whole(self, state.rstick_x, state.rstick_y, RSTICK)
@@ -440,13 +440,14 @@ class Mapper(object):
 
 			# Check pads
 			# RPAD
-			if controller.flags & ControllerFlags.HAS_RSTICK:
+			if controller.flags & ControllerFlags.HAS_TOUCHPADS:
+				if FE_PAD in fe or self.buttons & SCButtons.RPADTOUCH or SCButtons.RPADTOUCH & btn_rem:
+					self.profile.pads[RIGHT].whole(self, state.rpad_x, state.rpad_y, RIGHT)
+			else:
 				if FE_PAD in fe or self.old_state.rpad_x != state.rpad_x or self.old_state.rpad_y != state.rpad_y:
 					self.profile.pads[RIGHT].whole(self, state.rpad_x, state.rpad_y, RIGHT)
-			elif FE_PAD in fe or self.buttons & SCButtons.RPADTOUCH or SCButtons.RPADTOUCH & btn_rem:
-				self.profile.pads[RIGHT].whole(self, state.rpad_x, state.rpad_y, RIGHT)
 			# DPAD
-			if controller.flags & (ControllerFlags.IS_DECK | ControllerFlags.IS_SC2):
+			if controller.flags & ControllerFlags.HAS_DPAD and hasattr(state, "dpad_x"):
 				if FE_PAD in fe or self.old_state.dpad_x != state.dpad_x or self.old_state.dpad_y != state.dpad_y:
 					self.profile.pads[DPAD].whole(self, state.dpad_x, state.dpad_y, DPAD)
 

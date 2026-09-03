@@ -10,6 +10,7 @@ Created controllers are completely useless. For debuging purposes only.
 """
 
 from scc.controller import Controller
+from scc.constants import ControllerFlags
 import os, logging
 
 ENV_VAR = "SCC_FAKES"
@@ -30,6 +31,8 @@ if ENV_VAR in os.environ:
 
 
 class FakeController(Controller):
+	flags = ControllerFlags.HAS_TOUCHPADS
+
 	def __init__(self, number):
 		Controller.__init__(self)
 		self._number = number

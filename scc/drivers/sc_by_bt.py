@@ -110,7 +110,8 @@ class Driver:
 
 
 class SCByBt(SCController):
-	flags = 0 | ControllerFlags.SEPARATE_STICK
+	flags = ( ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_TOUCHPADS )
 
 	def __init__(self, driver, syspath, hidrawdev):
 		self._cmsg = []  # controll messages

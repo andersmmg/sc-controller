@@ -125,16 +125,18 @@ class ControllerFlags(IntEnum):
 	Steam Controller and other pads.
 	"""
 	NONE =				0		# No flags, default SC.
-	HAS_RSTICK =		1 << 0	# Controller has right stick instead of touchpad
+	HAS_RSTICK =		1 << 0	# Controller has real right stick
 	SEPARATE_STICK =	1 << 1	# Left stick and left pad are using separate axes
 	EUREL_GYROS =		1 << 2	# Gyro sensor values are provided as pitch, yaw
 								# and roll instead of quaterion. 'q4' is unused
 								# in such case.
 	HAS_CPAD =			1 << 3	# Controller has DS4-like touchpad in center
-	HAS_DPAD =			1 << 4	# Controller has normal d-pad instead of touchpad
+	HAS_DPAD =			1 << 4	# Controller has physical d-pad
 	NO_GRIPS =			1 << 5	# Controller has no grips
 	IS_DECK =			1 << 6	# Very special case
 	IS_SC2 =			1 << 7	# Steam Controller 2
+	HAS_TOUCHPADS =		1 << 8	# Controller has physical SC-style touchpads;
+								# pads[LEFT]/pads[RIGHT] are real touch surfaces
 
 
 STICK_PAD_MIN = -32768

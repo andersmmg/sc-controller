@@ -267,7 +267,9 @@ class TestInputs(object):
 		"""
 		Tests that mapper.is_touched()/was_touched() reflect SC2 stick touch bits.
 		"""
-		mapper.controller.flags = ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
+		mapper.controller.flags = (ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_DPAD | ControllerFlags.HAS_RSTICK
+			| ControllerFlags.HAS_TOUCHPADS)
 		assert not mapper.is_touched(STICK)
 		assert not mapper.is_touched(RSTICK)
 
@@ -291,7 +293,9 @@ class TestInputs(object):
 		Tests that stick touch edge triggers profile.stick/rstick.whole even
 		with no coordinate change, so touched()/untouched() can fire on sticks.
 		"""
-		mapper.controller.flags = ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
+		mapper.controller.flags = (ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_DPAD | ControllerFlags.HAS_RSTICK
+			| ControllerFlags.HAS_TOUCHPADS)
 		stick = _CountingAction()
 		rstick = _CountingAction()
 		mapper.profile.stick = stick
@@ -314,7 +318,9 @@ class TestInputs(object):
 		"""
 		Tests that touched(STICK)/touched(RSTICK) fires on stick touch edge.
 		"""
-		mapper.controller.flags = ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
+		mapper.controller.flags = (ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_DPAD | ControllerFlags.HAS_RSTICK
+			| ControllerFlags.HAS_TOUCHPADS)
 		mapper.profile.stick = TouchedModifier(
 			(parser.restart("button(Keys.KEY_P)")).parse())
 		mapper.profile.rstick = TouchedModifier(
@@ -336,7 +342,9 @@ class TestInputs(object):
 		Tests that set_button(RSTICK, ...) does not crash (bug where
 		'a &= ~string' raised TypeError).
 		"""
-		mapper.controller.flags = ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
+		mapper.controller.flags = (ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_DPAD | ControllerFlags.HAS_RSTICK
+			| ControllerFlags.HAS_TOUCHPADS)
 		mapper.set_button(RSTICK, True)
 		assert mapper.is_pressed(SCButtons.RSTICKTOUCH)
 		mapper.set_button(RSTICK, False)
@@ -354,7 +362,9 @@ class TestInputs(object):
 		regular buttons: set_button / is_pressed and button edges fire
 		profile.button actions.
 		"""
-		mapper.controller.flags = ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
+		mapper.controller.flags = (ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_DPAD | ControllerFlags.HAS_RSTICK
+			| ControllerFlags.HAS_TOUCHPADS)
 		assert int(SCButtons.RSENSE) != int(SCButtons.RPADTOUCH)
 		assert int(SCButtons.LSENSE) != int(SCButtons.LPADTOUCH)
 		assert int(SCButtons.RSENSE) != int(SCButtons.LSENSE)
@@ -373,7 +383,9 @@ class TestInputs(object):
 		"""
 		Tests that grip touch button edges trigger the mapped button action.
 		"""
-		mapper.controller.flags = ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
+		mapper.controller.flags = (ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_DPAD | ControllerFlags.HAS_RSTICK
+			| ControllerFlags.HAS_TOUCHPADS)
 		mapper.profile.buttons[SCButtons.LSENSE] = (parser
 			.restart("button(Keys.KEY_R)")).parse()
 		mapper.profile.buttons[SCButtons.RSENSE] = (parser

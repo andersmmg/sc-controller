@@ -504,7 +504,7 @@ If anything is assigned incorrectly, click on button on image to (re)assign phys
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="margin_left">40</property>
-                        <property name="label" translatable="yes">Right stick (right pad)</property>
+                        <property name="label" translatable="yes">Right stick</property>
                         <property name="xalign">0</property>
                       </object>
                       <packing>
@@ -517,7 +517,7 @@ If anything is assigned incorrectly, click on button on image to (re)assign phys
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="margin_left">40</property>
-                        <property name="label" translatable="yes">DPAD (left pad)</property>
+                        <property name="label" translatable="yes">D-Pad</property>
                         <property name="xalign">0</property>
                       </object>
                       <packing>

@@ -222,7 +222,7 @@ class ControllerRegistration(Editor):
 		assigned_buttons = set([ x for x in self._mappings.values()
 							if x in SCButtons.__members__.values() ])
 		assigned_buttons.update([ x.button for x in self._mappings.values()
-							if isinstance(x, DPadEmuData) ])
+							if isinstance(x, DPadEmuData) and x.button is not None ])
 		for a in BUTTON_ORDER:
 			if a not in assigned_buttons:
 				if a not in (SCButtons.RGRIP, SCButtons.LGRIP):
@@ -290,7 +290,8 @@ class ControllerRegistration(Editor):
 			elif isinstance(target, DPadEmuData):
 				config['dpads'][code] = axis_to_json(target.axis_data)
 				config['dpads'][code]["positive"] = target.positive
-				config['dpads'][code]["button"] = nameof(target.button)
+				if target.button is not None:
+					config['dpads'][code]["button"] = nameof(target.button)
 			elif isinstance(target, AxisData):
 				config['axes'][code] = axis_to_json(target)
 
@@ -454,8 +455,8 @@ class ControllerRegistration(Editor):
 				# Special case, device may be usable, but there is no access
 				rvHIDWarning = self.builder.get_object("rvHIDWarning")
 				rvHIDWarning.set_reveal_child(False)
-			log.debug("Trying to use '%s' with evdev driver...", dev.fn)
-			self._tester = Tester("evdev", dev.fn)
+			log.debug("Trying to use '%s' with evdev driver...", dev.path)
+			self._tester = Tester("evdev", dev.path)
 			self._tester.__signals = [
 				self._tester.connect('ready', self.on_registration_ready),
 				self._tester.connect('error', self.on_device_open_failed)
@@ -464,6 +465,10 @@ class ControllerRegistration(Editor):
 
 		if dev.info.vendor == 0 and dev.info.product == 0:
 			# Not an USB device, skip HID test altogether
+			retry_with_evdev(None, 0)
+		elif dev.info.bustype == evdev.ecodes.BUS_BLUETOOTH:
+			# Bluetooth device, skip HID test (driver only supports USB)
+			log.debug("Bluetooth device, using evdev driver")
 			retry_with_evdev(None, 0)
 		else:
 			log.debug("Trying to use %.4x:%.4x with HID driver...",
@@ -559,7 +564,7 @@ class ControllerRegistration(Editor):
 					self._tester = Tester("hid", "%.4x:%.4x" % (
 						self._evdevice.info.vendor, self._evdevice.info.product))
 				else:
-					self._tester = Tester("evdev", self._evdevice.fn)
+					self._tester = Tester("evdev", self._evdevice.path)
 				self._tester.__signals = [
 					self._tester.connect('ready', self.on_registration_ready),
 					self._tester.connect('error', self.on_device_open_failed),
@@ -583,14 +588,18 @@ class ControllerRegistration(Editor):
 			else:
 				self.hilight_axis(what, STICK_PAD_MIN)
 		if isinstance(what, DPadEmuData):
+			if what.button is not None:
+				# Real dpad has no 'click' button
+				if pressed:
+					self.hilight(nameof(what.button))
+				else:
+					self.unhilight(nameof(what.button))
 			if pressed:
-				self.hilight(nameof(what.button))
 				if what.positive:
 					self.hilight_axis(what.axis_data, STICK_PAD_MAX)
 				else:
 					self.hilight_axis(what.axis_data, STICK_PAD_MIN)
 			else:
-				self.unhilight(nameof(what.button))
 				self.hilight_axis(what.axis_data, 0)
 		elif what is not None:
 			if pressed:
@@ -709,7 +718,14 @@ class ControllerRegistration(Editor):
 			if what in STICK_PAD_AREAS:
 				area_name, axes = STICK_PAD_AREAS[what]
 				mnuStick = self.builder.get_object("mnuStick")
-				mnuStick._what = "STICKPRESS" if what == "STICK" else what
+				mnuStickPress = self.builder.get_object("mnuStickPress")
+				if what == "STICK":
+					mnuStick._what = "STICKPRESS"
+				elif what == "RSTICK":
+					mnuStick._what = "RSTICKPRESS"
+				else:
+					mnuStick._what = what
+				mnuStickPress.set_sensitive(what != "DPAD")
 				mnuStick._axes = [ self._axis_data[index] for index in axes ]
 				mnuStick.popup(None, None, None, None, 1, Gtk.get_current_event_time())
 			elif what in TRIGGER_AREAS:
@@ -726,7 +742,12 @@ class ControllerRegistration(Editor):
 
 	def on_mnuStickmove_activate(self, *a):
 		mnuStick = self.builder.get_object("mnuStick")
-		self._grabber = StickGrabber(self, mnuStick._axes)
+		if mnuStick._what == "DPAD":
+			# Dpad reported as axes is grabbed directly
+			self._grabber = StickGrabber(self, mnuStick._axes,
+					text=_("Move the dpad, or press buttons"))
+		else:
+			self._grabber = StickGrabber(self, mnuStick._axes)
 
 
 	def on_btCancelInput_clicked(self, *a):

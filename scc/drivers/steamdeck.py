@@ -132,6 +132,8 @@ class Deck(USBDevice, SCController):
 	flags = ( 0
 		| ControllerFlags.SEPARATE_STICK
 		| ControllerFlags.HAS_DPAD
+		| ControllerFlags.HAS_RSTICK
+		| ControllerFlags.HAS_TOUCHPADS
 		| ControllerFlags.IS_DECK
 	)
 	

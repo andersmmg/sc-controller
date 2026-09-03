@@ -316,6 +316,13 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		if expected_layout != self.current_ui_layout:
 			self.apply_ui_layout(expected_layout)
 
+		if btDPAD.get_sensitive():
+			btLGRIP = self.builder.get_object("btLGRIP")
+			if btDPAD.get_parent() is not btLGRIP.get_parent():
+				btDPAD.get_parent().remove(btDPAD)
+				btLGRIP.get_parent().pack_start(btDPAD, False, True, 6)
+				btLGRIP.get_parent().reorder_child(btDPAD, 5)
+
 		stckEditor.set_visible_child(grEditor)
 		GLib.idle_add(self.on_c_size_allocate)
 
