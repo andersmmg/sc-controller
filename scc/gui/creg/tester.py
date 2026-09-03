@@ -87,10 +87,10 @@ class Tester(GObject.GObject):
 			return
 		if len(data) > 0:
 			self.buffer += data
-			while "\n" in self.buffer:
-				line, self.buffer = self.buffer.split("\n", 1)
+			while b"\n" in self.buffer:
+				line, self.buffer = self.buffer.split(b"\n", 1)
 				try:
-					self._on_line(line)
+					self._on_line(line.decode('utf-8', 'ignore'))
 				except Exception as e:
 					log.exception(e)
 			self.subprocess.get_stdout_pipe().read_bytes_async(
