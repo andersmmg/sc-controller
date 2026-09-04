@@ -5,7 +5,7 @@ SC-Controller - Action Editor
 Also doubles as Menu Item Editor in some cases
 """
 from __future__ import unicode_literals
-from scc.tools import _
+from scc.tools import _, nameof
 
 from gi.repository import Gtk, Gdk, GLib
 from scc.actions import Action, XYAction, NoAction, RingAction, TriggerAction
@@ -19,7 +19,6 @@ from scc.constants import CUT, ROUND, LINEAR, MINIMUM
 from scc.controller import HapticData
 from scc.profile import Profile
 from scc.macros import Macro
-from scc.tools import nameof
 from scc.gui.controller_widget import PRESSABLE, TRIGGERS, PADS
 from scc.gui.controller_widget import STICKS, GYROS, BUTTONS
 from scc.gui.modeshift_editor import ModeshiftEditor
@@ -28,6 +27,7 @@ from scc.gui.simple_chooser import SimpleChooser
 from scc.gui.macro_editor import MacroEditor
 from scc.gui.ring_editor import RingEditor
 from scc.gui.dwsnc import headerbar
+from scc.gui.input_names import get_input_name, get_app_config
 from scc.gui.ae import AEComponent
 from scc.gui.editor import Editor
 import os, logging, math, importlib
@@ -1119,6 +1119,10 @@ class ActionEditor(Editor):
 		sclFriction.set_value(math.log(10 * 1000.0, 10))
 
 
+	def _input_name(self, id, default=None):
+		return get_input_name(id, get_app_config(self.app), default)
+
+
 	def set_input(self, id, action, mode=None):
 		"""
 		Setups action editor for editing specified input.
@@ -1128,33 +1132,31 @@ class ActionEditor(Editor):
 		self.id = id
 		if id in SCButtons or mode in (Action.AC_MENU, Action.AC_BUTTON):
 			if id in PRESSABLE:
-				self.set_title(_("%s Press") % (nameof(id),))
+				if nameof(id).endswith("PRESS"):
+					self.set_title(self._input_name(id))
+				else:
+					self.set_title(_("%s Press") % (self._input_name(id),))
 			elif id in SCButtons:
-				self.set_title(nameof(id),)
+				self.set_title(self._input_name(id))
 			self._set_mode(action, mode or Action.AC_BUTTON)
 			self.hide_modifiers()
 			self.set_action(action)
 		elif id in TRIGGERS:
-			self.set_title(_("%s Trigger") % (id,))
+			self.set_title(_("%s Analog") % (self._input_name(id),))
 			self._set_mode(action, mode or Action.AC_TRIGGER)
 			self.set_action(action)
 			self.hide_macro()
 			self.hide_ring()
 		elif id in STICKS:
-			if id == Profile.DPAD:
-				self.set_title(_("D-pad"))
-			elif id == Profile.RSTICK:
-				self.set_title(_("Right Stick"))
-			elif id == Profile.STICK:
-				self.set_title(_("Left Stick"))
-			else:
+			if id not in (Profile.DPAD, Profile.RSTICK, Profile.STICK):
 				raise ValueError("unknown id %s" % (id, ))
+			self.set_title(self._input_name(id))
 			self._set_mode(action, mode or Action.AC_STICK)
 			self.set_action(action)
 			self.hide_macro()
 			self.id = id
 		elif id in GYROS:
-			self.set_title(_("Gyro"))
+			self.set_title(self._input_name(id))
 			self._set_mode(action, mode or Action.AC_GYRO)
 			self.set_action(action)
 			self.hide_modeshift()
@@ -1165,12 +1167,7 @@ class ActionEditor(Editor):
 			self._set_mode(action, mode or Action.AC_PAD)
 			self.set_action(action)
 			self.hide_macro()
-			if id == Profile.LPAD:
-				self.set_title(_("Left Pad"))
-			elif id == Profile.RPAD:
-				self.set_title(_("Right Pad"))
-			else:
-				self.set_title(_("Touch Pad"))
+			self.set_title(self._input_name(id))
 		if mode == Action.AC_OSK:
 			self.hide_name()
 			self.hide_modeshift()

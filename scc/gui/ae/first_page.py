@@ -11,7 +11,7 @@ from scc.tools import _
 from gi.repository import Gtk, Gdk, GLib
 from scc.actions import Action
 from scc.gui.ae import AEComponent
-from scc.tools import nameof
+from scc.gui.input_names import get_input_name, get_app_config
 
 
 import os, logging
@@ -97,21 +97,8 @@ class FirstPage(AEComponent):
 			else:
 				markup = MARKUP_BUTTON
 			
-			long_names = {
-				'LPAD' : _("Left Pad"),
-				'RPAD' : _("Right Pad"),
-				'LGRIP' : _("Left Grip"),
-				'RGRIP' : _("Right Grip"),
-				'LB' : _("Left Bumper"),
-				'RB' : _("Right Bumper"),
-				'LEFT' : _("Left Trigger"),
-				'RIGHT' : _("Right Trigger"),
-				'STICK' : _("Stick"),
-			}
-			
 			markup = markup % {
-				'what' : long_names.get(nameof(self.editor.get_id()),
-								nameof(self.editor.get_id()).title())
+				'what' : get_input_name(self.editor.get_id(), get_app_config(self.app))
 			}
 			self.builder.get_object("lblMarkup").set_markup(markup.strip(" \r\n\t"))
 			return True

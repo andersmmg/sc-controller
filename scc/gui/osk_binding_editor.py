@@ -17,6 +17,7 @@ from scc.gui.binding_editor import BindingEditor
 from scc.gui.controller_widget import TRIGGERS, STICKS
 from scc.gui.parser import GuiActionParser
 from scc.gui.editor import Editor
+from scc.gui.input_names import get_input_name, get_app_config
 from scc.osd.keyboard import Keyboard as OSDKeyboard
 
 import os, logging
@@ -48,7 +49,7 @@ class OSKBindingEditor(Editor, BindingEditor):
 			ae.set_input(STICK, self.current.stick, mode=Action.AC_OSK)
 			ae.show(self.window)
 		elif id in SCButtons:
-			title = _("%s Button") % (id.name,)
+			title = _("%s Button") % (get_input_name(id, get_app_config(self.app)),)
 			ae = self.choose_editor(self.current.buttons[id], title)
 			ae.set_input(id, self.current.buttons[id], mode=Action.AC_OSK)
 			ae.show(self.window)

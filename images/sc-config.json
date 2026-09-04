@@ -8,9 +8,15 @@
 			"A", "B", "X", "Y", "BACK",
 			"C", "START", "LB", "RB", "LT", "RT",
 			"STICK", "LPAD", "RPAD", "LG", "RG"
-		]
+		],
+		"names": {
+			"STICK": "Stick",
+			"START": "Start",
+			"BACK": "Back",
+			"C": "Steam"
+		}
 	},
-	
+
 	"gyros": true,
 	"buttons": {
 		"1": "A",

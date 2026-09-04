@@ -14,6 +14,7 @@ from scc.constants import SCButtons, STICK, YAW, ROLL
 from scc.gui.parser import GuiActionParser
 from scc.gui.ae import AEComponent
 from scc.tools import nameof
+from scc.gui.input_names import get_input_name, get_app_config
 
 import logging, re
 log = logging.getLogger("AE.GyroAction")
@@ -70,7 +71,7 @@ class GyroActionComponent(AEComponent):
 		AEComponent.load(self)
 		self._recursing = True
 		cbGyroButton = self.builder.get_object("cbGyroButton")
-		fill_buttons(cbGyroButton)
+		fill_buttons(cbGyroButton, get_app_config(self.app))
 		self._recursing = False
 	
 	
@@ -327,9 +328,10 @@ def is_gyro_enable(modemod):
 	return False
 
 
-def fill_buttons(cb):
+def fill_buttons(cb, config=None):
 	cb.set_row_separator_func( lambda model, iter : model.get_value(iter, 1) is None )
 	model = cb.get_model()
 	for button, text in GyroActionComponent.BUTTONS:
-		model.append(( None if button is None else nameof(button), text ))	
+		model.append(( None if button is None else nameof(button),
+			None if text is None else get_input_name(button, config, text) ))
 	cb.set_active(0)

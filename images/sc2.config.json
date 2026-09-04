@@ -5,7 +5,22 @@
 			"A", "B", "X", "Y", "BACK", "C", "START", "LB", "RB", "LT", "RT",
 			"STICK", "TOUCHPAD", "TOUCHPAD", "RGRIP", "LGRIP", "DOTS"
 		],
-		"no_glyph_buttons": [ "A", "B", "X", "Y", "BACK", "START", "DOTS", "C" ]
+		"no_glyph_buttons": [ "A", "B", "X", "Y", "BACK", "START", "DOTS", "C" ],
+		"names": {
+			"LB": "L1",
+			"RB": "R1",
+			"LT": "L2",
+			"RT": "R2",
+			"LGRIP": "L5",
+			"LGRIP2": "L4",
+			"RGRIP": "R5",
+			"RGRIP2": "R4",
+			"RSTICKPRESS": "R3",
+			"LSTICKPRESS": "L3",
+			"START": "Menu",
+			"BACK": "View",
+			"C": "Steam"
+		}
 	},
 	"buttons": [
 		"A", "B", "X", "Y", "DOTS", "BACK", "C", "START",
