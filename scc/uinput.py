@@ -553,7 +553,7 @@ class Keyboard(UInput):
 
 		new = [k for k in keys if k not in self._pressed]
 		for i in new:
-			self.scanEvent(Scans[i])
+			self.scanEvent(Scans.get(i, 0))
 			self.keyEvent(i, 1)
 		if len(new):
 			self.synEvent()
@@ -573,7 +573,7 @@ class Keyboard(UInput):
 		else:
 			rem = list(self._pressed)
 		for i in rem:
-			self.scanEvent(Scans[i])
+			self.scanEvent(Scans.get(i, 0))
 			self.keyEvent(i, 0)
 		if len(rem):
 			self.synEvent()

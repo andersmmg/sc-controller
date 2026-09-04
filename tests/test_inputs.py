@@ -88,6 +88,13 @@ class RememberingDummy(Dummy):
 		self.axes[axis] = val
 
 
+	def keyEvent(self, key, val):
+		if val:
+			self.pressed.add(key)
+		else:
+			self.pressed.discard(key)
+
+
 	def moveEvent(self, dx=0, dy=0):
 		self.mouse_x += dx
 		self.mouse_y += dy
@@ -215,6 +222,76 @@ class TestInputs(object):
 		for x in range(100):
 			mapper.input(mapper.controller, ZERO_STATE, ZERO_STATE)
 		assert mapper.gamepad.axes[Axes.ABS_RX] == 0
+
+
+	@input_test
+	def test_sens_stick_whole(self, mapper):
+		"""
+		Tests that sens() forwards whole() input to stick bindings.
+		SensitivityModifier used to swallow whole(), so stick to gamepad
+		bindings wrapped in sens() produced no output at all!
+		"""
+		mapper.controller.flags = (ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_RSTICK | ControllerFlags.HAS_DPAD)
+		mapper.profile.stick = (parser.restart(
+			"sens(1.2, 1.2, XY(axis(Axes.ABS_X), raxis(Axes.ABS_Y)))"
+		)).parse()
+		state = ZERO_STATE._replace(stick_x=10000, stick_y=0)
+		mapper.input(mapper.controller, ZERO_STATE, state)
+		assert abs(mapper.gamepad.axes[Axes.ABS_X]) > 10000
+		assert abs(mapper.gamepad.axes[Axes.ABS_X]) < 13000
+		assert abs(mapper.gamepad.axes[Axes.ABS_Y]) <= 1
+		mapper.input(mapper.controller, state, ZERO_STATE)
+		assert abs(mapper.gamepad.axes[Axes.ABS_X]) <= 1
+		assert abs(mapper.gamepad.axes[Axes.ABS_Y]) <= 1
+
+
+	@input_test
+	def test_joystick_round_response(self, mapper):
+		"""
+		Tests that round-response normalization keeps the emulated gamepad
+		output inside the circle, even with sensitivity applied.
+		"""
+		import math
+		mapper.controller.flags = (ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_RSTICK | ControllerFlags.HAS_DPAD)
+
+		mapper.profile.stick = (parser.restart(
+			"sens(1.2, 1.2, XY(axis(Axes.ABS_X), raxis(Axes.ABS_Y), True))"
+		)).parse()
+		state = ZERO_STATE._replace(stick_x=23170, stick_y=23170)
+		mapper.input(mapper.controller, ZERO_STATE, state)
+		x, y = mapper.gamepad.axes[Axes.ABS_X], mapper.gamepad.axes[Axes.ABS_Y]
+		assert math.sqrt(x * x + y * y) <= STICK_PAD_MAX + 1
+
+		mapper.profile.stick = (parser.restart(
+			"sens(1.2, 1.2, XY(axis(Axes.ABS_X), raxis(Axes.ABS_Y)))"
+		)).parse()
+		state2 = ZERO_STATE._replace(stick_x=32767, stick_y=32767)
+		mapper.input(mapper.controller, state, state2)
+		x, y = mapper.gamepad.axes[Axes.ABS_X], mapper.gamepad.axes[Axes.ABS_Y]
+		assert math.sqrt(x * x + y * y) > STICK_PAD_MAX
+		mapper.input(mapper.controller, state2, ZERO_STATE)
+
+
+	@input_test
+	def test_dpad_button_goes_to_gamepad(self, mapper):
+		"""
+		Tests that dpad buttons (BTN_DPAD_*) are emitted through the emulated
+		gamepad, not the keyboard, whic was a weird issue sometimes.
+		"""
+		if not hasattr(Keys, "BTN_DPAD_DOWN"):
+			return
+		mapper.controller.flags = (ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_RSTICK | ControllerFlags.HAS_DPAD)
+		mapper.profile.buttons[SCButtons.A] = (parser.restart(
+			"button(Keys.BTN_DPAD_DOWN)")).parse()
+		state = ZERO_STATE._replace(buttons=SCButtons.A)
+		mapper.input(mapper.controller, ZERO_STATE, state)
+		assert Keys.BTN_DPAD_DOWN in mapper.gamepad.pressed
+		assert Keys.BTN_DPAD_DOWN not in mapper.keyboard.pressed
+		mapper.input(mapper.controller, state, ZERO_STATE)
+		assert Keys.BTN_DPAD_DOWN not in mapper.gamepad.pressed
 
 
 	@input_test

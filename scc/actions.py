@@ -2214,11 +2214,12 @@ class XYAction(WholeHapticAction, Action):
 	STICK_REPEAT_INTERVAL = 0.01
 	STICK_REPEAT_MIN = 10
 
-	def __init__(self, x=None, y=None):
+	def __init__(self, x=None, y=None, normalize=False):
 		Action.__init__(self, *strip_none(x, y))
 		WholeHapticAction.__init__(self)
 		self.x = x or NoAction()
 		self.y = y or NoAction()
+		self.normalize = normalize
 		self.actions = (self.x, self.y)
 		self._old_distance = 0
 		self._old_pos = None
@@ -2247,7 +2248,8 @@ class XYAction(WholeHapticAction, Action):
 		""" Called when decoding profile from json """
 		x = parser.from_json_data(data["X"]) if "X" in data else NoAction()
 		y = parser.from_json_data(data["Y"]) if "Y" in data else NoAction()
-		return XYAction(x, y)
+		normalize = bool(data.get("normalize", False)) if isinstance(data, dict) else False
+		return XYAction(x, y, normalize)
 
 
 	def compress(self):
@@ -2325,6 +2327,17 @@ class XYAction(WholeHapticAction, Action):
 			else:
 				self._old_pos = None
 
+		if self.normalize and (x or y):
+			sx, sy = self.get_speed()
+			if sx == 0: sx = 1.0
+			if sy == 0: sy = 1.0
+			ox, oy = x * sx, y * sy
+			distance = sqrt(ox*ox + oy*oy)
+			if distance > STICK_PAD_MAX:
+				scale = STICK_PAD_MAX / distance
+				x *= scale
+				y *= scale
+
 		if what == RIGHT and mapper.controller_flags() & ControllerFlags.HAS_RSTICK \
 				and not mapper.controller_flags() & ControllerFlags.HAS_TOUCHPADS:
 			self.x.axis(mapper, x, what)
@@ -2359,12 +2372,21 @@ class XYAction(WholeHapticAction, Action):
 			rv += self.x.to_string(True, pad + 2).split("\n")
 			rv += [ (" " * pad) + "," ]
 			rv += self.y.to_string(True, pad + 2).split("\n")
+			if self.normalize:
+				rv += [ (" " * pad) + "," ]
+				rv += [ (" " * pad) + "True" ]
 			rv += [ (" " * pad) + ")" ]
 			return "\n".join(rv)
 		elif self.y:
-			return self.COMMAND + "(" + (", ".join([ x.to_string() for x in (self.x, self.y) ])) + ")"
+			rv = self.COMMAND + "(" + (", ".join([ x.to_string() for x in (self.x, self.y) ]))
+			if self.normalize:
+				rv += ", True"
+			return rv + ")"
 		else:
-			return self.COMMAND + "(" + self.x.to_string() + ")"
+			rv = self.COMMAND + "(" + self.x.to_string()
+			if self.normalize:
+				rv += ", True"
+			return rv + ")"
 
 
 	def __str__(self):

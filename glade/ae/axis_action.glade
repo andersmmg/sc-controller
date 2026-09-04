@@ -255,6 +255,53 @@
           </packing>
         </child>
         <child>
+          <object class="GtkBox" id="vbJoystick">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="GtkCheckButton" id="cbJoystickRound">
+                <property name="label" translatable="yes">Round response (circular normalization)</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="margin_left">20</property>
+                <property name="margin_right">20</property>
+                <property name="margin_top">5</property>
+                <property name="draw_indicator">True</property>
+                <signal name="toggled" handler="on_cbJoystickRound_toggled" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="lblJoystickHint">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="margin_left">20</property>
+                <property name="margin_right">20</property>
+                <property name="margin_top">5</property>
+                <property name="label" translatable="yes">Normalizes the stick output range to keep it exactly circular.</property>
+                <property name="wrap">True</property>
+                <property name="xalign">0</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="name">page_joystick</property>
+            <property name="title" translatable="yes">Joystick</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
           <object class="GtkBox" id="vbButton">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
@@ -296,7 +343,7 @@
           <packing>
             <property name="name">page21</property>
             <property name="title" translatable="yes">page21</property>
-            <property name="position">1</property>
+            <property name="position">2</property>
           </packing>
         </child>
         <child>
@@ -583,7 +630,7 @@
           <packing>
             <property name="name">page0</property>
             <property name="title" translatable="yes">page0</property>
-            <property name="position">2</property>
+            <property name="position">3</property>
           </packing>
         </child>
         <child>
@@ -655,7 +702,7 @@
           <packing>
             <property name="name">page1</property>
             <property name="title" translatable="yes">page1</property>
-            <property name="position">3</property>
+            <property name="position">4</property>
           </packing>
         </child>
         <child>
@@ -791,7 +838,7 @@
           <packing>
             <property name="name">grCircular</property>
             <property name="title" translatable="yes">page2</property>
-            <property name="position">4</property>
+            <property name="position">5</property>
           </packing>
         </child>
       </object>

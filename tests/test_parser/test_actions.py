@@ -273,6 +273,20 @@ class TestActions(object):
 		))
 	
 	
+	def test_XY_normalize(self):
+		"""
+		Tests if XYAction with round-response normalization set can be
+		converted to string and parsed back to same action.
+		"""
+		a = XYAction(
+			AxisAction(Axes.ABS_X),
+			AxisAction(Axes.ABS_Y),
+			normalize=True
+		)
+		assert _parses_as_itself(a)
+		assert parser.restart(a.to_string()).parse().normalize is True
+	
+	
 	def test_relXY(self):
 		"""
 		Tests if relXYAciton can be converted to string and parsed back to

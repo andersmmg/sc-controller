@@ -293,6 +293,20 @@ class TestActions(object):
 		assert isinstance(a.y, AxisAction)
 	
 	
+	def test_XY_normalize(self):
+		"""
+		Tests if round-response normalization flag is parsed from json.
+		"""
+		a = parser.from_json_data({
+			'X' : { 'action' : 'axis(ABS_X)' },
+			'Y' : { 'action' : 'axis(ABS_Y)' },
+			'normalize' : True,
+		})
+		
+		assert isinstance(a, XYAction)
+		assert a.normalize is True
+	
+	
 	def test_trigger(self):
 		"""
 		Tests if TriggerAction is parsed correctly from json.

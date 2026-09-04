@@ -29,12 +29,14 @@ class PerAxisComponent(AEComponent):
 	def __init__(self, app, editor):
 		AEComponent.__init__(self, app, editor)
 		self.x = self.y = NoAction()
+		self.normalize = False
 	
 	
 	def set_action(self, mode, action):
 		if isinstance(action, XYAction):
 			self.x = action.x
 			self.y = action.y
+			self.normalize = bool(getattr(action, "normalize", False))
 			self.update()
 	
 	
@@ -52,7 +54,7 @@ class PerAxisComponent(AEComponent):
 	
 	
 	def send(self):
-		self.editor.set_action(XYAction(self.x, self.y))
+		self.editor.set_action(XYAction(self.x, self.y, self.normalize))
 	
 	
 	def on_btAxisX_clicked(self, *a):

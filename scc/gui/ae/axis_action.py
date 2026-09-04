@@ -106,8 +106,10 @@ class AxisActionComponent(AEComponent, TimerManager):
 							if len(action.actions[x].strip().parameters) > 0:
 								p[x] = action.actions[x].strip().parameters[0]
 					if p[0] == Axes.ABS_X and p[1] == Axes.ABS_Y:
+						self.set_joystick_round(action)
 						self.set_cb(cb, "lstick", 2)
 					elif p[0] == Axes.ABS_RX and p[1] == Axes.ABS_RY:
+						self.set_joystick_round(action)
 						if isinstance(action, RelXYAction):
 							self.set_cb(cb, "rstick_rel", 2)
 						else:
@@ -489,12 +491,37 @@ class AxisActionComponent(AEComponent, TimerManager):
 				self.editor.friction = 10
 			action = self.make_mouse_action()
 		else:
-			stActionData.set_visible_child(self.builder.get_object("nothing"))
 			action = cbAxisOutput.get_model().get_value(cbAxisOutput.get_active_iter(), 0)
 			action = self.parser.restart(action).parse()
 			self.update_osd_area(None)
+			if key in ('lstick', 'rstick'):
+				stActionData.set_visible_child(self.builder.get_object("vbJoystick"))
+				if action is not None:
+					action.normalize = self.builder.get_object("cbJoystickRound").get_active()
+			else:
+				stActionData.set_visible_child(self.builder.get_object("nothing"))
 
 		self.editor.set_action(action)
+
+
+	def set_joystick_round(self, action):
+		"""
+		Sets state of joystick 'round response' checkbox from action.
+		"""
+		self._recursing = True
+		self.builder.get_object("cbJoystickRound").set_active(
+			bool(getattr(action, "normalize", False)))
+		self._recursing = False
+
+
+	def on_cbJoystickRound_toggled(self, *a):
+		if self._recursing : return
+		cbAxisOutput = self.builder.get_object("cbAxisOutput")
+		action = cbAxisOutput.get_model().get_value(cbAxisOutput.get_active_iter(), 0)
+		action = self.parser.restart(action).parse()
+		if action is not None:
+			action.normalize = self.builder.get_object("cbJoystickRound").get_active()
+			self.editor.set_action(action)
 
 
 class FakeMapper(object):

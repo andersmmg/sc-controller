@@ -1379,6 +1379,10 @@ class SensitivityModifier(Modifier):
 		return self.action.describe(context)
 
 
+	def whole(self, mapper, x, y, what):
+		return self.action.whole(mapper, x, y, what)
+
+
 	def to_string(self, multiline=False, pad=0):
 		speeds = [] + self.speeds
 		while len(speeds) > 1 and speeds[-1] == 1.0:

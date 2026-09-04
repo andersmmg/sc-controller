@@ -7,7 +7,7 @@ from scc.uinput import UInput, Keyboard, Mouse, Dummy, Rels
 from scc.constants import FE_STICK, FE_TRIGGER, FE_PAD, GYRO, STICK, RSTICK
 from scc.constants import SCButtons, LEFT, RIGHT, CPAD, DPAD, HapticPos
 from scc.constants import STICK_PAD_MAX, STICKTILT, ControllerFlags
-from scc.aliases import ALL_AXES, ALL_BUTTONS
+from scc.aliases import ALL_AXES, ALL_BUTTONS, DPAD_BUTTONS
 from scc.actions import ButtonAction, GyroAbsAction
 from scc.controller import HapticData
 from scc.config import Config
@@ -68,7 +68,11 @@ class Mapper(object):
 			self.gamepad = Dummy()
 			return
 		cfg = Config()
-		keys = ALL_BUTTONS[0:cfg["output"]["buttons"]]
+		keys = list(ALL_BUTTONS[0:cfg["output"]["buttons"]])
+		# ensure dpad buttons are included
+		for b in DPAD_BUTTONS:
+			if b not in keys:
+				keys.append(b)
 		vendor = int(cfg["output"]["vendor"], 16)
 		product = int(cfg["output"]["product"], 16)
 		version = int(cfg["output"]["version"], 16)
