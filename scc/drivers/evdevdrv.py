@@ -29,7 +29,7 @@ except ImportError:
 	ecodes = FakeECodes()
 
 from collections import namedtuple
-import os, sys, binascii, json, logging
+import os, sys, time, binascii, json, logging
 log = logging.getLogger("evdev")
 
 TRIGGERS = "ltrig", "rtrig"
@@ -53,6 +53,7 @@ class EvdevController(Controller):
 	as SCController class does.
 	"""
 	PADPRESS_EMULATION_TIMEOUT = 0.2
+	STICK_REPEAT_INTERVAL = 0.004
 	ECODES = ecodes
 	flags = ( ControllerFlags.HAS_RSTICK
 			| ControllerFlags.SEPARATE_STICK
@@ -78,6 +79,8 @@ class EvdevController(Controller):
 			self._id = self._generate_id()
 		self._state = EvdevControllerInput( *[0] * len(EvdevControllerInput._fields) )
 		self._padpressemu_task = None
+		self._stickrepeat_task = None
+		self._last_event_ts = 0
 
 
 	def _parse_config(self, config):
@@ -109,6 +112,9 @@ class EvdevController(Controller):
 
 
 	def close(self):
+		if self._stickrepeat_task is not None and self.mapper is not None:
+			self.mapper.cancel_task(self._stickrepeat_task)
+			self._stickrepeat_task = None
 		self.poller.unregister(self.device.fd)
 		try:
 			self.device.ungrab()
@@ -159,6 +165,7 @@ class EvdevController(Controller):
 		new_state = self._state
 		need_cancel_padpressemu = False
 		try:
+			self._last_event_ts = time.time()
 			for event in self.device.read():
 				if event.type == ecodes.EV_KEY and event.code in self._dpad_map:
 					cal = self._calibrations[event.code]
@@ -232,6 +239,16 @@ class EvdevController(Controller):
 					)
 				self.mapper.input(self, old_state, new_state)
 
+        # repeat consistent stick input, since some devices only report changes
+		if self.mapper:
+			if self._is_stick_deflected(new_state):
+				if self._stickrepeat_task is None:
+					self._stickrepeat_task = self.mapper.schedule(
+						self.STICK_REPEAT_INTERVAL, self.repeat_stick)
+			elif self._stickrepeat_task is not None:
+				self.mapper.cancel_task(self._stickrepeat_task)
+				self._stickrepeat_task = None
+
 
 	def test_input(self, event):
 		if event.type == ecodes.EV_KEY:
@@ -247,6 +264,28 @@ class EvdevController(Controller):
 			print("Axis", event.code, event.value)
 
 			sys.stdout.flush()
+
+
+	@staticmethod
+	def _is_stick_deflected(state):
+		""" Returns True if any stick axis is deflected from center position """
+		return bool(state.stick_x or state.stick_y
+				or state.rstick_x or state.rstick_y)
+
+
+	def repeat_stick(self, mapper):
+		"""
+		Called periodically while a stick is deflected but no new evdev events
+		are arriving.
+		"""
+		self._stickrepeat_task = None
+		if self.mapper is None or not self._is_stick_deflected(self._state):
+			return
+		if time.time() - self._last_event_ts >= self.STICK_REPEAT_INTERVAL:
+			state = self._state
+			self.mapper.input(self, state, state)
+		self._stickrepeat_task = self.mapper.schedule(
+			self.STICK_REPEAT_INTERVAL, self.repeat_stick)
 
 
 	def cancel_padpress_emulation(self, mapper):

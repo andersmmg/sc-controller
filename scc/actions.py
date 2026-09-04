@@ -819,12 +819,15 @@ class MouseAction(WholeHapticAction, Action):
 	COMMAND = "mouse"
 	ALIASES = ("trackpad", )
 	HAPTIC_FACTOR = 75.0	# Just magic number
+	STICK_RATE = 250.0
 
 	def __init__(self, axis=None, speed=None):
 		Action.__init__(self, *strip_none(axis, speed))
 		WholeHapticAction.__init__(self)
 		self._mouse_axis = axis or None
 		self._old_pos = None
+		self._last_stick_ts = None
+		self._stick_dt = None
 		if speed:
 			self.speed = (speed, speed)
 		else:
@@ -916,13 +919,34 @@ class MouseAction(WholeHapticAction, Action):
 			mapper.mouse_wheel(dx, 0)
 
 
+	def _stick_move(self, mapper, x, y):
+		"""
+		Moves mouse for stick-driven input, normalizing the movement by time
+		since last event so that mouse speed does not depend on input report
+		rate.
+		"""
+		now = time.time()
+		dt = 1.0 / MouseAction.STICK_RATE
+		if self._last_stick_ts is not None:
+			d = now - self._last_stick_ts
+			if d < 0.1:
+				if self._stick_dt is None:
+					self._stick_dt = d
+				else:
+					self._stick_dt = self._stick_dt * 0.7 + d * 0.3
+				dt = self._stick_dt
+		self._last_stick_ts = now
+		scale = dt * MouseAction.STICK_RATE
+		mapper.mouse_move(x * self.speed[0] * 0.01 * scale, y * self.speed[1] * 0.01 * scale)
+
+
 	def whole(self, mapper, x, y, what):
 		if what in (STICK, RSTICK):
-			mapper.mouse_move(x * self.speed[0] * 0.01, y * self.speed[1] * 0.01)
+			self._stick_move(mapper, x, y)
 			mapper.force_event.add(FE_STICK)
 		elif what == RIGHT and mapper.controller_flags() & ControllerFlags.HAS_RSTICK \
 				and not mapper.controller_flags() & ControllerFlags.HAS_TOUCHPADS:
-			mapper.mouse_move(x * self.speed[0] * 0.01, y * self.speed[1] * 0.01)
+			self._stick_move(mapper, x, y)
 			mapper.force_event.add(FE_PAD)
 		else:	# left or right pad
 			if mapper.is_touched(what):
