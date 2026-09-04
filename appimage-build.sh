@@ -155,7 +155,7 @@ cp scripts/${APP}.appdata.xml ${BUILD_APPDIR}/usr/share/metainfo/${APP}.appdata.
 
 # Fix shebangs
 for x in "${BUILD_APPDIR}/usr/bin"/sc-controller "${BUILD_APPDIR}/usr/bin"/scc* ; do
-	sed -i 's|^#!.*python2.*|#!/usr/bin/env python3|' "$x"
+	sed -i 's|^#!.*python.*|#!/usr/bin/env python3|' "$x"
 done
 
 # Copy AppRun script

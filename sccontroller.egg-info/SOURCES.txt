@@ -504,8 +504,10 @@ scripts/scc-osd-radial-menu
 scripts/scc-osd-show-bindings
 tests/test_boolean.py
 tests/test_compress.py
+tests/test_device_monitor.py
 tests/test_docs.py
 tests/test_glade.py
 tests/test_inputs.py
+tests/test_scheduler.py
 tests/test_setup.py
 tests/test_vdf.py
