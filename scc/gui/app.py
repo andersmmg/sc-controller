@@ -42,6 +42,9 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 
 	HILIGHT_COLOR = "#FF00FF00"		# ARGB
 	OBSERVE_COLOR = "#FF60A0FF"		# ARGB
+	# For high-res sticks like SC2, with hysteresis
+	TEST_DOT_SHOW_DEADZONE = STICK_PAD_MAX * 0.06
+	TEST_DOT_HIDE_DEADZONE = STICK_PAD_MAX * 0.05
 	CONFIG = "scc.config.json"
 	RELEASE_URL = "https://github.com/andersmmg/sc-controller/releases/tag/v%s"
 	OSD_MODE_PROF_NAME = ".scc-osd.profile_editor"
@@ -145,6 +148,9 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		self.rpad_test = Gtk.Image.new_from_file(os.path.join(self.imagepath, "test-cursor.svg"))
 		self.stick_test = Gtk.Image.new_from_file(os.path.join(self.imagepath, "test-cursor.svg"))
 		self.rstick_test = Gtk.Image.new_from_file(os.path.join(self.imagepath, "test-cursor.svg"))
+		for marker in (self.lpad_test, self.rpad_test, self.stick_test, self.rstick_test):
+			marker.set_opacity(0.0)
+			marker.show()
 		self.main_area.put(self.lpad_test, 40, 40)
 		self.main_area.put(self.rpad_test, 290, 90)
 		self.main_area.put(self.stick_test, 150, 40)
@@ -220,6 +226,15 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 				imgDaemonStatus.set_from_pixbuf(SVGWidget.render_svg_file(icon, inverted, brightness))
 
 
+	def hide_test_markers(self, *a):
+		"""
+		Hides all input-test markers. Called when displayed controller
+		changes or is disconnected.
+		"""
+		for marker in (self.lpad_test, self.rpad_test, self.stick_test, self.rstick_test):
+			marker.set_opacity(0.0)
+
+
 	def load_gui_config_for_controller(self, controller, first):
 		"""
 		Loads controller config, changes image and hides, shows or disables
@@ -231,6 +246,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		"""
 		stckEditor = self.builder.get_object('stckEditor')
 		lblEmpty = self.builder.get_object('lblEmpty')
+		self.hide_test_markers()
 		if controller:
 			config = controller.load_gui_config(self.imagepath or {})
 		else:
@@ -988,6 +1004,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 				s = self.profile_switchers.pop()
 				s.set_controller(None)
 				self.remove_switcher(s)
+			self.hide_test_markers()
 
 		# Assign controllers to widgets
 		for i in range(0, count):
@@ -1201,26 +1218,28 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 				STICK  : (self.stick_test,  "STICKTEST"),
 				RSTICK : (self.rstick_test, "RSTICKTEST"),
 			}[what]
-			# Check if stick or pad is released
-			if data[0] == data[1] == 0:
-				widget.hide()
+			# Check if stick or pad is released (within deadzone)
+			if data[0] * data[0] + data[1] * data[1] <= App.TEST_DOT_HIDE_DEADZONE * App.TEST_DOT_HIDE_DEADZONE:
+				widget.set_opacity(0.0)
 				return
-			if not widget.is_visible():
-				widget.show()
 			# Grab values
 			try:
 				ax, ay, aw, trash = self.background.get_area_position(area)
 			except ValueError:
-				widget.hide()
+				widget.set_opacity(0.0)
 				return
-			cw = widget.get_allocation().width
+			# Use natural size instead of allocation
+			cw = widget.get_preferred_width()[1]
 			# Compute center
 			x, y = ax + aw * 0.5 - cw * 0.5, ay + 1.0 - cw * 0.5
 			# Add pad position
 			x += data[0] * aw / STICK_PAD_MAX * 0.5
 			y -= data[1] * aw / STICK_PAD_MAX * 0.5
-			# Move circle
 			self.main_area.move(widget, x, y)
+			if widget.get_opacity() < 0.01:
+				# Hysteresis
+				if data[0] * data[0] + data[1] * data[1] > App.TEST_DOT_SHOW_DEADZONE * App.TEST_DOT_SHOW_DEADZONE:
+					widget.set_opacity(1.0)
 		elif what in ("LT", "RT", "STICKPRESS", "RSTICKPRESS"):
 			if data[0]:
 				self.hilights[App.OBSERVE_COLOR].add(what)
@@ -1430,6 +1449,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		for ps in self.profile_switchers:
 			ps.set_controller(None)
 			ps.on_daemon_dead()
+		self.hide_test_markers()
 		self.set_daemon_status("dead", False)
 
 
