@@ -15,7 +15,36 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check:
+    runs-on: ubuntu-24.04
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+    steps:
+      - name: Check for new commits since last nightly
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "Manual run, always building."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          last="$(gh api "repos/${GITHUB_REPOSITORY}/commits/nightly" --jq .sha 2>/dev/null || true)"
+          if [[ -z "$last" ]]; then
+            echo "No nightly built yet, building."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$last" == "${GITHUB_SHA}" ]]; then
+            echo "No new commits since last nightly, skipping build."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "New commits since last nightly, building."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
   nightly:
+    needs: check
+    if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -38,6 +67,11 @@ jobs:
           gh release delete nightly --yes --cleanup-tag || true
           gh release create nightly \
             "${{ steps.build.outputs.appimage }}" \
-            --target "${GITHUB_REF_NAME}" \
+            --target "${GITHUB_SHA}" \
             --title "Nightly build ($(date -u +%Y-%m-%d))" \
-            --notes "Automated nightly build of SC Controller from the default branch. The download link for this release never changes."
+            --notes "$(cat <<EOF
+          Automated nightly build of SC Controller from the default branch.
+          Commit: \`${GITHUB_SHA}\`
+          The download link for this release never changes.
+          EOF
+          )"
