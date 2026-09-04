@@ -14,6 +14,7 @@ from math import sin, cos, pi as PI
 from collections import OrderedDict
 import colorsys
 import os, sys, re, logging
+from scc.gui import icon_tint
 unicode = str  # Python 2 compatibility alias
 
 log = logging.getLogger("Background")
@@ -205,39 +206,78 @@ class SVGWidget(Gtk.EventBox):
 
 
 	@staticmethod
-	def render_svg(svg, inverted=False, brightness=1.0, recolor={}, size=None):
+	def render_svg(svg, inverted=False, brightness=1.0, recolor={}, size=None, tint=None):
 		"""
 		Renders an SVG string to a GdkPixbuf.Pixbuf, optionally recoloring
-		named elements and/or inverting luminance.
-		`size` is an optional (width, height) pair to scale the result to.
+		named elements, tinting grays with `tint` color and/or inverting
+		luminance.
 		"""
-		if inverted or recolor:
+		if inverted or recolor or tint or size:
 			tree = ET.fromstring(svg.encode("utf-8"), parser=XML_PARSER())
+			if tint:
+				SVGEditor.tint_colors(tree, tint)
 			for button, color in (recolor or {}).items():
 				el = SVGEditor.find_by_id(tree, button)
 				if el is not None:
 					SVGEditor.recolor(el, color)
 			if inverted:
 				SVGEditor.invert_colors(tree, brightness)
+			if size:
+				tree.attrib["width"] = str(int(size[0]))
+				tree.attrib["height"] = str(int(size[1]))
 			xml = ET.tostring(tree)
 			data = xml.encode("utf-8") if isinstance(xml, str) else xml
 			handle = Rsvg.Handle.new_from_data(data)
 		else:
 			handle = Rsvg.Handle.new_from_data(svg.encode("utf-8"))
 		pixbuf = handle.get_pixbuf()
-		if size:
+		if size and (pixbuf.get_width() != size[0] or pixbuf.get_height() != size[1]):
 			pixbuf = pixbuf.scale_simple(size[0], size[1],
 					GdkPixbuf.InterpType.BILINEAR)
 		return pixbuf
 
 
 	@staticmethod
-	def render_svg_file(filename, inverted=False, brightness=1.0, size=None):
+	def render_svg_file(filename, inverted=False, brightness=1.0, size=None, tint=None):
 		"""
 		Renders an SVG file to a GdkPixbuf.Pixbuf.
 		"""
 		return SVGWidget.render_svg(open(filename, "r").read(),
-				inverted, brightness, {}, size)
+				inverted, brightness, {}, size, tint)
+
+
+	@staticmethod
+	def render_cropped_svg_file(filename, height=32, tint=None, max_width=None):
+		"""
+		Renders an SVG file, crops transparent borders away and scales
+		the artwork
+		"""
+		rendered = SVGWidget.render_svg_file(filename, size=(256, 256), tint=tint)
+		px = rendered.get_pixels()
+		w, h = rendered.get_width(), rendered.get_height()
+		xmin, ymin, xmax, ymax = w, h, -1, -1
+		for y in range(h):
+			row = y * w
+			for x in range(w):
+				if px[(row + x) * 4 + 3] > 8:
+					if x < xmin: xmin = x
+					if x > xmax: xmax = x
+					if y < ymin: ymin = y
+					if y > ymax: ymax = y
+
+		if xmax < 0:
+			return rendered
+		pad = 2
+		xmin = max(0, xmin - pad); ymin = max(0, ymin - pad)
+		xmax = min(w - 1, xmax + pad); ymax = min(h - 1, ymax + pad)
+		cropped = rendered.new_subpixbuf(
+				xmin, ymin, xmax - xmin + 1, ymax - ymin + 1)
+		scale = height / cropped.get_height()
+		width = max(1, round(cropped.get_width() * scale))
+		if max_width is not None and width > max_width:
+			height = max(1, round(height * max_width / width))
+			width = max_width
+		return cropped.scale_simple(width, height, GdkPixbuf.InterpType.BILINEAR)
 
 
 	def hilight(self, buttons):
@@ -599,6 +639,45 @@ class SVGEditor(object):
 				walk(ch)
 		walk(tree)
 
+
+	@staticmethod
+	def tint_colors(tree, color):
+		"""
+		Colorize every gray fill/stroke/stop-color in the tree with `color`:
+		each gray's lightness is kept and the target color's hue/saturation
+		applied. Saturated (non-gray) colors are left alone
+		"""
+		import re
+		pattern = re.compile(r'#([0-9a-fA-F]{6})')
+		cache = {}
+
+		def tint_value(v):
+			def repl(m):
+				hexd = m.group(1)
+				if hexd not in cache:
+					cache[hexd] = icon_tint.tint_gray("#" + hexd, color)[1:]
+				return "#" + cache[hexd]
+			return pattern.sub(repl, v)
+
+		def walk(el):
+			if 'style' in el.attrib:
+				parts = [p.split(":", 1) for p in el.attrib['style'].split(";") if ":" in p]
+				style = dict(parts)
+				changed = False
+				for k in ("fill", "stroke", "stop-color"):
+					v = style.get(k)
+					if v and v.startswith("#"):
+						style[k] = tint_value(v)
+						changed = True
+				if changed:
+					el.attrib['style'] = ";".join("%s:%s" % (k, v) for k, v in style.items())
+				for k in ("fill", "stroke", "stop-color"):
+					v = el.attrib.get(k)
+					if v and v.startswith("#"):
+						el.attrib[k] = tint_value(v)
+			for ch in el:
+				walk(ch)
+		walk(tree)
 
 	@staticmethod
 	def matrixmul(X, Y, *a):

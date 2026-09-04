@@ -46,7 +46,7 @@ class ControllerRegistration(Editor):
 		Editor.__init__(self)
 		self.app = app
 		self._gamepad_icon = SVGWidget.render_svg_file(
-				os.path.join(self.app.imagepath, "controller-icons", "evdev-0.svg"), *self.app.get_svg_invert())
+				os.path.join(self.app.imagepath, "controller-icons", "evdev.svg"), *self.app.get_svg_invert())
 		self._other_icon = SVGWidget.render_svg_file(
 				os.path.join(self.app.imagepath, "controller-icons", "unknown.svg"), *self.app.get_svg_invert())
 		self._axis_data = [ AxisData(name, xy) for (name, xy) in AXIS_ORDER ]
@@ -310,6 +310,7 @@ class ControllerRegistration(Editor):
 		cbControllerButtons = self.builder.get_object("cbControllerButtons")
 		self._groups = {}
 		model = cbControllerButtons.get_model()
+		model.clear()		# re-entry safe; may have been loaded before
 		groups = json.loads(open(os.path.join(self.app.imagepath,
 			"button-images", "groups.json"), "r").read())
 		for group in groups:
@@ -388,8 +389,6 @@ class ControllerRegistration(Editor):
 				btNext.set_label("_Restart Emulation")
 				return
 			stDialog.set_visible_child(pages[1])
-			self.load_buttons()
-			self.refresh_controller_image()
 			rvController.set_reveal_child(True)
 			self.load_buttons()
 			self.refresh_controller_image()

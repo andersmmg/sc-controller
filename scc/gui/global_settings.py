@@ -83,7 +83,7 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 			return self._gamepad_icons[drv]
 		try:
 			p = GdkPixbuf.Pixbuf.new_from_file(os.path.join(
-				self.app.imagepath, "controller-icons", drv + "-4.svg"))
+				self.app.imagepath, "controller-icons", drv + ".svg"))
 		except:
 			log.warning("Failed to load gamepad icon for driver '%s'", drv)
 			p = self._gamepad_icons["unknown"]

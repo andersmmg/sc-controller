@@ -239,13 +239,30 @@ class SCByBt(SCController):
 
 
 	def flush(self):
-		""" Flushes all prepared control messages to the device """
+		"""
+		Flushes all prepared control messages to the device.
+		Raises OSError if the device is gone (eg. controller was turned off
+		or disconnected); use input() wrapper or catch as needed.
+		"""
 		while len(self._cmsg):
 			msg = self._cmsg.pop()
 			# Feature report data must be sent with report ID 3
 			# or Input/output error will occur with later BlueZ versions (5.64)
 			# Does not affect older BlueZ versions
 			self._hidrawdev.sendFeatureReport(msg, 3)
+
+
+	def _safe_flush(self):
+		"""
+		flush() that treats I/O errors as disconnection: closes the controller
+		and schedules reconnection, exactly like the read-failure path.
+		"""
+		try:
+			self.flush()
+		except OSError:
+			log.debug("Write to controller failed, assuming disconnection")
+			self.close()
+			self.driver.retry(self.syspath)
 
 
 	def input(self, idata):
@@ -280,7 +297,7 @@ class SCByBt(SCController):
 					self._state.rpad_y = int(rx * s + ry * c)
 
 				self.mapper.input(self, self._old_state, self._state)
-			self.flush()
+			self._safe_flush()
 		elif r > 1:
 			log.error("Read Failed")
 			self.close()

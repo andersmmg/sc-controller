@@ -120,6 +120,8 @@ class Config(object):
 		# Defaults for controller config
 		"name":					None,	# Filled with controller ID on runtime
 		"icon":					None,	# Determined by magic by UI
+		"icon_color":			None,	# Tint for the controller icon; assigned automatically
+		"icon_shape":			None,	# Controller type whose icon art to use, None = own type
 		"led_level":			80,		# range 0 to 100
 		"idle_timeout":			600,	# in seconds, range from 1 to 32767
 		"osd_alignment":		0,		# not used yet

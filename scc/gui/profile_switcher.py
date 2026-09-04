@@ -13,10 +13,11 @@ from scc.tools import _
 
 from gi.repository import Gtk, Gio, GLib, GObject
 from scc.gui.userdata_manager import UserDataManager
-from scc.paths import get_controller_icons_path, get_default_controller_icons_path
-from scc.tools import find_profile, find_controller_icon
+from scc.gui.svg_widget import SVGWidget
+from scc.gui import icon_tint
+from scc.tools import find_profile
 
-import os, random, logging
+import os, logging
 unicode = str  # Python 2 compatibility alias
 log = logging.getLogger("PS")
 
@@ -51,11 +52,12 @@ class ProfileSwitcher(Gtk.EventBox, UserDataManager):
 	SEND_TIMEOUT = 100	# How many ms should switcher wait before sending event
 						# about profile being switched
 
-	def __init__(self, imagepath, config):
+	def __init__(self, imagepath, config, app=None):
 		Gtk.EventBox.__init__(self)
 		UserDataManager.__init__(self)
 		self.imagepath = imagepath
 		self.config = config
+		self.app = app
 		self._allow_new = False
 		self._first_time = True
 		self._current = None
@@ -370,49 +372,37 @@ class ProfileSwitcher(Gtk.EventBox, UserDataManager):
 
 
 	def update_icon(self):
-		""" Changes displayed icon to whatever is currently set in config """
-		# Called internally and from ControllerSettings
+		"""
+		Changes displayed icon to the tinted base icon for controller type,
+		colored with controller's configured icon_color. One is assigned
+		automatically if there is none yet.
+		Called internally and from ControllerSettings.
+		"""
 		if not self._controller:
 			self._icon.set_from_file(os.path.join(self.imagepath, "controller-icon.svg"))
 			return
 
 		id = self._controller.get_id()
-		cfg = self.config.get_controller_config(id)
-		if cfg["icon"]:
-			icon = find_controller_icon(cfg["icon"])
-			self._icon.set_from_file(icon)
-		else:
-			log.debug("There is no icon for controller %s, auto assinging one", id)
-			paths = [ get_default_controller_icons_path(), get_controller_icons_path() ]
+		if id != getattr(self, "_icon_controller_id", None):
+			self._icon_controller_id = id
+			icon_tint.auto_assign_color(self.config, id)
+		color = icon_tint.get_icon_color(self.config, id)
+		log.debug("Icon color for %s: %s", id, color)
 
-			def cb(icons):
-				if id != self._controller.get_id():
-					# Controller was changed before callback was called
-					return
-				icon = None
-				used_icons = {
-					self.config['controllers'][x]['icon']
-					for x in self.config['controllers']
-					if 'icon' in self.config['controllers'][x]
-				}
-				tp = "%s-" % (self._controller.get_type(),)
-				icons = sorted(( os.path.split(x.get_path())[-1] for x in icons ))
-				log.debug("Searching for icon type: %s", tp.strip("-"))
-				for i in icons:
-					if i not in used_icons and i.startswith(tp):
-						# Unused icon found
-						icon = i
-						break
-				else:
-					# All icons are already used, assign anything
-					icon = random.choice(icons)
-				log.debug("Auto-assigned icon %s for controller %s", icon, id)
-				cfg = self.config.get_controller_config(id)
-				cfg["icon"] = icon
-				self.config.save()
-				GLib.idle_add(self.update_icon)
+		tp = icon_tint.get_icon_shape(
+				self.config, id, self._controller.get_type())
+		path = icon_tint.find_base_icon(tp, self.imagepath)
+		if path is None:
+			# Shape override may point to missing icon so fall back to own type
+			tp = self._controller.get_type()
+			path = icon_tint.find_base_icon(tp, self.imagepath)
+		if path is None:
+			log.warning("There is no icon for controller type %s", tp)
+			self._icon.set_from_file(os.path.join(self.imagepath, "controller-icon.svg"))
+			return
 
-			self.load_user_data(paths, "*.svg", None, cb)
+		pixbuf = SVGWidget.render_cropped_svg_file(path, height=24, tint=color)
+		self._icon.set_from_pixbuf(pixbuf)
 
 
 class ButtonInRevealer(Gtk.Revealer):

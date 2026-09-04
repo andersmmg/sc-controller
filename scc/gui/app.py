@@ -1042,7 +1042,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		vbSwitchers = self.builder.get_object("vbSwitchers")
 		sepSwitchers = self.builder.get_object("sepSwitchers")
 
-		ps = ProfileSwitcher(self.imagepath, self.config)
+		ps = ProfileSwitcher(self.imagepath, self.config, self)
 		ps.set_margin_left(margin_left)
 		ps.set_margin_right(margin_right)
 		ps.connect('right-clicked', self.on_profile_right_clicked)
