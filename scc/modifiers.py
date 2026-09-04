@@ -630,7 +630,9 @@ class DeadzoneModifier(Modifier):
 			self._convert = self.mode_CUT
 
 		self.lower = int(params[0])
-		self.upper = int(params[1]) if len(params) == 2 else None
+		self.upper = None
+		if len(params) == 2 and params[1] is not None:
+			self.upper = int(params[1])
 
 
 	def mode_CUT(self, x, y, range):

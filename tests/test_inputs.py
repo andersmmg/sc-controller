@@ -2,13 +2,16 @@ from scc.constants import STICK_PAD_MIN, STICK_PAD_MAX
 from scc.drivers.fake import FakeController
 from scc.uinput import Dummy, Keys, Axes
 from scc.constants import SCButtons, ControllerFlags, STICK, RSTICK
+from scc.constants import TRIGGER_MAX, CUT, ROUND, LINEAR, MINIMUM
 from scc.parser import ActionParser
 from scc.profile import Profile
 from scc.scheduler import Scheduler
 from scc.mapper import Mapper
-from scc.modifiers import TouchedModifier
-from scc.actions import Action
+from scc.modifiers import TouchedModifier, DeadzoneModifier
+from scc.actions import Action, NoAction
+from scc.drivers.evdevdrv import EvdevController, EvdevControllerInput
 from collections import namedtuple
+from math import sqrt
 import time
 
 """
@@ -476,3 +479,210 @@ class TestInputs(object):
 		mapper.input(mapper.controller, state, ZERO_STATE)
 		assert Keys.KEY_R not in mapper.keyboard.pressed
 		assert Keys.KEY_T not in mapper.keyboard.pressed
+
+
+	@input_test
+	def test_normalize_corner_clamped_to_circle(self, mapper):
+		"""
+		With normalize=True, corner input is scaled down to
+		the unit circle instead of passed through as a square corner.
+		"""
+		mapper.profile.stick = parser.restart(
+			"XY(axis(Axes.ABS_X), axis(Axes.ABS_Y), True)").parse()
+
+		state = ZERO_STATE._replace(lpad_x=STICK_PAD_MAX, lpad_y=STICK_PAD_MAX)
+		mapper.input(mapper.controller, ZERO_STATE, state)
+
+		x = mapper.gamepad.axes[Axes.ABS_X]
+		y = mapper.gamepad.axes[Axes.ABS_Y]
+		r = sqrt(float(x) * x + float(y) * y)
+		assert abs(r - STICK_PAD_MAX) < 2, "radius %s not on circle" % (r,)
+
+
+	@input_test
+	def test_normalize_passthrough_inside_circle(self, mapper):
+		"""
+		With normalize=True, input already inside the circle passes through
+		unchanged.
+		"""
+		mapper.profile.stick = parser.restart(
+			"XY(axis(Axes.ABS_X), axis(Axes.ABS_Y), True)").parse()
+
+		state = ZERO_STATE._replace(lpad_x=16384)
+		mapper.input(mapper.controller, ZERO_STATE, state)
+		assert mapper.gamepad.axes[Axes.ABS_X] == 16384
+		assert mapper.gamepad.axes[Axes.ABS_Y] == 0
+
+
+	@input_test
+	def test_no_normalize_default_square(self, mapper):
+		"""
+		Default (normalize unset) keeps square output: full corner deflection
+		reaches (max, max).
+		"""
+		mapper.profile.stick = parser.restart(
+			"XY(axis(Axes.ABS_X), axis(Axes.ABS_Y))").parse()
+
+		state = ZERO_STATE._replace(lpad_x=STICK_PAD_MAX, lpad_y=STICK_PAD_MAX)
+		mapper.input(mapper.controller, ZERO_STATE, state)
+		assert mapper.gamepad.axes[Axes.ABS_X] == STICK_PAD_MAX
+		assert mapper.gamepad.axes[Axes.ABS_Y] == STICK_PAD_MAX
+
+
+class TestDeadzoneUpperBound(object):
+	"""
+	Behavioral tests for DeadzoneModifier's optional upper bound
+
+	Ensure it never clips high input in any mode, even LINEAR
+	"""
+
+	def test_cut_without_upper_never_cuts_high_input(self):
+		d = DeadzoneModifier(CUT, 2000, NoAction())
+		assert d.upper is None
+		assert d._convert(20000, 0, TRIGGER_MAX) == (20000, 0)
+		assert d._convert(STICK_PAD_MAX, 0, STICK_PAD_MAX) == (STICK_PAD_MAX, 0)
+		assert d._convert(STICK_PAD_MAX, STICK_PAD_MAX, STICK_PAD_MAX) \
+			== (STICK_PAD_MAX, STICK_PAD_MAX)
+
+	def test_cut_with_upper_cuts_input_above_bound(self):
+		d = DeadzoneModifier(CUT, 2000, 20000, NoAction())
+		assert d._convert(20000, 0, TRIGGER_MAX) == (20000, 0)
+		assert d._convert(20001, 0, TRIGGER_MAX) == (0, 0)
+		assert d._convert(STICK_PAD_MAX, STICK_PAD_MAX, STICK_PAD_MAX) == (0, 0)
+
+	def test_round_with_upper_snaps_to_circle(self):
+		d = DeadzoneModifier(ROUND, 2000, 20000, NoAction())
+		x, y = d._convert(STICK_PAD_MAX, STICK_PAD_MAX, STICK_PAD_MAX)
+		expected = STICK_PAD_MAX * sqrt(0.5)
+		assert abs(x - expected) < 1
+		assert abs(y - expected) < 1
+
+	def test_round_without_upper_passes_high_input(self):
+		d = DeadzoneModifier(ROUND, 2000, NoAction())
+		assert d._convert(STICK_PAD_MAX, 0, TRIGGER_MAX) == (STICK_PAD_MAX, 0)
+
+	def test_linear_full_deflection_reaches_max_without_upper(self):
+		d = DeadzoneModifier(LINEAR, 2000, NoAction())
+		x, y = d._convert(STICK_PAD_MAX, 0, STICK_PAD_MAX)
+		assert abs(x - STICK_PAD_MAX) < 1
+
+	def test_linear_upper_is_saturation_input(self):
+		"""
+		In LINEAR mode, 'upper' is the input value that maps to full output
+		(range): input band [lower, upper] is scaled to [0, range].
+		"""
+		d = DeadzoneModifier(LINEAR, 2000, 20000, NoAction())
+		# 11000 is halfway between lower (2000) and upper (20000)
+		x, y = d._convert(11000, 0, STICK_PAD_MAX)
+		assert abs(x - STICK_PAD_MAX * 0.5) < 1
+		# at/above upper, output is at full range
+		x, y = d._convert(20000, 0, STICK_PAD_MAX)
+		assert abs(x - STICK_PAD_MAX) < 1
+
+	def test_minimum_full_deflection_without_upper_covers_range(self):
+		d = DeadzoneModifier(MINIMUM, 2000, NoAction())
+		x, y = d._convert(STICK_PAD_MAX, 0, STICK_PAD_MAX)
+		assert abs(x - STICK_PAD_MAX) < 1
+
+	def test_minimum_full_deflection_maps_to_upper(self):
+		d = DeadzoneModifier(MINIMUM, 2000, 20000, NoAction())
+		x, y = d._convert(STICK_PAD_MAX, 0, STICK_PAD_MAX)
+		assert abs(x - 20000) < 1
+
+	def test_decode_without_upper_key(self):
+		"""
+		Regression: profile json without 'upper' key
+		"""
+		a = DeadzoneModifier.decode(
+			{"deadzone": {"mode": "CUT", "lower": 100}}, NoAction())
+		assert a.upper is None
+		assert a.lower == 100
+
+	def test_decode_with_upper_key(self):
+		a = DeadzoneModifier.decode(
+			{"deadzone": {"mode": "CUT", "lower": 100, "upper": 20000}},
+			NoAction())
+		assert a.upper == 20000
+
+	def test_decode_from_profile_json(self):
+		""" Full parser path for a profile saved with upper-bound toggle off """
+		p = ActionParser()
+		a = p.from_json_data({"deadzone": {
+			"mode": "LINEAR", "lower": 100,
+			"action": {"__class": "mouse", "id": "REL_WHEEL"}}})
+		assert a.upper is None
+
+
+class TestStickRepeat(object):
+	"""
+	Tests for evdev driver's stick repeat
+	"""
+
+	class RecordingMapper(object):
+		def __init__(self):
+			self.inputs = []
+			self.scheduled = []
+
+		def input(self, c, old_state, new_state):
+			self.inputs.append(new_state)
+
+		def schedule(self, delay, cb):
+			self.scheduled.append((delay, cb))
+			return object()
+
+	def _mk_controller(self):
+		c = object.__new__(EvdevController)
+		c._state = EvdevControllerInput(
+			*[0] * len(EvdevControllerInput._fields))
+		c._stickrepeat_task = None
+		c._padpressemu_task = None
+		c._last_event_ts = 0
+		c.mapper = None
+		return c
+
+	def test_is_stick_deflected(self):
+		c = self._mk_controller()
+		assert not c._is_stick_deflected(c._state)
+		c._state = c._state._replace(stick_x=100)
+		assert c._is_stick_deflected(c._state)
+		c._state = EvdevControllerInput(
+			*[0] * len(EvdevControllerInput._fields))._replace(rstick_y=-100)
+		assert c._is_stick_deflected(c._state)
+
+	def test_repeat_resends_while_deflected(self):
+		c = self._mk_controller()
+		c.mapper = self.RecordingMapper()
+		c._state = c._state._replace(stick_x=100)
+		c._last_event_ts = time.time() - 10 # long since last real event
+
+		c.repeat_stick(c.mapper)
+
+		assert len(c.mapper.inputs) == 1
+		assert c.mapper.inputs[0].stick_x == 100
+		# loop is kept alive while stick stays deflected
+		assert c._stickrepeat_task is not None
+		assert len(c.mapper.scheduled) == 1
+
+	def test_repeat_skips_when_event_recent(self):
+		""" No repeat input when a real event arrived just now """
+		c = self._mk_controller()
+		c.mapper = self.RecordingMapper()
+		c._state = c._state._replace(stick_x=100)
+		c._last_event_ts = time.time()
+
+		c.repeat_stick(c.mapper)
+
+		assert len(c.mapper.inputs) == 0
+		# but the loop is still rescheduled
+		assert c._stickrepeat_task is not None
+
+	def test_repeat_stops_when_centered(self):
+		""" No repeat input and no reschedule once stick is back at center """
+		c = self._mk_controller()
+		c.mapper = self.RecordingMapper()
+
+		c.repeat_stick(c.mapper)
+
+		assert len(c.mapper.inputs) == 0
+		assert len(c.mapper.scheduled) == 0
+		assert c._stickrepeat_task is None
