@@ -15,6 +15,7 @@ from scc.drivers.evdevdrv import FIRST_BUTTON, TRIGGERS, parse_axis
 from scc.controller import Controller
 from scc.paths import get_config_path
 from scc.tools import find_library
+from scc.scheduler import Scheduler
 from scc.lib import IntEnum
 
 import os, json, ctypes, sys, logging
@@ -646,6 +647,11 @@ def hiddrv_test(cls, args):
 		
 		def get_poller(self):
 			return self.poller
+		
+		def get_scheduler(self):
+			if not hasattr(self, "scheduler"):
+				self.scheduler = Scheduler()
+			return self.scheduler
 	
 	fake_daemon = FakeDaemon()
 	

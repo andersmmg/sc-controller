@@ -233,8 +233,13 @@ class ProfileSwitcher(Gtk.EventBox, UserDataManager):
 		if self._recursing : return
 
 		def run_later():
-			name = self._model.get_value(cb.get_active_iter(), 0)
-			giofile = self._model.get_value(cb.get_active_iter(), 1)
+			it = cb.get_active_iter()
+			if it is None:
+				# prevents errors sometimes when profile changes (like removed controller)
+				self._timer = None
+				return
+			name = self._model.get_value(it, 0)
+			giofile = self._model.get_value(it, 1)
 			GLib.source_remove(self._timer)
 			self._timer = None
 

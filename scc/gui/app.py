@@ -1208,7 +1208,11 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 			if not widget.is_visible():
 				widget.show()
 			# Grab values
-			ax, ay, aw, trash = self.background.get_area_position(area)
+			try:
+				ax, ay, aw, trash = self.background.get_area_position(area)
+			except ValueError:
+				widget.hide()
+				return
 			cw = widget.get_allocation().width
 			# Compute center
 			x, y = ax + aw * 0.5 - cw * 0.5, ay + 1.0 - cw * 0.5

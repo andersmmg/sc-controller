@@ -8,7 +8,7 @@ manage plugging/releasing devices.
 from scc.lib.eudevmonitor import Eudev, Monitor
 from scc.lib.ioctl_opt import IOR
 from ctypes.util import find_library
-import os, ctypes, fcntl, re, logging
+import os, ctypes, fcntl, re, select, time, logging
 
 log = logging.getLogger("DevMon")
 
@@ -22,6 +22,15 @@ try:
 	HAVE_BLUETOOTH_LIB = True
 except: pass
 
+# hopefully big enought to avoid most drops but not too big..
+RECEIVE_BUFFER_SIZE = 16 * 1024 * 1024
+RESCAN_INTERVAL = 5.0
+
+# this many ticks must pass without a full rescan before forcing a rescan
+FORCE_RESCAN_TICKS = 6
+BT_WARN_INTERVAL = 60.0
+UEVENT_SEQNUM = "/sys/kernel/uevent_seqnum"
+
 
 class DeviceMonitor(Monitor):
 
@@ -32,6 +41,9 @@ class DeviceMonitor(Monitor):
 		self.dev_removed_cbs = {}
 		self.bt_addresses = {}
 		self.known_devs = {}
+		self._last_seqnum = None
+		self._ticks = 0
+		self._last_bt_warn = 0
 
 
 	def add_callback(self, subsystem, vendor_id, product_id, added_cb, removed_cb):
@@ -64,8 +76,14 @@ class DeviceMonitor(Monitor):
 		if not HAVE_BLUETOOTH_LIB:
 			log.warning("Failed to load libbluetooth.so, bluetooth support will be incomplete")
 		poller = self.daemon.poller
+		try:
+			self.set_receive_buffer_size(RECEIVE_BUFFER_SIZE)
+		except OSError as e:
+			log.warning("Failed to increase udev monitor receive buffer: %s", e)
 		poller.register(self.fileno(), poller.POLLIN, self.on_data_ready)
 		Monitor.start(self)
+		self._rescan_task = self.daemon.get_scheduler().schedule(
+			RESCAN_INTERVAL, self._periodic_rescan)
 
 
 	def _on_new_syspath(self, subsystem, syspath):
@@ -94,22 +112,44 @@ class DeviceMonitor(Monitor):
 	def _get_hci_addresses(self):
 		if not HAVE_BLUETOOTH_LIB:
 			return
-		cl = hci_conn_list_req()
-		cl.dev_id = btlib.hci_get_route(ctypes.c_void_p(0))
-		if cl.dev_id < 0 or cl.dev_id > 65534:
+		get_route = getattr(btlib, "hci_get_route", None)
+		open_dev = getattr(btlib, "hci_open_dev", None)
+		if get_route is None or open_dev is None:
 			return
-		cl.conn_num = 256
+		try:
+			cl = hci_conn_list_req()
+			cl.dev_id = get_route(ctypes.c_void_p(0))
+			if cl.dev_id < 0 or cl.dev_id > 65534:
+				return
+			cl.conn_num = 256
 
-		s = btlib.hci_open_dev(cl.dev_id)
-		if fcntl.ioctl(s, HCIGETCONNLIST, cl, True):
-			log.error("Failed to list bluetooth collections")
-			return
+			s = open_dev(cl.dev_id)
+			if s < 0:
+				return
+			try:
+				if fcntl.ioctl(s, HCIGETCONNLIST, cl, True):
+					self._bt_warn("Failed to list bluetooth collections")
+					return
 
-		for i in range(cl.conn_num):
-			ci = cl.conn_info[i]
-			id = "hci%s:%s" % (cl.dev_id, ci.handle)
-			address = ":".join([ hex(x).lstrip("0x").zfill(2).upper() for x in reversed(ci.bdaddr) ])
-			self.bt_addresses[id] = address
+				for i in range(cl.conn_num):
+					ci = cl.conn_info[i]
+					id = "hci%s:%s" % (cl.dev_id, ci.handle)
+					address = ":".join([ hex(x).lstrip("0x").zfill(2).upper() for x in reversed(ci.bdaddr) ])
+					self.bt_addresses[id] = address
+			finally:
+				# hci_open_dev returns fd that has to be closed, otherwise
+				# every call leaks one and daemon eventually runs out of fds
+				os.close(s)
+		except OSError as e:
+			self._bt_warn("Failed to list bluetooth connections: %s" % (e,))
+
+
+	def _bt_warn(self, msg):
+		""" Logs bluetooth warning, but at most once per BT_WARN_INTERVAL """
+		now = time.time()
+		if now - self._last_bt_warn >= BT_WARN_INTERVAL:
+			self._last_bt_warn = now
+			log.warning(msg)
 
 
 	def _dev_for_hci(self, syspath):
@@ -136,22 +176,79 @@ class DeviceMonitor(Monitor):
 		return None
 
 
+	def _has_data(self):
+		""" Returns True if there are more events waiting in udev monitor socket """
+		try:
+			r, w, x = select.select([ self.fileno() ], [], [], 0)
+			return len(r) > 0
+		except Exception:
+			return False
+
+
+	def _read_uevent_seqnum(self):
+		"""
+		Returns current kernel uevent sequence number
+		"""
+		try:
+			return int(open(UEVENT_SEQNUM).read().strip())
+		except Exception:
+			return None
+
+
+	def _periodic_rescan(self):
+		"""
+		Rescans devices to catch missed events, only runs when the kernel
+		uevent sequence number changes or after a forced rescan interval
+
+		Without the chekc it causes stutter especially on bt controllers
+		"""
+		seq = self._read_uevent_seqnum()
+		force = False
+		if seq is None:
+			# always rescan
+			force = True
+		elif self._last_seqnum is None or seq != self._last_seqnum:
+			self._last_seqnum = seq
+			force = True
+		self._ticks += 1
+		if self._ticks >= FORCE_RESCAN_TICKS:
+			self._ticks = 0
+			force = True
+		if force:
+			try:
+				self.rescan()
+			except Exception as e:
+				log.exception(e)
+		self._rescan_task = self.daemon.get_scheduler().schedule(
+			RESCAN_INTERVAL, self._periodic_rescan)
+
+
 	def on_data_ready(self, *a):
-		event = self.receive_device()
-		if event:
-			if event.action == "bind" and event.initialized:
-				if event.syspath not in self.known_devs:
-					self._on_new_syspath(event.subsystem, event.syspath)
-			elif event.action == "add" and event.initialized and event.subsystem in ("input", "bluetooth"):
-				# those are not bound
-				if event.syspath not in self.known_devs:
-					if event.subsystem == "bluetooth":
-						self._get_hci_addresses()
-					self._on_new_syspath(event.subsystem, event.syspath)
-			elif event.action in ("remove", "unbind") and event.syspath in self.known_devs:
-				vendor, product, cb = self.known_devs.pop(event.syspath)
-				if cb:
-					cb(event.syspath, vendor, product)
+		try:
+			# drain socket events
+			while self._has_data():
+				event = self.receive_device()
+				if event is None:
+					# uh oh re-sync state
+					log.warning("udev monitor buffer overrun, rescanning devices")
+					self.rescan()
+					return
+				if event.action == "bind" and event.initialized:
+					if event.syspath not in self.known_devs:
+						self._on_new_syspath(event.subsystem, event.syspath)
+				elif event.action == "add" and event.initialized and event.subsystem in ("input", "bluetooth"):
+					# those are not bound
+					if event.syspath not in self.known_devs:
+						if event.subsystem == "bluetooth":
+							self._get_hci_addresses()
+						self._on_new_syspath(event.subsystem, event.syspath)
+				elif event.action in ("remove", "unbind") and event.syspath in self.known_devs:
+					vendor, product, cb = self.known_devs.pop(event.syspath)
+					if cb:
+						cb(event.syspath, vendor, product)
+		except Exception as e:
+			# Monitor errors must no kill daemon
+			log.exception(e)
 
 
 	def rescan(self):
@@ -167,7 +264,9 @@ class DeviceMonitor(Monitor):
 				subsystem_to_vp_to_callback[subsystem] = {}
 			subsystem_to_vp_to_callback[subsystem][vendor_id, product_id] = cb
 
+		seen = set()
 		for syspath in enumerator:
+			seen.add(syspath)
 			if syspath not in self.known_devs:
 				try:
 					subsystem = DeviceMonitor.get_subsystem(syspath)
@@ -175,6 +274,17 @@ class DeviceMonitor(Monitor):
 					continue
 				if subsystem in subsystem_to_vp_to_callback:
 					self._on_new_syspath(subsystem, syspath)
+
+		# Fire removal callbacks for devices that disappeared from sysfs,
+		# in case their 'remove' event was missed
+		# Possible this may cause issues but i haven't noticed
+		for syspath in [ s for s in self.known_devs if s not in seen ]:
+			vendor, product, cb = self.known_devs.pop(syspath)
+			if cb:
+				try:
+					cb(syspath, vendor, product)
+				except Exception as e:
+					log.exception(e)
 
 
 	def get_vendor_product(self, syspath, subsystem=None):
