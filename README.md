@@ -14,6 +14,9 @@ This fork has been ported to **Python 3**, adds support for the **2026 Steam Con
 - Native support for the 2026 Steam Controller (codename "Triton"), including dual sticks, separate dpad, grip sensing, and LED brightness control
 - Ported to Python 3
 - Much better dark mode support with SVG inversion
+- Joystick output circularity normalization
+- Better support for generic gamepads
+- Lots of bug fixes
 
 ## Features (from upstream)
 
@@ -39,7 +42,7 @@ The SC2 ("Triton") driver (`scc/drivers/tritondrv.py`) is implemented using the 
 
 - Bluetooth support for the SC2
 - Improved icons and other artwork
-- GTK4 migration
+- GTK4 migration?
 - Updated screenshots and packaging
 
 ## Like what I'm doing?
