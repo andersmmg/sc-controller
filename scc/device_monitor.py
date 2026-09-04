@@ -15,6 +15,7 @@ log = logging.getLogger("DevMon")
 RE_BT_NUMBERS = re.compile(r"[0-9A-F]{4}:([0-9A-F]{4}):([0-9A-F]{4}).*")
 HCIGETCONNLIST = IOR(ord('H'), 212, ctypes.c_int)
 HAVE_BLUETOOTH_LIB = False
+btlib = None
 try:
 	btlib_name = find_library('bluetooth')
 	assert btlib_name
