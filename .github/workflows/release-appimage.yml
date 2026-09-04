@@ -1,0 +1,39 @@
+name: Release AppImage
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build AppImage
+        id: build
+        uses: ./.github/actions/build-appimage
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.ref_name }}-AppImage
+          path: ${{ steps.build.outputs.appimage }}
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          asset="SC_Controller-${version}-x86_64.AppImage"
+          cp "${{ steps.build.outputs.appimage }}" "${asset}"
+          sha256sum "${asset}" > "${asset}.sha256"
+          gh release create "$GITHUB_REF_NAME" "${asset}" "${asset}.sha256" \
+            --title "SC Controller ${version}" \
+            --generate-notes

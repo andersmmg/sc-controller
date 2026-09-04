@@ -1,0 +1,51 @@
+name: Build AppImage
+description: Builds the SC Controller AppImage via appimage-build.sh
+
+outputs:
+  appimage:
+    description: Workspace-relative path of the built AppImage
+    value: ${{ steps.finish.outputs.appimage }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install system build dependencies
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          imagemagick \
+          zstd \
+          libacl1-dev \
+          zlib1g-dev
+
+    - name: Set up host Python 3.14
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.14"
+
+    - name: Install setuptools
+      shell: bash
+      run: python3 -m pip install --upgrade setuptools==84.0.0
+
+    - name: Prepare AppDir
+      shell: bash
+      run: bash appimage-build.sh
+
+    - name: Fetch appimagetool
+      shell: bash
+      run: |
+        wget -q -O /tmp/appimagetool \
+          https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+        chmod +x /tmp/appimagetool
+
+    - name: Package AppImage
+      shell: bash
+      run: /tmp/appimagetool --appimage-extract-and-run -n appimage
+
+    - name: Locate AppImage
+      id: finish
+      shell: bash
+      run: |
+        ls -la *.AppImage
+        echo "appimage=$(ls -1 *.AppImage | head -1)" >> "$GITHUB_OUTPUT"
