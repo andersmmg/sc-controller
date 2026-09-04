@@ -124,7 +124,7 @@
                 <property name="margin_left">20</property>
                 <property name="margin_right">20</property>
                 <property name="margin_bottom">10</property>
-                <property name="label" translatable="yes">This dialog allows to setup traditional controllers to be used with SC Controller. 
+                <property name="label" translatable="yes">This dialog allows to setup traditional controllers to be used with SC Controller.
 
 Please, select your controller from list bellow and click Next.</property>
                 <property name="xalign">0</property>
@@ -903,7 +903,7 @@ is enabled in Settings or here:</property>
                 <property name="hexpand">True</property>
                 <property name="label" translatable="yes">Change will be applied after emulation is restarted.
 If you have any games running, restarting emulation will
-"unplug" virtual gamepad, what may cause them to ignore 
+"unplug" virtual gamepad, what may cause them to ignore
 future inputs or even crash.</property>
                 <property name="use_markup">True</property>
                 <property name="wrap">True</property>

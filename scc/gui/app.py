@@ -43,7 +43,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 	HILIGHT_COLOR = "#FF00FF00"		# ARGB
 	OBSERVE_COLOR = "#FF60A0FF"		# ARGB
 	CONFIG = "scc.config.json"
-	RELEASE_URL = "https://github.com/kozec/sc-controller/releases/tag/v%s"
+	RELEASE_URL = "https://github.com/andersmmg/sc-controller/releases/tag/v%s"
 	OSD_MODE_PROF_NAME = ".scc-osd.profile_editor"
 
 	def __init__(self, gladepath="/usr/share/scc",
@@ -1174,7 +1174,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 			msg += "\n" + _("Another application (most likely Steam) is using the controller.")
 		elif "CANT_SUMMON_THE_DAEMON" in error:
 			msg += "\n" + _("Background process responsible for emulation is not starting.\n\nTry executing \"scc-daemon debug\" in terminal window to check for any errors"
-				"\nor <a href='https://github.com/kozec/sc-controller/issues'>open issue on GitHub</a> and copy output there.")
+				"\nor <a href='https://github.com/andersmmg/sc-controller/issues'>open issue on GitHub</a> and copy output there.")
 		elif "LIBUSB_ERROR_PIPE" in error:
 			msg += "\n" + _("USB dongle was removed.")
 		elif "Failed to create uinput device." in error:

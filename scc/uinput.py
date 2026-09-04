@@ -216,14 +216,14 @@ class UInput(object):
 			self._a, self._amin, self._amax, self._afuzz, self._aflat = zip(*axes)
 
 		self._r = rels
-		
+
 		self._lib = find_library("libuinput")
 		self._ff_events = None
 		if rumble:
 			self._ff_events = (POINTER(FeedbackEvent) * MAX_FEEDBACK_EFFECTS)()
 			for i in range(MAX_FEEDBACK_EFFECTS):
 				self._ff_events[i].contents = FeedbackEvent()
-		
+
 		try:
 			if self._lib.uinput_module_version() != UNPUT_MODULE_VERSION:
 				raise Exception()
@@ -236,7 +236,7 @@ class UInput(object):
 			print("and runinng 'python setup.py build' or 'run.sh' script", file=sys.stderr)
 
 			raise Exception("Invalid native module version")
-		
+
 		c_k		= (ctypes.c_uint16 * len(self._k))(*self._k)
 		c_a		= (ctypes.c_uint16 * len(self._a))(*self._a)
 		c_amin	 = (ctypes.c_int32  * len(self._amin ))(*self._amin )
@@ -250,7 +250,7 @@ class UInput(object):
 		c_keyboard = ctypes.c_int(keyboard)
 		c_rumble = ctypes.c_int(MAX_FEEDBACK_EFFECTS if rumble else 0)
 		c_name = ctypes.c_char_p(name.encode("utf-8") if isinstance(name, str) else name)
-		
+
 		self._fd = self._lib.uinput_init(ctypes.c_int(len(self._k)),
 										 c_k,
 										 ctypes.c_int(len(self._a)),
@@ -584,10 +584,10 @@ class Dummy(object):
 	""" Fake uinput device that does nothing, but has all required methods """
 	def __init__(self, *a, **b):
 		pass
-	
+
 	def keyEvent(self, *a, **b):
 		pass
-	
+
 	axisEvent = keyEvent
 	relEvent = keyEvent
 	scanEvent = keyEvent
@@ -600,10 +600,10 @@ class Dummy(object):
 	pressEvent = keyEvent
 	releaseEvent = keyEvent
 	reset = keyEvent
-	
+
 	def keyManaged(self, ev):
 		return False
-	
+
 	axisManaged = keyManaged
 	relManaged = keyManaged
 
