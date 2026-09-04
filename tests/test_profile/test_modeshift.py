@@ -15,7 +15,7 @@ class TestModeshift(object):
 		"""
 		https://github.com/kozec/sc-controller/issues/146
 		"""
-		STR = "mode(LB, dpad(button(Keys.KEY_UP)), rotate(3.8, sens(2.0, 2.0, ball(0.552, mouse()))))"
+		STR = "mode(LB, dpad(button(KEY_UP)), rotate(3.8, sens(2.0, 2.0, ball(0.552, mouse()))))"
 		a = parser.from_json_data({
 			"action": "mouse()",
 			"ball": [ 0.552 ],
@@ -45,7 +45,7 @@ class TestModeshift(object):
 		"""
 		https://github.com/kozec/sc-controller/issues/146
 		"""
-		STR = "mode(LGRIP, ball(XY(mouse(Rels.REL_HWHEEL), mouse(Rels.REL_WHEEL))), rotate(3.8, sens(2.0, 2.0, mouse())))"
+		STR = "mode(LGRIP, ball(XY(mouse(REL_HWHEEL), mouse(REL_WHEEL))), rotate(3.8, sens(2.0, 2.0, mouse())))"
 		a = parser.from_json_data({
 			"action": "mouse()",
 			"rotate": 3.8,

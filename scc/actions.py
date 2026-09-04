@@ -1460,7 +1460,7 @@ class TrackballAction(Action):
 	COMMAND = "trackball"
 
 	def __new__(cls, speed=None):
-		from modifiers import BallModifier
+		from scc.modifiers import BallModifier
 		return BallModifier(MouseAction(speed=speed))
 
 
