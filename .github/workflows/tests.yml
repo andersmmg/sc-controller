@@ -1,0 +1,37 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            python3-pytest \
+            python3-setuptools \
+            python3-gi \
+            gir1.2-gtk-3.0 \
+            gir1.2-rsvg-2.0 \
+            python3-dev \
+            zlib1g-dev \
+            libusb-1.0-0-dev
+
+      - name: Build C extensions
+        run: python3 setup.py build_ext --inplace
+
+      - name: Run tests
+        run: python3 -m pytest tests/ -v
