@@ -15,6 +15,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  test:
+    needs: check
+    if: needs.check.outputs.changed == 'true'
+    uses: ./.github/workflows/tests.yml
+
   check:
     runs-on: ubuntu-24.04
     outputs:
@@ -43,7 +48,7 @@ jobs:
           fi
 
   nightly:
-    needs: check
+    needs: [test, check]
     if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-24.04
     steps:

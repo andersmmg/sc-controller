@@ -10,7 +10,11 @@ permissions:
   actions: write
 
 jobs:
+  test:
+    uses: ./.github/workflows/tests.yml
+
   release:
+    needs: test
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
