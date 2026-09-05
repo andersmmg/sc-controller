@@ -13,8 +13,23 @@ jobs:
   test:
     uses: ./.github/workflows/tests.yml
 
+  version-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify tag matches app version
+        run: |
+          pyver=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          tagver="${GITHUB_REF_NAME#v}"
+          echo "Tag: ${GITHUB_REF_NAME}  pyproject.toml version: ${pyver}"
+          if [ "$tagver" != "$pyver" ]; then
+            echo "::error::Tag '$GITHUB_REF_NAME' does not match pyproject.toml version '$pyver'. Update the version in pyproject.toml before tagging."
+            exit 1
+          fi
+
   release:
-    needs: test
+    needs: [test, version-check]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
