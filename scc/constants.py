@@ -28,7 +28,27 @@ from scc.lib import IntEnum
 If SC-Controller is updated while daemon is running, DAEMON_VERSION send by
 daemon will differ one one expected by UI and daemon will be forcefully restarted.
 """
-DAEMON_VERSION = "0.4.8"
+_VERSION_FALLBACK = "0.5.0"
+
+
+def _read_version():
+	try:
+		import os, re
+		pyproject = os.path.join(
+			os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+			"pyproject.toml")
+		if os.path.exists(pyproject):
+			with open(pyproject, "r") as f:
+				m = re.search(r'^\s*version\s*=\s*"([^"]+)"', f.read(), re.M)
+			if m:
+				return m.group(1)
+		from importlib import metadata
+		return metadata.version("sccontroller")
+	except Exception:
+		return _VERSION_FALLBACK
+
+
+DAEMON_VERSION = _read_version()
 
 HPERIOD  = 0.02
 LPERIOD  = 0.5
@@ -148,7 +168,6 @@ CPAD_MIN = 0
 CPAD_X_MAX = 1916
 CPAD_Y_MAX = 930
 
-STICK_PAD_MIN_HALF = STICK_PAD_MIN / 3
 TRIGGER_MIN = 0
 TRIGGER_HALF = 50
 TRIGGER_CLICK = 254 # Values under this are generated until trigger clicks

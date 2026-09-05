@@ -64,8 +64,7 @@ There are no official distro packages for this fork yet; install or run from sou
 
 ### Installing
   - Download and extract [latest release](https://github.com/andersmmg/sc-controller/releases/latest) (or clone this repository)
-  - `python3 setup.py build`
-  - `python3 setup.py install`
+  - `python3 -m pip install --no-build-isolation .`
 
 
 ## Running with non distro-specific package

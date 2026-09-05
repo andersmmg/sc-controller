@@ -22,16 +22,23 @@ function rebuild_c_modules() {
 		rm -f "./lib${cm}${EXT_SUFFIX}"
 	done
 
-	"$PYTHON" setup.py build || exit 1
-	echo ""
+	rm -rf build/wheel
+	"$PYTHON" -m pip wheel --no-build-isolation --no-deps \
+		--wheel-dir build/wheel . || exit 1
 
-	for cm in "${C_MODULES[@]}"; do
-		built=$(ls build/lib*/lib${cm}*.so 2>/dev/null | head -1)
-		if [ -n "$built" ]; then
-			ln -sf "$built" "./$(basename "$built")" || exit 1
-			echo "Symlinked ./$(basename "$built") -> $built"
-		fi
-	done
+	# Extract built extensions to repo root, where the drivers expect them
+	# Mostly just for development ugh
+	"$PYTHON" - <<'EOF' || exit 1
+import glob, os, zipfile
+wheels = glob.glob("build/wheel/sccontroller-*.whl")
+assert wheels, "wheel build produced no wheel"
+with zipfile.ZipFile(wheels[0]) as z:
+	for n in z.namelist():
+		base = os.path.basename(n)
+		if base.startswith("lib") and base.endswith(".so"):
+			open(base, "wb").write(z.read(n))
+			print("Extracted ./" + base)
+EOF
 	echo ""
 }
 

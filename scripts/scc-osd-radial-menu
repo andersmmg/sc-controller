@@ -1,36 +1,11 @@
 #!/usr/bin/env python3
-import os, sys, signal, argparse
+import os, sys
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _ROOT not in sys.path:
 	sys.path.insert(0, _ROOT)
 if not os.environ.get("SCC_SHARED") and os.path.isdir(os.path.join(_ROOT, "glade")):
 	os.environ["SCC_SHARED"] = _ROOT
 
-def sigint(*a):
-	print("\n*break*")
-	sys.exit(-1)
-
-def main():
-	signal.signal(signal.SIGINT, sigint)
-
-	import gi
-	gi.require_version('Gtk', '3.0')
-	gi.require_version('Rsvg', '2.0')
-	gi.require_version('GdkX11', '3.0')
-	
-	from scc.tools import init_logging
-	from scc.paths import get_share_path
-	init_logging()
-	
-	from scc.osd.radial_menu import RadialMenu
-	m = RadialMenu()
-	if not m.parse_argumets(sys.argv):
-		sys.exit(1)
-	m.run()
-	if m.get_exit_code() == 0:
-		print(m.get_selected_item_id())
-	sys.exit(m.get_exit_code())
-
-
 if __name__ == "__main__":
-	main()
+	from scc._launcher import osd_radial_menu as _main
+	_main()

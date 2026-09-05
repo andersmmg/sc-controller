@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sccontroller"
+version = "0.4.8"
+description = "Standalone controller mapping tool"
+readme = "README.md"
+license = "GPL-2.0"
+license-files = ["LICENSE", "ADDITIONAL-LICENSES"]
+authors = [{ name = "andersmmg" }]
+requires-python = ">=3.10"
+keywords = ["steam", "controller", "gamepad", "mapping"]
+classifiers = [
+	"Development Status :: 4 - Beta",
+	"Environment :: X11 Applications :: GTK",
+	"Intended Audience :: End Users/Desktop",
+	"Operating System :: POSIX :: Linux",
+	"Programming Language :: Python :: 3 :: Only",
+	"Topic :: Games/Entertainment",
+]
+
+[project.urls]
+Homepage = "https://github.com/andersmmg/sc-controller"
+
+[project.scripts]
+scc = "scc._launcher:scc"
+scc-daemon = "scc._launcher:scc_daemon"
+sc-controller = "scc._launcher:sc_controller"
+scc-osd-dialog = "scc._launcher:osd_dialog"
+scc-osd-keyboard = "scc._launcher:osd_keyboard"
+scc-osd-launcher = "scc._launcher:osd_launcher"
+scc-osd-menu = "scc._launcher:osd_menu"
+scc-osd-message = "scc._launcher:osd_message"
+scc-osd-radial-menu = "scc._launcher:osd_radial_menu"
+scc-osd-show-bindings = "scc._launcher:osd_show_bindings"
+
+[tool.setuptools]
+packages = [
+	"scc", "scc.drivers", "scc.lib",
+	"scc.x11", "scc.osd", "scc.foreign",
+	"scc.gui", "scc.gui.ae", "scc.gui.importexport", "scc.gui.creg",
+]
+
+[[tool.setuptools.ext-modules]]
+name = "libuinput"
+sources = ["scc/uinput.c"]
+
+[[tool.setuptools.ext-modules]]
+name = "libcemuhook"
+sources = ["scc/cemuhook_server.c"]
+libraries = ["z"]
+define-macros = [["PYTHON", "1"]]
+
+[[tool.setuptools.ext-modules]]
+name = "libhiddrv"
+sources = ["scc/drivers/hiddrv.c"]
+
+[[tool.setuptools.ext-modules]]
+name = "libsc_by_bt"
+sources = ["scc/drivers/sc_by_bt.c"]
+
+[[tool.setuptools.ext-modules]]
+name = "libremotepad"
+sources = ["scc/drivers/remotepad_controller.c"]
+
+[tool.setuptools.data-files]
+"share/scc/glade" = ["glade/*.glade", "glade/ae/*.glade"]
+"share/scc/images" = ["images/*.svg", "images/*.json"]
+"share/scc/images/button-images" = ["images/button-images/*.svg", "images/button-images/*.json"]
+"share/scc/images/controller-icons" = ["images/controller-icons/*.svg"]
+"share/scc/images/controller-images" = ["images/controller-images/*.svg"]
+"share/icons/hicolor/24x24/status" = ["images/24x24/status/*.png"]
+"share/icons/hicolor/256x256/status" = ["images/256x256/status/*.png"]
+"share/scc/default_profiles" = ["default_profiles/*.sccprofile", "default_profiles/.*.sccprofile"]
+"share/scc/default_menus" = ["default_menus/*.menu", "default_menus/.*.menu"]
+"share/scc/osd-styles" = ["osd-styles/*.json", "osd-styles/*.css"]
+"share/scc" = ["gamecontrollerdb.txt"]
+"share/pixmaps" = ["images/sc-controller.svg"]
+"share/mime/packages" = ["scc-mime-types.xml"]
+"share/applications" = ["scripts/sc-controller.desktop"]
+"lib/udev/rules.d" = ["scripts/69-sc-controller.rules"]
+"share/scc/images/menu-icons/buttons" = ["images/menu-icons/buttons/LICENCES", "images/menu-icons/buttons/*.png"]
+"share/scc/images/menu-icons/driving" = ["images/menu-icons/driving/LICENCES", "images/menu-icons/driving/*.png"]
+"share/scc/images/menu-icons/items" = ["images/menu-icons/items/LICENCES", "images/menu-icons/items/*.png"]
+"share/scc/images/menu-icons/media" = ["images/menu-icons/media/LICENCES", "images/menu-icons/media/*.png"]
+"share/scc/images/menu-icons/system" = ["images/menu-icons/system/LICENCES", "images/menu-icons/system/*.png"]
+"share/scc/images/menu-icons/weapons" = ["images/menu-icons/weapons/LICENCES", "images/menu-icons/weapons/*.png"]

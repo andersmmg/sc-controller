@@ -38,9 +38,10 @@ function build_dep() {
 	mkdir -p ${BUILDCACHE}/${NAME}
 	pushd ${BUILDCACHE}/${NAME}
 	tar --extract --strip-components=1 -f ${DEPCACHE}/${NAME}.tar.gz
+	# pip instead of the deprecated 'setup.py install' for third-party deps
 	PYTHONPATH=${BUILD_APPDIR}/${SITE} ${PYTHON} \
-		setup.py install --optimize=1 \
-		--prefix="/usr/" --root="${BUILD_APPDIR}"
+		-m pip install --no-build-isolation --no-deps \
+		--prefix="/usr/" --root="${BUILD_APPDIR}" .
 	popd
 }
 
@@ -132,8 +133,23 @@ rm -Rf "${BUILD_APPDIR}/usr/share/vala"
 rm -Rf "${BUILD_APPDIR}/usr/share/icu"
 
 # Build important part
-${PYTHON} setup.py build
-PYTHONPATH=${BUILD_APPDIR}/${SITE} ${PYTHON} setup.py install --prefix ${BUILD_APPDIR}/usr
+${PYTHON} -m pip wheel --no-build-isolation --no-deps \
+	--wheel-dir ${BUILD_APPDIR}/wheel . || exit 1
+# Remove files from previous builds
+rm -Rf ${BUILD_APPDIR}/${SITE}/scc \
+	${BUILD_APPDIR}/${SITE}/sccontroller-*.dist-info \
+	${BUILD_APPDIR}/${SITE}/sccontroller-*.egg-info \
+	${BUILD_APPDIR}/${SITE}/libuinput*.so \
+	${BUILD_APPDIR}/${SITE}/libcemuhook*.so \
+	${BUILD_APPDIR}/${SITE}/libhiddrv*.so \
+	${BUILD_APPDIR}/${SITE}/libsc_by_bt*.so \
+	${BUILD_APPDIR}/${SITE}/libremotepad*.so
+rm -f ${BUILD_APPDIR}/usr/bin/scc ${BUILD_APPDIR}/usr/bin/scc-* \
+	${BUILD_APPDIR}/usr/bin/sc-controller
+${PYTHON} -m pip install --no-build-isolation --no-deps --no-index \
+	--ignore-installed \
+	--prefix ${BUILD_APPDIR}/usr ${BUILD_APPDIR}/wheel/sccontroller-*.whl || exit 1
+rm -Rf ${BUILD_APPDIR}/wheel
 
 # Move udev stuff
 mv ${BUILD_APPDIR}/usr/lib/udev/rules.d/69-${APP}.rules ${BUILD_APPDIR}/
