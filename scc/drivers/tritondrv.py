@@ -2,9 +2,10 @@
 """
 SCC - Steam Controller 2 (Triton) driver
 
-Handles Steam Controller 2 wired directly to USB bus (28de:1302, 28de:1303)
-and wireless controllers connected through Proteus/Nereid dongle
-(28de:1304, 28de:1305)
+Handles Steam Controller 2 wired directly to USB bus (28de:1302),
+wireless controllers connected through Proteus/Nereid dongle
+(28de:1304, 28de:1305) and Steam Controller 2 connected over Bluetooth
+(28de:1303, BLE mode, using hidraw transport).
 
 Referenced Valve's SDL3 (SDL_hidapi_steam_triton.c and
 steam/controller_structs.h) and https://github.com/CouchTurtle/sc2-research
@@ -39,10 +40,13 @@ from scc.constants import (
 from scc.controller import Controller
 from scc.drivers.usb import USBDevice, register_hotplug_device
 from scc.lib import usb1
+from scc.lib.hidraw import HIDRaw
+
+import os
 
 VENDOR_ID			= 0x28de
 PRODUCT_SC2_WIRED	= 0x1302
-PRODUCT_SC2_WIRED2	= 0x1303
+PRODUCT_SC2_BLE		= 0x1303 # BLE mode also USB
 PRODUCT_PROTEUS		= 0x1304
 PRODUCT_NEREID		= 0x1305
 DONGLE_PRODUCTS		= (PRODUCT_PROTEUS, PRODUCT_NEREID)
@@ -81,6 +85,10 @@ GYRO_SCALE = 0.5
 LIZARD_INTERVAL			= 3.0
 # Haptic output report must be resent every 40ms (50ms safety timeout)
 RUMBLE_INTERVAL			= 0.040
+# Delay between SC2 BT reconnection attempts
+BT_RETRY_INTERVAL		= 1.0
+BT_PROBE_INTERVAL		= 0.25
+BT_PROBE_RETRIES		= 3
 
 # Interface numbers of controller slots on the dongle
 DONGLE_SLOT_INTERFACES	= (2, 3, 4, 5)
@@ -88,6 +96,8 @@ DONGLE_SLOT_INTERFACES	= (2, 3, 4, 5)
 RUMBLE_OUTPUT_REPORTS	= 10	# report id + MsgHapticRumble
 
 log = logging.getLogger("Triton")
+
+_bt_drv = None
 
 
 SC2Input = namedtuple("SC2Input", '''buttons ltrig rtrig stick_x stick_y
@@ -148,9 +158,11 @@ def init(daemon, config):
 	def cb(device, handle):
 		return TritonDevice(device, handle, daemon)
 
-	for product_id in (PRODUCT_SC2_WIRED, PRODUCT_SC2_WIRED2,
+	for product_id in (PRODUCT_SC2_WIRED, PRODUCT_SC2_BLE,
 			PRODUCT_PROTEUS, PRODUCT_NEREID):
 		register_hotplug_device(cb, VENDOR_ID, product_id)
+	global _bt_drv
+	_bt_drv = SC2BTDriver(daemon, config)
 	return True
 
 
@@ -347,7 +359,8 @@ class TritonDevice(USBDevice):
 
 class SC2Controller(Controller):
 	"""
-	One Steam Controller 2, either wired or connected to one of dongle slots.
+	One Steam Controller 2, either wired, connected to one of dongle slots
+	or connected over Bluetooth (see SC2BTDevice).
 	"""
 	flags = ( 0
 		| ControllerFlags.SEPARATE_STICK
@@ -381,6 +394,16 @@ class SC2Controller(Controller):
 		return "sc2.config.json"
 
 
+	def _send_feature(self, data):
+		""" Sends 64B feature report (report id 1) to the controller """
+		self._driver._feature(self._iface, data)
+
+
+	def _send_output(self, data):
+		""" Sends haptic output report over interrupt endpoint """
+		self._driver.rumble(self._out_ep, data)
+
+
 	def __repr__(self):
 		return "<SC2 %s>" % (self.get_id(),)
 
@@ -393,9 +416,15 @@ class SC2Controller(Controller):
 
 	def _keep_lizard_off(self):
 		self._last_lizard = time.time()
-		self._driver._feature(self._iface, struct.pack('<BBBBH',
+		self._send_feature(self._lizard_off_payload())
+
+
+	@staticmethod
+	def _lizard_off_payload():
+		""" USB-style payload that turns lizard mode off """
+		return struct.pack('<BBBBH',
 			FEATURE_REPORT_ID, FEATURE_SET_SETTINGS, 3,
-			SETTING_LIZARD_MODE, 0))
+			SETTING_LIZARD_MODE, 0)
 
 
 	def _send_rumble(self):
@@ -410,12 +439,12 @@ class SC2Controller(Controller):
 			0,				# nRightGain
 		)
 		self._last_rumble = time.time()
-		self._driver.rumble(self._out_ep, data)
+		self._send_output(data)
 
 
 	def _stop_rumble(self):
 		""" Sends a report that stops both motors """
-		self._driver.rumble(self._out_ep, struct.pack('<BBHHBHB',
+		self._send_output(struct.pack('<BBHHBHB',
 			0x80, 0, 0, 0, 0, 0, 0))
 
 
@@ -494,7 +523,7 @@ class SC2Controller(Controller):
 		if self._enable_gyros == enabled:
 			return
 		self._enable_gyros = enabled
-		self._driver._feature(self._iface, struct.pack('<BBBBH',
+		self._send_feature(struct.pack('<BBBBH',
 			FEATURE_REPORT_ID, FEATURE_SET_SETTINGS, 3,
 			SETTING_IMU_MODE, IMU_MODE_ENABLED if enabled else 0))
 
@@ -512,7 +541,7 @@ class SC2Controller(Controller):
 		if self._led_level == level:
 			return
 		self._led_level = level
-		self._driver._feature(self._iface, struct.pack('<BBBBH',
+		self._send_feature(struct.pack('<BBBBH',
 			FEATURE_REPORT_ID, FEATURE_SET_SETTINGS, 3,
 			SETTING_LED_USER_BRIGHTNESS, level))
 
@@ -559,11 +588,232 @@ class SC2Controller(Controller):
 		command = 2 if amplitude >= 4096 else 1	# CLICK_STRONG / CLICK
 		gain = round(20.0 * math.log10(max(1, amplitude) / 512.0))
 		gain = max(-23, min(24, gain))
-		self._driver.rumble(self._out_ep,
+		self._send_output(
 			struct.pack('<BBBb', 0x82, side, command, gain))
 
 
 	def turnoff(self):
 		log.debug("Turning off SC2 controller %s", self.get_id())
-		self._driver._feature(self._iface, struct.pack('<BBB',
+		self._send_feature(struct.pack('<BBB',
 			FEATURE_REPORT_ID, FEATURE_TURN_OFF, 0))
+
+
+class SC2BTDriver(object):
+	"""
+	SC2 driver part that handles controller connected over bluetooth (BLE).
+	Uses hidraw transport instead of USB
+	"""
+
+	def __init__(self, daemon, config):
+		self.daemon = daemon
+		self.config = config
+		self.reconnecting = set()
+		self._active = {}
+		daemon.get_device_monitor().add_callback("bluetooth",
+				VENDOR_ID, PRODUCT_SC2_BLE,
+				self.new_device_callback, None)
+
+
+	def new_device_callback(self, syspath, *whatever):
+		if syspath in self._active:
+			# Dedupes udev add events and reconnect attempts racing each
+			# other so returns already working controller instead
+			self.reconnecting.discard(syspath)
+			return self._active[syspath]
+		hidrawname = self.daemon.get_device_monitor().get_hidraw(syspath)
+		if hidrawname is None:
+			return None
+		try:
+			dev = HIDRaw(open(os.path.join("/dev/", hidrawname), "w+b"))
+			c = SC2BTDevice(self, syspath, dev)
+		except Exception as e:
+			if syspath in self.reconnecting:
+				log.debug("SC2 reconnect attempt failed: %s", e)
+			else:
+				log.exception(e)
+			return None
+		self._active[syspath] = c
+		self.reconnecting.discard(syspath)
+		return c
+
+
+	def _controller_closed(self, syspath, c):
+		""" Called from SC2BTDevice.close() """
+		if self._active.get(syspath) is c:
+			del self._active[syspath]
+
+
+	def retry(self, syspath):
+		"""
+		Starts periodically retrying reconnection after IO operation with
+		controller failed until controller answers again or device monitor
+		reports it being disconnected
+
+		Helps with issues when connection drops
+		"""
+		if syspath in self.reconnecting:
+			return
+		self.reconnecting.add(syspath)
+		self.daemon.get_device_monitor().add_remove_callback(
+			syspath, self._retry_cancel)
+		self._schedule_retry(syspath)
+
+
+	def _schedule_retry(self, syspath):
+		def reconnect(*a):
+			if syspath not in self.reconnecting:
+				return
+			monitor = self.daemon.get_device_monitor()
+			if getattr(monitor, "known_devs", None) is not None and \
+					syspath not in monitor.known_devs:
+				self.reconnecting.discard(syspath)
+				return
+			if self.new_device_callback(syspath) is None:
+				self._schedule_retry(syspath)
+		self.daemon.get_scheduler().schedule(BT_RETRY_INTERVAL, reconnect)
+
+
+	def _retry_cancel(self, syspath, *a):
+		self.reconnecting.discard(syspath)
+
+
+class SC2BTDevice(SC2Controller):
+	"""
+	Steam Controller 2 connected over bluetooth (BLE)
+	"""
+
+	def __init__(self, driver, syspath, hidrawdev):
+		SC2Controller.__init__(self, driver, -1, -1, None)
+		self.daemon = driver.daemon
+		self.syspath = syspath
+		self._closed = False
+		self._ready = False
+		self._hidrawdev = hidrawdev
+		self._fileno = hidrawdev._device.fileno()
+		self._poller = driver.daemon.get_poller()
+		self._probe_count = 0
+		self._probing = False
+		self._id = "sc2bt:%s" % (
+			hidrawdev.getPhysicalAddress().decode("utf-8", "ignore")
+					.replace(":", ""), )
+		try:
+			self.configure()
+		except Exception:
+			self._hidrawdev._device.close()
+			raise
+		self._ready = True
+		if self._poller:
+			self._poller.register(self._fileno, self._poller.POLLIN, self._input)
+		driver.daemon.get_device_monitor().add_remove_callback(
+			syspath, self.close)
+		log.debug("SC2 over bluetooth added: %s", self.get_id())
+		driver.daemon.add_controller(self)
+
+
+	def get_type(self):
+		return "sc2"
+
+
+	def __repr__(self):
+		return "<SC2BT %s>" % (self.get_id(), )
+
+
+	def _io_error(self, op):
+		if self._closed or self._probing:
+			return
+		log.debug("SC2 BT IO error on %s, probing connection", op)
+		if self._poller:
+			self._poller.unregister(self._fileno)
+		self._probe_count = 0
+		self._probing = True
+		self._schedule_probe()
+
+
+	def _schedule_probe(self):
+		def probe(*a):
+			if self._closed:
+				return
+			self._probe_count += 1
+			if self._probe_count > BT_PROBE_RETRIES:
+				self._probing = False
+				self._disconnect()
+				return
+			try:
+				self._hidrawdev.sendFeatureReport(
+					(self._lizard_off_payload() + b'\x00' * 64)[:64][1:],
+					FEATURE_REPORT_ID)
+			except (OSError, IOError):
+				self._schedule_probe()
+			else:
+				log.debug("SC2 BT connection recovered after IO error")
+				self._probing = False
+				if self._poller:
+					self._poller.register(self._fileno,
+						self._poller.POLLIN, self._input)
+		self.daemon.get_scheduler().schedule(BT_PROBE_INTERVAL, probe)
+
+
+	def _send_feature(self, data):
+		"""
+		Sends 64B feature report over hidraw, similar ot USB
+		"""
+		body = (data + b'\x00' * 64)[:64][1:]
+		try:
+			self._hidrawdev.sendFeatureReport(body, FEATURE_REPORT_ID)
+		except (OSError, IOError):
+			if not self._ready:
+				raise
+			self._io_error("feature report")
+
+
+	def _send_output(self, data):
+		"""
+		Sends haptic output report over hidraw
+		"""
+		try:
+			os.write(self._fileno, bytes(data))
+		except (OSError, IOError):
+			if not self._ready:
+				raise
+			self._io_error("output report")
+
+
+	def _input(self, *a):
+		try:
+			data = os.read(self._fileno, 64)
+		except (OSError, IOError):
+			self._io_error("read")
+			return
+		if not data:
+			return
+		try:
+			if data[0] in (REPORT_STATE, REPORT_STATE_BLE, REPORT_STATE_TIMESTAMP):
+				self.input(data)
+			elif data[0] == REPORT_BATTERY and len(data) >= 3:
+				self._battery_level = data[2]
+		except Exception as e:
+			log.error("Failed to handle SC2 BT data")
+			log.error(e)
+			log.error(traceback.format_exc())
+
+
+	def _disconnect(self):
+		"""
+		Treats failed IO as disconnection
+		"""
+		if self._closed:
+			return
+		log.debug("IO with SC2 controller failed, assuming disconnection")
+		self.close()
+		self._driver.retry(self.syspath)
+
+
+	def close(self, *a):
+		if self._closed:
+			return
+		self._closed = True
+		if self._poller:
+			self._poller.unregister(self._fileno)
+		self._driver._controller_closed(self.syspath, self)
+		self.daemon.remove_controller(self)
+		self._hidrawdev._device.close()
