@@ -27,7 +27,7 @@ runs:
 
     - name: Install setuptools
       shell: bash
-      run: python3 -m pip install --upgrade setuptools==84.0.0
+      run: python3 -m pip install --upgrade "setuptools==84.0.0" "packaging>=24.2"
 
     - name: Prepare AppDir
       shell: bash
