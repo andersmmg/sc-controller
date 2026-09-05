@@ -33,6 +33,9 @@ jobs:
             zlib1g-dev \
             libusb-1.0-0-dev
 
+      - name: Upgrade setuptools
+        run: python3 -m pip install --break-system-packages --upgrade "setuptools==84.0.0"
+
       - name: Build C extensions
         run: python3 -m pip wheel --no-build-isolation --no-deps --wheel-dir build/wheel .
 
