@@ -80,17 +80,17 @@ def defines(base, include):
 
 	""" Extract #define from base/include following #includes """
 
+	out = OrderedDict()
 	parsed = set()
 	fname = os.path.normpath(os.path.abspath(os.path.join(base, include)))
 	parsed.add(fname)
+	fh = open(fname)
+	open_fhs = [fh]
 
-	lexer = shlex.shlex(open(fname), posix=True)
-
+	lexer = shlex.shlex(fh, posix=True)
 	lexer.whitespace = ' \t\r'
 	lexer.commenters = ''
 	lexer.quotes = '"'
-
-	out = OrderedDict()
 
 	def parse_c_comments(lexer, tok, ntok):
 		if tok != '/' or ntok != '*':
@@ -180,10 +180,14 @@ def defines(base, include):
 			fname = os.path.normpath(os.path.abspath(os.path.join(base, name)))
 			if os.path.isfile(fname) and not fname in parsed:
 				parsed.add(fname)
-				lexer.push_source(open(fname))
-		else:
-			lexer.push_token(tok)
+				fh2 = open(fname)
+				open_fhs.append(fh2)
+				lexer.push_source(fh2)
+			else:
+				lexer.push_token(tok)
 
+	for open_fh in open_fhs:
+		open_fh.close()
 
 	return out
 

@@ -191,7 +191,11 @@ class DeviceMonitor(Monitor):
 		Returns current kernel uevent sequence number
 		"""
 		try:
-			return int(open(UEVENT_SEQNUM).read().strip())
+			try:
+				with open(UEVENT_SEQNUM) as fh:
+					return int(fh.read().strip())
+			except Exception:
+				return None
 		except Exception:
 			return None
 
@@ -295,19 +299,22 @@ class DeviceMonitor(Monitor):
 		May throw all kinds of OSErrors or IOErrors
 		"""
 		if os.path.exists(os.path.join(syspath, "idVendor")):
-			vendor  = int(open(os.path.join(syspath, "idVendor")).read().strip(), 16)
-			product = int(open(os.path.join(syspath, "idProduct")).read().strip(), 16)
+			with open(os.path.join(syspath, "idVendor")) as fh:
+				vendor  = int(fh.read().strip(), 16)
+			with open(os.path.join(syspath, "idProduct")) as fh:
+				product = int(fh.read().strip(), 16)
 			return vendor, product
 		# Try reading PRODUCT= from uevent (works for uhid/input devices)
 		uevent = os.path.join(syspath, "uevent")
 		if os.path.exists(uevent):
 			try:
-				for line in open(uevent).read().split("\n"):
-					if line.startswith("PRODUCT="):
-						parts = line.split("=")[1].split("/")
-						if len(parts) >= 3:
-							vendor = int(parts[1], 16)
-							product = int(parts[2], 16)
+				with open(uevent) as fh:
+					for line in fh.read().split("\n"):
+						if line.startswith("PRODUCT="):
+							parts = line.split("=")[1].split("/")
+							if len(parts) >= 3:
+								vendor = int(parts[1], 16)
+								product = int(parts[2], 16)
 							return vendor, product
 			except (ValueError, IndexError):
 				pass
@@ -354,7 +361,8 @@ class DeviceMonitor(Monitor):
 		"""
 		uniq = os.path.join(syspath, "uniq")
 		if os.path.exists(uniq):
-			return open(uniq, "r").read().strip()
+				with open(uniq, "r") as fh:
+					return fh.read().strip()
 		for name in os.listdir(syspath):
 			if name.startswith("input"):
 				path = os.path.join(syspath, name)
@@ -371,8 +379,10 @@ class DeviceMonitor(Monitor):
 
 		May throw all kinds of OSErrors or IOErrors
 		"""
-		busnum  = int(open(os.path.join(syspath, "busnum")).read().strip())
-		devnum = int(open(os.path.join(syspath, "devnum")).read().strip())
+		with open(os.path.join(syspath, "busnum")) as fh:
+			busnum  = int(fh.read().strip())
+		with open(os.path.join(syspath, "devnum")) as fh:
+			devnum = int(fh.read().strip())
 		return busnum, devnum
 
 

@@ -451,7 +451,8 @@ class EvdevDriver(object):
 		if os.path.exists(config_file):
 			config = None
 			try:
-				config = json.loads(open(config_file, "r").read())
+				with open(config_file, "r") as fh:
+					config = json.loads(fh.read())
 			except Exception as e:
 				log.exception(e)
 				return False

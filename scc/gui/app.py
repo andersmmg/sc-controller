@@ -392,11 +392,13 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		# TODO: Maybe not best place to do this
 		try:
 			# Dynamic modules
-			rawlist = open("/proc/modules", "r").read().split("\n")
+			with open("/proc/modules", "r") as fh:
+				rawlist = fh.read().split("\n")
 			kernel_mods = [ line.split(" ")[0] for line in rawlist ]
 			# Built-in modules
 			release = platform.uname()[2]
-			rawlist = open("/lib/modules/%s/modules.builtin" % release, "r").read().split("\n")
+			with open("/lib/modules/%s/modules.builtin" % release, "r") as fh:
+				rawlist = fh.read().split("\n")
 			kernel_mods += [ os.path.split(x)[-1].split(".")[0] for x in rawlist ]
 		except Exception:
 			# Maybe running on BSD or Windows...
@@ -1617,7 +1619,8 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		data = dict(current_profile=name)
 		jstr = json.dumps(data, sort_keys=True, indent=4)
 
-		open(os.path.join(get_config_path(), self.CONFIG), "w").write(jstr)
+		with open(os.path.join(get_config_path(), self.CONFIG), "w") as fh:
+			fh.write(jstr)
 
 
 	def load_profile_selection(self):

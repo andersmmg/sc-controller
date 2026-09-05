@@ -103,9 +103,16 @@ class Driver:
 		if hidrawname is None:
 			return None
 		try:
-			dev = HIDRaw(open(os.path.join("/dev/", hidrawname), "w+b"))
+			fh = open(os.path.join("/dev/", hidrawname), "w+b")
+		except Exception as e:
+			log.exception(e)
+			return None
+		try:
+			# HIDRaw takes ownership of fh
+			dev = HIDRaw(fh)
 			return SCByBt(self, syspath, dev)
 		except Exception as e:
+			fh.close()
 			log.exception(e)
 			return None
 
@@ -324,11 +331,22 @@ def hidraw_test(filename):
 			print(tup)
 
 
-	dev = HIDRaw(open(filename, "w+b"))
-	driver = Driver(FakeDaemon(), {})
-	c = TestSC(driver, None, dev)
-	c.configure()
-	c.flush()
+	try:
+		fh = open(filename, "w+b")
+	except Exception as e:
+		log.exception(e)
+		return
+	try:
+		# HIDRaw takes ownership of fh
+		dev = HIDRaw(fh)
+		driver = Driver(FakeDaemon(), {})
+		c = TestSC(driver, None, dev)
+		c.configure()
+		c.flush()
+	except Exception as e:
+		fh.close()
+		log.exception(e)
+		return
 	while True:
 		c._input()
 		print({ x[0]: getattr(c._state, x[0]) for x in c._state._fields_ })

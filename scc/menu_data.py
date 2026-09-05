@@ -169,7 +169,8 @@ class MenuData(object):
 		Loads menu from file.
 		Actions are parsed only if action_parser is set to ActionParser instance.
 		"""
-		return MenuData.from_fileobj(open(filename, "r"), action_parser)
+		with open(filename, "r") as fh:
+			return MenuData.from_fileobj(fh, action_parser)
 	
 	
 	@staticmethod
@@ -182,7 +183,8 @@ class MenuData(object):
 		Throws ValueError if specified file cannot be parsed or
 		specified menu cannot be found.
 		"""
-		data = json.loads(open(filename, "r").read())
+		with open(filename, "r") as fh:
+			data = json.loads(fh.read())
 		if "menus" not in data:
 			raise ValueError("Menu not found")
 		if menuname not in data["menus"]:

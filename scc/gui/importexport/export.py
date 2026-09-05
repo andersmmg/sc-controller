@@ -278,7 +278,8 @@ class Export(UserDataManager):
 		
 		def export_menu(tar, filename):
 			try:
-				menu = MenuData.from_json_data(json.loads(open(filename, "r").read()), ActionParser())
+				with open(filename, "r") as fh:
+					menu = MenuData.from_json_data(json.loads(fh.read()), ActionParser())
 				tar.add(filename, arcname=os.path.split(filename)[-1], recursive=False)
 			except Exception as e:
 				# Menu that cannot be parsed shouldn't be exported

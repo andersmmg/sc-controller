@@ -36,7 +36,8 @@ with zipfile.ZipFile(wheels[0]) as z:
 	for n in z.namelist():
 		base = os.path.basename(n)
 		if base.startswith("lib") and base.endswith(".so"):
-			open(base, "wb").write(z.read(n))
+			with open(base, "wb") as fh:
+				fh.write(z.read(n))
 			print("Extracted ./" + base)
 EOF
 	echo ""

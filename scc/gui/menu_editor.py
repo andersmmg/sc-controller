@@ -408,7 +408,8 @@ class MenuEditor(Editor):
 		path = os.path.join(get_menus_path(), id)
 		data = self._generate_menudata()
 		jstr = Encoder(sort_keys=True, indent=4).encode(data)
-		open(path, "w").write(jstr)
+		with open(path, "w") as fh:
+			fh.write(jstr)
 		log.debug("Wrote menu file %s", path)
 		if self.callback:
 			self.callback(id)

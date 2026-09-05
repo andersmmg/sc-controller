@@ -262,7 +262,8 @@ class ImportSccprofile(object):
 					apply_replacements(obj.obj)
 					jstr = Encoder(sort_keys=True, indent=4).encode(obj.obj)
 					filename = os.path.join(get_menus_path(), "%s.menu" % (importas,))
-					open(filename, "w").write(jstr)
+					with open(filename, "w") as fh:
+						fh.write(jstr)
 		
 		trash, trash, importas, trash, obj = files[0]	# 1st is always profile that's being imported
 		self.app.new_profile(obj.obj, importas)

@@ -691,7 +691,8 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		theme = cb.get_model().get_value(cb.get_active_iter(), 0)
 		if theme in (None, "None"): return
 		filename = os.path.join(get_share_path(), "osd-styles", theme)
-		data = json.loads(open(filename, "r").read())
+		with open(filename, "r") as fh:
+			data = json.loads(fh.read())
 		
 		# Transfer values from json to config
 		for grp in ("osd_colors", "osk_colors"):
@@ -709,7 +710,8 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		color_keys = list(self.app.config['osk_colors'].keys()) + list(self.app.config['osd_colors'].keys())
 		osd_style = cb.get_model().get_value(cb.get_active_iter(), 0)
 		css_file = os.path.join(get_share_path(), "osd-styles", osd_style)
-		first_line = open(css_file, "r").read().split("\n")[0]
+		with open(css_file, "r") as fh:
+			first_line = fh.read().split("\n")[0]
 		used_colors = None				# None means "all"
 		if "Used colors:" in first_line:
 			used_colors = set(first_line.split(":", 1)[1].strip(" */").split(" "))
@@ -755,9 +757,8 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		"""
 		if self._recursing: return
 		try:
-			data = MenuData.from_fileobj(
-				open(find_menu("Default.menu"), "r"),
-				GuiActionParser())
+			with open(find_menu("Default.menu"), "r") as dm_fh:
+				data = MenuData.from_fileobj(dm_fh, GuiActionParser())
 			index = int(widget.get_name().split("_")[-1])
 			instance = GlobalSettings._make_mi_instance(index)
 		except Exception as e:
@@ -801,7 +802,8 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		path = os.path.join(get_menus_path(), "Default.menu")
 		data = MenuData(*items)
 		jstr = Encoder(sort_keys=True, indent=4).encode(data)
-		open(path, "w").write(jstr)
+		with open(path, "w") as fh:
+			fh.write(jstr)
 		log.debug("Wrote menu file %s", path)
 	
 	
@@ -811,7 +813,8 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		boxes for present menu items.
 		"""
 		try:
-			data = MenuData.from_fileobj(open(find_menu("Default.menu"), "r"))
+			with open(find_menu("Default.menu"), "r") as dm_fh:
+				data = MenuData.from_fileobj(dm_fh)
 		except Exception as e:
 			# Shouldn't really happen
 			log.error(traceback.format_exc())

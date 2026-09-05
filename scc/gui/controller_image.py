@@ -112,8 +112,9 @@ class ControllerImage(SVGWidget):
 		"""
 		if self.backup is None:
 			self.backup = copy.deepcopy(self.current)
-		data = json.loads(open(os.path.join(self.app.imagepath,
-			"%s.json" % (filename,)), "r").read())
+		with open(os.path.join(self.app.imagepath,
+				"%s.json" % (filename,)), "r") as fh:
+			data = json.loads(fh.read())
 		self.current["gui"]["background"] = data["gui"]["background"]
 		self.use_config(self.current, self.backup)
 
@@ -125,8 +126,9 @@ class ControllerImage(SVGWidget):
 		"""
 		if self.backup is None:
 			self.backup = copy.deepcopy(self.current)
-		data = json.loads(open(os.path.join(self.app.imagepath,
-			"%s.json" % (filename,)), "r").read())
+		with open(os.path.join(self.app.imagepath,
+				"%s.json" % (filename,)), "r") as fh:
+			data = json.loads(fh.read())
 		self.current["gui"]["buttons"] = data["gui"]["buttons"]
 		self.current["buttons"] = data["buttons"]
 		self.use_config(self.current, self.backup)
@@ -139,8 +141,9 @@ class ControllerImage(SVGWidget):
 
 
 	def get_button_groups(self):
-		groups = json.loads(open(os.path.join(self.app.imagepath,
-			"button-images", "groups.json"), "r").read())
+		with open(os.path.join(self.app.imagepath,
+				"button-images", "groups.json"), "r") as fh:
+			groups = json.loads(fh.read())
 		return {
 			x['key'] : x['buttons'] for x in groups
 			if x['type'] == "buttons"

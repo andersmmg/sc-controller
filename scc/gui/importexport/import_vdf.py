@@ -77,7 +77,8 @@ class ImportVdf(object):
 		from there.
 		Calls GLib.idle_add to send loaded data into UI.
 		"""
-		data = parse_vdf(open(filename, "r"))
+		with open(filename, "r") as fh:
+			data = parse_vdf(fh)
 		# Sanity check
 		if "userroamingconfigstore" not in data: return
 		if "controller_config" not in data["userroamingconfigstore"]: return
@@ -121,7 +122,8 @@ class ImportVdf(object):
 				self._lock.acquire()
 				if os.path.exists(filename):
 					try:
-						data = parse_vdf(open(filename, "r"))
+						with open(filename, "r") as fh:
+							data = parse_vdf(fh)
 						name = data['appstate']['name']
 					except Exception as e:
 						log.error("Failed to load app manifest for '%s'", gameid)
@@ -176,7 +178,8 @@ class ImportVdf(object):
 					continue
 				log.info("Reading '%s'", filename)
 				try:
-					data = parse_vdf(open(filename, "r"))
+					with open(filename, "r") as fh:
+						data = parse_vdf(fh)
 					name = data['controller_mappings']['title']
 					GLib.idle_add(self._set_profile_name, index, name, filename)
 					break
@@ -312,7 +315,8 @@ class ImportVdf(object):
 		dump.write("\nProfile filename: %s\n" % (filename,))
 		dump.write("\nProfile dump:\n")
 		try:
-			dump.write(open(filename, "r").read())
+			with open(filename, "r") as fh:
+				dump.write(fh.read())
 		except Exception as e:
 			dump.write("(failed to write: %s)" % (e,))
 		tvError.get_buffer().set_text(dump.getvalue())
@@ -376,7 +380,8 @@ class ImportVdf(object):
 			error_log.write("\nProfile filename: %s\n" % (filename,))
 			error_log.write("\nProfile dump:\n")
 			try:
-				error_log.write(open(filename, "r").read())
+				with open(filename, "r") as fh:
+					error_log.write(fh.read())
 			except Exception as e:
 				error_log.write("(failed to write: %s)" % (e,))
 			

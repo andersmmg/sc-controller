@@ -13,7 +13,8 @@ log = logging.getLogger("import.vdffz")
 class VDFFZProfile(VDFProfile):
 	def load(self, filename):
 		try:
-			data = json.loads(open(filename, "r").read())
+			with open(filename, "r") as fh:
+				data = json.loads(fh.read())
 		except Exception as e:
 			raise ValueError("Failed to parse JSON")
 		if 'ConfigData' not in data:

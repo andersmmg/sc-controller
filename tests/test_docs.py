@@ -15,8 +15,10 @@ class TestDocs(object):
 		Tests if every known Action is documentated in docs/actions.md
 		"""
 		# Read docs first
-		actions_md = open("docs/actions.md", "r").read()
-		profile_md = open("docs/profile-file.md", "r").read()
+		with open("docs/actions.md", "r") as fh:
+			actions_md = fh.read()
+		with open("docs/profile-file.md", "r") as fh:
+			profile_md = fh.read()
 		
 		# Do stupid fulltext search, because currently it's simply fast enough
 		for command in Action.ALL:

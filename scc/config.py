@@ -210,7 +210,8 @@ class Config(object):
 
 
 	def load(self):
-		self.values = json.loads(open(self.filename, "r").read())
+		with open(self.filename, "r") as f:
+			self.values = json.loads(f.read())
 
 
 	def create(self):

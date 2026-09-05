@@ -51,7 +51,8 @@ class RadialMenu(Menu):
 		try:
 			# Try to read json file and bail out if it fails
 			desc = os.path.join(get_share_path(), "images", 'radial-menu.svg.json')
-			source_colors = json.loads(open(desc, "r").read())['colors']
+			with open(desc, "r") as fh:
+				source_colors = json.loads(fh.read())['colors']
 		except Exception as e:
 			log.warning("Failed to load keyboard description")
 			log.warning(e)

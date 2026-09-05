@@ -36,7 +36,8 @@ class Dialog(Editor, ComboSetter, Export, ImportVdf, ImportSccprofile):
 		or None if type is not supported.
 		"""
 		try:
-			f = open(filename, 'rb').read(1024)
+			with open(filename, 'rb') as fh:
+				f = fh.read(1024)
 		except Exception as e:
 			# File not readable
 			log.error(traceback.format_exc())
@@ -44,7 +45,8 @@ class Dialog(Editor, ComboSetter, Export, ImportVdf, ImportSccprofile):
 		try:
 			if f.decode("utf-8").strip(" \t\r\n").startswith("{"):
 				# Looks like json
-				data = json.loads(open(filename, "r").read())
+				with open(filename, "r") as fh:
+					data = json.loads(fh.read())
 				if "buttons" in data and "gyro" in data:
 					return 'sccprofile'
 				if "GameName" in data and "FileName" in data:

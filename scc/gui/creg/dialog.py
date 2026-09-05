@@ -139,21 +139,22 @@ class ControllerRegistration(Editor):
 			log.exception(e)
 			return False
 
-		for line in db.readlines():
-			if line.startswith(weird_id):
-				log.info("Loading mappings for '%s' from gamecontrollerdb", weird_id)
-				log.debug("Buttons: %s", buttons)
-				log.debug("Axes: %s", axes)
-				for token in line.strip().split(","):
-					if ":" in token:
-						k, v = token.split(":", 1)
-						k = SDL_TO_SCC_NAMES.get(k, k)
-						if v.startswith("b") and hasattr(SCButtons, k.upper()):
-							try:
-								keycode = buttons[int(v.strip("b"))]
-							except IndexError:
-								log.warning("Skipping unknown gamecontrollerdb button->button mapping: '%s'", v)
-								continue
+		try:
+			for line in db.readlines():
+				if line.startswith(weird_id):
+					log.info("Loading mappings for '%s' from gamecontrollerdb", weird_id)
+					log.debug("Buttons: %s", buttons)
+					log.debug("Axes: %s", axes)
+					for token in line.strip().split(","):
+						if ":" in token:
+							k, v = token.split(":", 1)
+							k = SDL_TO_SCC_NAMES.get(k, k)
+							if v.startswith("b") and hasattr(SCButtons, k.upper()):
+								try:
+									keycode = buttons[int(v.strip("b"))]
+								except IndexError:
+									log.warning("Skipping unknown gamecontrollerdb button mapping: '%s'", v)
+									continue
 							button  = getattr(SCButtons, k.upper())
 							self._mappings[keycode] = button
 						elif v.startswith("b") and k in SDL_AXES:
@@ -201,9 +202,11 @@ class ControllerRegistration(Editor):
 							pass
 						else:
 							log.warning("Skipping unknown gamecontrollerdb mapping %s:%s", k, v)
-				return True
-		else:
-			log.debug("Mappings for '%s' not found in gamecontrollerdb", weird_id)
+					return True
+			else:
+				log.debug("Mappings for '%s' not found in gamecontrollerdb", weird_id)
+		finally:
+			db.close()
 
 		return False
 
@@ -324,8 +327,9 @@ class ControllerRegistration(Editor):
 		self._groups = {}
 		model = cbControllerButtons.get_model()
 		model.clear()		# re-entry safe; may have been loaded before
-		groups = json.loads(open(os.path.join(self.app.imagepath,
-			"button-images", "groups.json"), "r").read())
+		with open(os.path.join(self.app.imagepath,
+				"button-images", "groups.json"), "r") as fh:
+			groups = json.loads(fh.read())
 		for group in groups:
 			inverted, brightness = self.app.get_svg_invert()
 			images = [ SVGWidget.render_svg_file(os.path.join(
@@ -353,7 +357,8 @@ class ControllerRegistration(Editor):
 		config_file = os.path.join(get_config_path(), "devices",
 				"%s-%s.json" % (self._tester.driver, filename,))
 
-		open(config_file, "w").write(jsondata)
+		with open(config_file, "w") as fh:
+			fh.write(jsondata)
 		log.debug("Controller configuration '%s' written", config_file)
 
 		self.kill_tester()

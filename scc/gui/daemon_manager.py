@@ -435,7 +435,8 @@ class ControllerManager(GObject.GObject):
 			if "/" not in filename:
 				filename = os.path.join(default_path, filename)
 			try:
-				data = json.loads(open(filename, "r").read()) or None
+				with open(filename, "r") as fh:
+					data = json.loads(fh.read()) or None
 				return data
 			except Exception as e:
 				log.exception(e)

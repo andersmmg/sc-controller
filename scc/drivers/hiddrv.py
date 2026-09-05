@@ -234,7 +234,8 @@ class HIDController(USBDevice, Controller):
 		if hid_descriptor is None:
 			hid_descriptor = self.handle.getRawDescriptor(
 					LIBUSB_DT_REPORT, 0, 512)
-		open("report", "wb").write(b"".join([ chr(x) for x in hid_descriptor ]))
+		with open("report", "wb") as fh:
+			fh.write(b"".join([ chr(x) for x in hid_descriptor ]))
 		self._build_hid_decoder(hid_descriptor, config, max_size)
 		self._packet_size = self._decoder.packet_size
 	
@@ -447,7 +448,8 @@ class HIDController(USBDevice, Controller):
 		try:
 			if full_path:
 				log.debug("Loading descriptor from '%s'", full_path)
-				return [ ord(x) for x in open(full_path, "rb").read(1024) ]
+				with open(full_path, "rb") as fh:
+					return [ ord(x) for x in fh.read(1024) ]
 		except Exception as e:
 			log.exception(e)
 		return None
@@ -588,7 +590,8 @@ class HIDDrv(object):
 				pid = int(pid, 16)
 				config_file = os.path.join(path, name)
 				try:
-					config = json.loads(open(config_file, "r").read())
+					with open(config_file, "r") as fh:
+						config = json.loads(fh.read())
 				except Exception:
 					log.warning("Ignoring file that cannot be parsed: %s", name)
 					continue

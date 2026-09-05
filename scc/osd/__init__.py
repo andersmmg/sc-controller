@@ -70,15 +70,16 @@ class OSDWindow(Gtk.Window):
 		colors = OSDCssMagic(colors)
 		try:
 			css_file = os.path.join(get_share_path(), "osd-styles", config["osd_style"])
-			css = open(css_file, "r").read()
+			with open(css_file, "r") as fh:
+				css = fh.read()
 			if ((Gtk.get_major_version(), Gtk.get_minor_version()) > (3, 20)):
 				css += OSDWindow.CSS_3_20
 			OSDWindow.css_provider = Gtk.CssProvider()
 			OSDWindow.css_provider.load_from_data((css % colors).encode("utf-8"))
 			Gtk.StyleContext.add_provider_for_screen(
-					Gdk.Screen.get_default(),
-					OSDWindow.css_provider,
-					Gtk.STYLE_PROVIDER_PRIORITY_USER)
+				Gdk.Screen.get_default(),
+				OSDWindow.css_provider,
+				Gtk.STYLE_PROVIDER_PRIORITY_USER)
 		except GLib.Error as e:
 			log.error("Failed to apply css with user settings:")
 			log.error(e)
@@ -86,14 +87,15 @@ class OSDWindow(Gtk.Window):
 
 			OSDWindow.css_provider = Gtk.CssProvider()
 			css_file = os.path.join(get_share_path(), "osd-styles", "Classic.gtkstyle.css")
-			css = open(css_file, "r").read()
+			with open(css_file, "r") as fh:
+				css = fh.read()
 			if ((Gtk.get_major_version(), Gtk.get_minor_version()) > (3, 20)):
 				css += OSDWindow.CSS_3_20
 			OSDWindow.css_provider.load_from_data((css % colors).encode("utf-8"))
 			Gtk.StyleContext.add_provider_for_screen(
-					Gdk.Screen.get_default(),
-					OSDWindow.css_provider,
-					Gtk.STYLE_PROVIDER_PRIORITY_USER)
+				Gdk.Screen.get_default(),
+				OSDWindow.css_provider,
+				Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
 
 	def _add_arguments(self):

@@ -12,7 +12,8 @@ def merge(f1, f2, from_, to):
 	from f1 to f2
 	"""
 	lines1, inside = [], False
-	for line in open(f1, "r").readlines():
+	with open(f1, "r") as fh1:
+		for line in fh1.readlines():
 		if from_ in line.strip("\r\n\t "):
 			inside = True
 		elif to in line.strip("\r\n\t "):
@@ -21,7 +22,8 @@ def merge(f1, f2, from_, to):
 			lines1.append(line)
 
 	lines2, inside = [], False
-	for line in open(f2, "r").readlines():
+	with open(f2, "r") as fh2:
+		for line in fh2.readlines():
 		if from_ in line.strip("\r\n\t "):
 			inside = True
 			lines2 += lines1
@@ -30,7 +32,8 @@ def merge(f1, f2, from_, to):
 		elif not inside:
 			lines2.append(line)
 
-	open(f2, "w").write("".join(lines2))
+	with open(f2, "w") as fh2:
+		fh2.write("".join(lines2))
 
 
 def main():

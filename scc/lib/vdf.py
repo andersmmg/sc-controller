@@ -79,6 +79,7 @@ def ensure_list(value):
 
 
 if __name__ == "__main__":
-	print(parse_vdf(open('app_generic.vdf', "r")))
+	with open('app_generic.vdf', "r") as fh:
+		print(parse_vdf(fh))
 
 

@@ -624,9 +624,19 @@ class SC2BTDriver(object):
 		if hidrawname is None:
 			return None
 		try:
-			dev = HIDRaw(open(os.path.join("/dev/", hidrawname), "w+b"))
+			fh = open(os.path.join("/dev/", hidrawname), "w+b")
+		except Exception as e:
+			if syspath in self.reconnecting:
+				log.debug("SC2 reconnect attempt failed: %s", e)
+			else:
+				log.exception(e)
+			return None
+		try:
+			# HIDRaw takes ownership of fh
+			dev = HIDRaw(fh)
 			c = SC2BTDevice(self, syspath, dev)
 		except Exception as e:
+			fh.close()
 			if syspath in self.reconnecting:
 				log.debug("SC2 reconnect attempt failed: %s", e)
 			else:

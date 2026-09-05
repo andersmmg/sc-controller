@@ -72,7 +72,8 @@ class SVGWidget(Gtk.EventBox):
 
 
 	def set_image(self, filename):
-		self.current_svg = open(filename, "r").read()
+		with open(filename, "r") as fh:
+			self.current_svg = fh.read()
 		self.cache = OrderedDict()
 		self.areas = []
 		self.parse_image()
@@ -260,8 +261,9 @@ class SVGWidget(Gtk.EventBox):
 		"""
 		Renders an SVG file to a GdkPixbuf.Pixbuf.
 		"""
-		return SVGWidget.render_svg(open(filename, "r").read(),
-				inverted, brightness, {}, size, tint)
+		with open(filename, "r") as fh:
+			return SVGWidget.render_svg(fh.read(),
+								inverted, brightness, {}, size, tint)
 
 
 	@staticmethod
@@ -883,5 +885,6 @@ class SVGEditor(object):
 
 	@staticmethod
 	def load_from_file(filename):
-		tree = ET.fromstring(open(filename, "r").read(), parser=XML_PARSER())
+		with open(filename, "r") as fh:
+			tree = ET.fromstring(fh.read(), parser=XML_PARSER())
 		return SVGEditor.find_by_tag(tree, "g")

@@ -51,13 +51,14 @@ class Daemon(object):
 		# redirect standard file descriptors
 		sys.stdout.flush()
 		sys.stderr.flush()
-		stdi = open(os.devnull, 'r')
-		stdo = open(os.devnull, 'a+')
-		stde = open(os.devnull, 'a+')
+		with open(os.devnull, 'r') as stdi, \
+			 open(os.devnull, 'a+') as stdo, \
+			 open(os.devnull, 'a+') as stde:
 
-		os.dup2(stdi.fileno(), sys.stdin.fileno())
-		os.dup2(stdo.fileno(), sys.stdout.fileno())
-		os.dup2(stde.fileno(), sys.stderr.fileno())
+			os.dup2(stdi.fileno(), sys.stdin.fileno())
+			os.dup2(stdo.fileno(), sys.stdout.fileno())
+			os.dup2(stde.fileno(), sys.stderr.fileno())
+
 
 		# write pidfile
 		self.write_pid()
@@ -87,8 +88,9 @@ class Daemon(object):
 		if pid:
 			# Check if PID coresponds to running daemon process and fail if yes
 			try:
-				assert os.path.exists("/proc")	# Just in case of BSD...
-				cmdline = open("/proc/%s/cmdline" % (pid,), "r").read().replace("\x00", " ").strip()
+				assert os.path.exists("/proc")  # Just in case of BSD...
+				with open("/proc/%s/cmdline" % (pid,), "r") as cmdf:
+					cmdline = cmdf.read().replace("\x00", " ").strip()
 				if sys.argv[0] in cmdline:
 					raise Exception("already running")
 			except IOError:
@@ -115,7 +117,7 @@ class Daemon(object):
 
 	def on_start(self):
 		pass
-	
+
 	def stop(self, once=False):
 		"""Stop the daemon."""
 

@@ -293,10 +293,16 @@ def test_close_is_idempotent():
 	assert len(daemon.removed) == 1
 
 
+class FakeFileHandle(object):
+	""" Minimal stand-in for an open hidraw file handle """
+	def close(self):
+		pass
+
+
 def make_working_hidraw(monkeypatch):
 	""" Makes driver's HIDRaw open path succeed, returning a fake device """
 	monkeypatch.setattr(tritondrv, "HIDRaw", lambda f: FakeHidrawDevice())
-	monkeypatch.setattr("builtins.open", lambda path, mode: object())
+	monkeypatch.setattr("builtins.open", lambda path, mode: FakeFileHandle())
 
 
 def test_reconnect_loop_retries_until_success(monkeypatch):
@@ -316,7 +322,7 @@ def test_reconnect_loop_retries_until_success(monkeypatch):
 	daemon.device_monitor.hidraw = "hidraw9"
 	monkeypatch.setattr(tritondrv, "HIDRaw",
 			lambda f: (_ for _ in ()).throw(OSError(5, "I/O error")))
-	monkeypatch.setattr("builtins.open", lambda path, mode: object())
+	monkeypatch.setattr("builtins.open", lambda path, mode: FakeFileHandle())
 	daemon.scheduler.run_one()
 	assert daemon.added == []
 	assert daemon.scheduler.tasks	# still rescheduled

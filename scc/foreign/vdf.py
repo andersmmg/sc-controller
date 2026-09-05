@@ -574,7 +574,8 @@ class VDFProfile(Profile):
 		Loads profile from vdf file. Returns self.
 		May raise ValueError.
 		"""
-		data = parse_vdf(open(filename, "r"))
+		with open(filename, "r") as fh:
+			data = parse_vdf(fh)
 		self.load_data(data)
 	
 	
