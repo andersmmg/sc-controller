@@ -9,6 +9,8 @@ import pytest
 import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version("Rsvg", "2.0")
+from scc.gui.creg.dialog import parse_sdl_dpad_axis
+from scc.gui.creg.dialog import order_evdev_buttons_for_sdl
 from scc.gui.svg_widget import SVGWidget
 
 SVG_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
@@ -63,3 +65,34 @@ def test_passing_full_test_name_raises(tmp_path):
 		("TEST", 10, 20, 60, 1))
 	with pytest.raises(ValueError):
 		w.get_axis_region("STICKTEST")
+
+
+def test_parse_sdl_dpad_half_axes():
+	axes = [16, 17]
+
+	assert parse_sdl_dpad_axis("dpup", "-a1", axes) == (17, 5, True)
+	assert parse_sdl_dpad_axis("dpdown", "+a1", axes) == (17, 5, True)
+	assert parse_sdl_dpad_axis("dpleft", "-a0", axes) == (16, 4, False)
+	assert parse_sdl_dpad_axis("dpright", "+a0", axes) == (16, 4, False)
+
+
+def test_parse_sdl_dpad_half_axis_honors_reversed_axis():
+	axes = [16, 17]
+
+	assert parse_sdl_dpad_axis("dpup", "+a1", axes) == (17, 5, False)
+	assert parse_sdl_dpad_axis("dpleft", "+a0", axes) == (16, 4, True)
+
+
+def test_parse_sdl_dpad_half_axis_rejects_invalid():
+	axes = [16, 17]
+
+	assert parse_sdl_dpad_axis("dpup", "-a2", axes) is None
+	assert parse_sdl_dpad_axis("dpup", "a1", axes) is None
+	assert parse_sdl_dpad_axis("leftx", "-a1", axes) is None
+
+
+def test_order_evdev_buttons_for_sdl_puts_gamepad_buttons_before_extra_keys():
+	buttons = [167, 304, 305, 307, 308, 310, 311, 314, 315, 316, 317, 318]
+
+	assert order_evdev_buttons_for_sdl(buttons) == \
+		[304, 305, 307, 308, 310, 311, 314, 315, 316, 317, 318, 167]

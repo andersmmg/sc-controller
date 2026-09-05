@@ -117,6 +117,8 @@ class ControllerRegistration(Editor):
 		"""
 		# Build list of button and axes
 		buttons = self._tester.buttons
+		if self._tester.driver == "evdev":
+			buttons = order_evdev_buttons_for_sdl(buttons)
 		axes = self._tester.axes
 
 		# Generate database ID
@@ -185,6 +187,15 @@ class ControllerRegistration(Editor):
 							index, positive = SDL_DPAD[k]
 							data = DPadEmuData(self._axis_data[index], positive)
 							self._mappings[keycode] = data
+						elif k in SDL_DPAD and re.fullmatch(r"[+-]a\d+", v):
+							mapping = parse_sdl_dpad_axis(k, v, axes)
+							if mapping is None:
+								log.warning("Skipping unknown gamecontrollerdb dpad axis: '%s'", v)
+								continue
+							code, index, invert = mapping
+							axis = self._axis_data[index]
+							axis.invert = invert
+							self._mappings[code] = axis
 						elif k == "platform":
 							# Not interesting
 							pass
@@ -791,3 +802,29 @@ class ControllerRegistration(Editor):
 			self._controller_image.connect('leave', self.on_area_leave)
 			self._controller_image.connect('click', self.on_area_click)
 			rvController.add(self._controller_image)
+
+
+def order_evdev_buttons_for_sdl(buttons):
+	"""
+	Reorders evdev key codes into the order SDL's Linux joystick driver uses
+	to number gamecontrollerdb buttons
+	"""
+	gamepad = [ code for code in buttons if code >= evdev.ecodes.BTN_JOYSTICK ]
+	other = [ code for code in buttons if code < evdev.ecodes.BTN_JOYSTICK ]
+	return gamepad + other
+
+
+def parse_sdl_dpad_axis(key, value, axes):
+	"""
+	Parses signed half-axis dpad binding from gamecontrollerdb correctly
+	"""
+	match = re.fullmatch(r"([+-])a(\d+)", value)
+	if key not in SDL_DPAD or match is None:
+		return None
+	try:
+		code = axes[int(match.group(2))]
+	except IndexError:
+		return None
+	axis_index, positive = SDL_DPAD[key]
+	source_positive = match.group(1) == "+"
+	return code, axis_index, source_positive != positive
