@@ -19,6 +19,7 @@ class USBDevice(object):
 	def __init__(self, device, handle):
 		self.device = device
 		self.handle = handle
+		self.syspath = None		# Set by USBDriver.handle_new_device
 		self._claimed = []
 		self._cmsg = []		# controll messages
 		self._rmsg = []		# requests (excepts response)
@@ -123,8 +124,11 @@ class USBDevice(object):
 		Don't use unless absolutelly necessary.
 		"""
 		tp = self.device.getVendorID(), self.device.getProductID()
+		if self.syspath is None:
+			log.error("force_restart() on device with unknown syspath, can't retry")
+			return
 		self.close()
-		_usb._retry_devices.append(tp)
+		_usb._retry_devices.append((self.syspath, tp))
 	
 	
 	def claim(self, number):
@@ -268,6 +272,7 @@ class USBDriver(object):
 				device.close()
 				return True
 		if handled_device:
+			handled_device.syspath = syspath
 			self._devices[device] = handled_device
 			self._syspaths[syspath] = device
 			log.debug("USB device added: %.4x:%.4x", *tp)
