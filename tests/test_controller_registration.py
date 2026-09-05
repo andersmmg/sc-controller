@@ -27,7 +27,11 @@ def _widget_with_areas(tmp_path, name, base, test):
 	fn = tmp_path / name
 	fn.write_text(SVG_TEMPLATE % (base + test[0], test[1], test[2],
 		test[3], test[4], ""))
-	return SVGWidget(str(fn))
+	w = SVGWidget.__new__(SVGWidget)
+	w.current_svg = fn.read_text()
+	w.areas = []
+	w.parse_image()
+	return w
 
 
 def test_square_test_area_used_directly(tmp_path):
