@@ -8,6 +8,9 @@ Also supports clicking on areas defined in SVG image.
 from __future__ import unicode_literals
 from scc.tools import _
 
+import gi
+gi.require_version("Gtk", "3.0")
+gi.require_version("Rsvg", "2.0")
 from gi.repository import Gtk, Gdk, GObject, GdkPixbuf, Rsvg
 from xml.etree import ElementTree as ET
 from math import sin, cos, pi as PI
@@ -151,6 +154,21 @@ class SVGWidget(Gtk.EventBox):
 		if a:
 			return a.x, a.y, a.w, a.h
 		raise ValueError("Area '%s' not found" % (area_id, ))
+
+
+	def get_axis_region(self, area_id):
+		"""
+		Returns (x, y, width, height) of the region an axis-test cursor may
+		travel in, for given base area name (e.g. "STICK").
+
+		Region is derived from the '<area_id>TEST' area. Square TEST areas
+		are used as-is and line-shaped TEST areas are interpreted as the
+		horizontal center row of the control.
+		"""
+		tx, ty, tw, th = self.get_area_position(area_id + "TEST")
+		if th > 2.0:
+			return tx, ty, tw, th
+		return tx, ty - tw * 0.5, tw, tw
 
 
 	@staticmethod

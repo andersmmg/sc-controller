@@ -9,6 +9,8 @@ daemon.
 from __future__ import unicode_literals
 from scc.tools import _
 
+import gi
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, GdkPixbuf
 from scc.gui.svg_widget import SVGWidget
 from scc.gui.creg.constants import SDL_TO_SCC_NAMES, STICK_PAD_AREAS
@@ -650,18 +652,18 @@ class ControllerRegistration(Editor):
 			px, py = cursor.position
 			# Grab values
 			try:
-				trash, ay, trash, ah = self._controller_image.get_area_position(axis.area)
-				ax, trash, aw, trash = self._controller_image.get_area_position(axis.area + "TEST")
+				ax, ay, aw, ah = self._controller_image.get_axis_region(
+					axis.area)
 			except ValueError:
 				# Area not found
 				cursor.set_visible(False)
 				return
 			cw = cursor.get_allocation().width
 			# Compute center
-			x, y = ax + aw * 0.5 - cw * 0.5, ay + aw * 0.5 - cw * 0.5
+			x, y = ax + aw * 0.5 - cw * 0.5, ay + ah * 0.5 - cw * 0.5
 			# Add pad position
 			x += px * aw / STICK_PAD_MAX * 0.5
-			y -= py * aw / STICK_PAD_MAX * 0.5
+			y -= py * ah / STICK_PAD_MAX * 0.5
 			# Move circle
 			parent.move(cursor, x, y)
 			cursor.set_visible(True)

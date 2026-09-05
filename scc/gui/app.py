@@ -994,6 +994,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 			if len(self.dm.get_controllers()) > 0:
 				c = self.dm.get_controllers()[0]
 				self.load_gui_config_for_controller(c, first=True)
+				self.enable_test_mode()
 		if count > self.controller_count:
 			# Controller added
 			while len(self.profile_switchers) < count:
@@ -1212,11 +1213,12 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		if self.osd_mode_mapper:
 			self.osd_mode_mapper.handle_event(daemon, what, data)
 		elif what in (LEFT, RIGHT, STICK, RSTICK):
+			# Note: base area names; get_axis_region() appends "TEST" itself
 			widget, area = {
-				LEFT   : (self.lpad_test,   "LPADTEST"),
-				RIGHT  : (self.rpad_test,   "RPADTEST"),
-				STICK  : (self.stick_test,  "STICKTEST"),
-				RSTICK : (self.rstick_test, "RSTICKTEST"),
+				LEFT   : (self.lpad_test,   "LPAD"),
+				RIGHT  : (self.rpad_test,   "RPAD"),
+				STICK  : (self.stick_test,  "STICK"),
+				RSTICK : (self.rstick_test, "RSTICK"),
 			}[what]
 			# Check if stick or pad is released (within deadzone)
 			if data[0] * data[0] + data[1] * data[1] <= App.TEST_DOT_HIDE_DEADZONE * App.TEST_DOT_HIDE_DEADZONE:
@@ -1224,17 +1226,17 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 				return
 			# Grab values
 			try:
-				ax, ay, aw, trash = self.background.get_area_position(area)
+				ax, ay, aw, ah = self.background.get_axis_region(area)
 			except ValueError:
 				widget.set_opacity(0.0)
 				return
 			# Use natural size instead of allocation
 			cw = widget.get_preferred_width()[1]
 			# Compute center
-			x, y = ax + aw * 0.5 - cw * 0.5, ay + 1.0 - cw * 0.5
+			x, y = ax + aw * 0.5 - cw * 0.5, ay + ah * 0.5 - cw * 0.5
 			# Add pad position
 			x += data[0] * aw / STICK_PAD_MAX * 0.5
-			y -= data[1] * aw / STICK_PAD_MAX * 0.5
+			y -= data[1] * ah / STICK_PAD_MAX * 0.5
 			self.main_area.move(widget, x, y)
 			if widget.get_opacity() < 0.01:
 				# Hysteresis
