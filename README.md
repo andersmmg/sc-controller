@@ -2,7 +2,7 @@
 
 An updated and maintained fork of [kozec/sc-controller](https://github.com/kozec/sc-controller); a user-mode driver and GTK3 based GUI for the Steam Controller, Steam Controller 2 (2026) and other devices.
 
-This fork has been ported to **Python 3**, adds support for the **2026 Steam Controller (codename "Triton")** (wired and through the Proteus/Nereid dongle) plus improved dark-mode visuals and various fixes. Bluetooth support is in the works.
+This fork has been ported to **Python 3**, adds support for the **2026 Steam Controller (codename "Triton")** (wired, dongle, and Bluetooth) plus improved dark-mode visuals and various fixes.
 
 [![screenshot1](docs/screenshot1-tn.png?raw=true)](docs/screenshot1.png?raw=true)
 [![screenshot2](docs/screenshot2-tn.png?raw=true)](docs/screenshot2.png?raw=true)
@@ -40,7 +40,6 @@ The SC2 ("Triton") driver (`scc/drivers/tritondrv.py`) is implemented using the 
 
 ## Future plans
 
-- Bluetooth support for the SC2
 - Improved icons and other artwork
 - GTK4 migration?
 - Updated screenshots and packaging
