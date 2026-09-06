@@ -116,6 +116,7 @@ class ActionEditor(Editor):
 		self._multiparams = [ None ] * 8
 		self._mode = None
 		self._recursing = False
+		self._sens_xy_locked = False
 
 
 	def setup_widgets(self):
@@ -447,11 +448,34 @@ class ActionEditor(Editor):
 
 
 	def on_btClearSens_clicked(self, source, *a):
-		i = 0
-		for scale, label, button, checkbox in self.sens_widgets:
+		for i, (scale, label, button, checkbox) in enumerate(self.sens_widgets):
 			if source == button:
 				scale.set_value(self.sens_defaults[i])
-				i += 1
+				if i == 0 and self.builder.get_object("cbSensLockXY").get_active():
+					y_scale, y_label, y_button, y_checkbox = self.sens_widgets[1]
+					y_scale.set_value(self.sens_defaults[1])
+
+
+	def _update_sens_lock_state(self):
+		locked = self.builder.get_object("cbSensLockXY").get_active() \
+				and self._may_lock_sens_xy()
+		for w in self.sens_widgets[1]:
+			w.set_sensitive(not locked)
+
+
+	def _may_lock_sens_xy(self):
+		return self._mode in (Action.AC_STICK, Action.AC_PAD)
+
+
+	def _sync_locked_sens_y(self):
+		scale, label, button, checkbox = self.sens_widgets[1]
+		x_scale, x_label, x_button, x_checkbox = self.sens_widgets[0]
+		x = abs(x_scale.get_value())
+		if x_checkbox.get_active():
+			x = -x
+		scale.set_value(x)
+		checkbox.set_active(x < 0)
+		return x
 
 
 	def on_btClearFeedback_clicked(self, source, *a):
@@ -561,13 +585,18 @@ class ActionEditor(Editor):
 			set_action = True
 
 		# Sensitivity
+		lock = self.builder.get_object("cbSensLockXY").get_active()
+		self._sens_xy_locked = lock and self._may_lock_sens_xy()
 		for i in range(0, len(self.sens)):
 			target = self.sens_widgets[i][0].get_value()
 			if self.sens_widgets[i][3].get_active():
 				target = -target
+			if i == 1 and self._sens_xy_locked:
+				target = self._sync_locked_sens_y()
 			if self.sens[i] != target:
 				self.sens[i] = target
 				set_action = True
+		self._update_sens_lock_state()
 
 		# Feedback
 		if cbFeedback.get_active():
@@ -791,6 +820,8 @@ class ActionEditor(Editor):
 				if index < 0:
 					for i in range(0, len(self.sens)):
 						self.sens[i] = action.speeds[i]
+					self._sens_xy_locked = self._may_lock_sens_xy() \
+							and action.speeds[0] == action.speeds[1]
 				else:
 					self.sens[index] = action.speeds[0]
 				action = action.action
@@ -805,6 +836,8 @@ class ActionEditor(Editor):
 		for i in range(0, len(self.sens)):
 			self.sens_widgets[i][3].set_active(self.sens[i] < 0)
 			self.sens_widgets[i][0].set_value(abs(self.sens[i]))
+		self.builder.get_object("cbSensLockXY").set_active(self._sens_xy_locked)
+		self._update_sens_lock_state()
 		# Feedback
 		cbFeedbackSide = self.builder.get_object("cbFeedbackSide")
 		lblFeedbackSide = self.builder.get_object("lblFeedbackSide")
@@ -1006,6 +1039,8 @@ class ActionEditor(Editor):
 		grSensitivity.set_sensitive((cm & Action.MOD_SENSITIVITY) != 0)
 		for w in self.sens_widgets[2]:
 			w.set_visible((cm & Action.MOD_SENS_Z) != 0)
+		self.builder.get_object("cbSensLockXY").set_visible(self._may_lock_sens_xy())
+		self._update_sens_lock_state()
 
 		# Rotation
 		for w in ("lblRotationHeader", "lblRotation", "sclRotation", "btClearRotation"):
