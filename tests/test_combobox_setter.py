@@ -1,11 +1,40 @@
-import gi
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
-
 from scc.gui.editor import ComboSetter, canonical_action_string
 
 STICK_KEY = "mode(RGRIP, OSK.move(), dpad(button(KEY_UP), button(KEY_DOWN), button(KEY_LEFT), button(KEY_RIGHT)))"
 TRIGGERS_KEY = "trigger(50, button(KEY_LEFTSHIFT))|trigger(50, button(KEY_LEFTCTRL))"
+
+
+class FakeRow(list):
+	def __init__(self, values):
+		list.__init__(self, values)
+		self.iter = self
+
+
+class FakeListStore(object):
+	def __init__(self, rows):
+		self.rows = [FakeRow(r) for r in rows]
+
+	def __iter__(self):
+		return iter(self.rows)
+
+
+class FakeComboBox(object):
+	def __init__(self, rows):
+		self.model = FakeListStore(rows)
+		self.active = -1
+
+	def get_model(self):
+		return self.model
+
+	def set_active_iter(self, it):
+		for i, row in enumerate(self.model.rows):
+			if row.iter is it:
+				self.active = i
+				return
+		raise ValueError("unknown iter")
+
+	def get_active(self):
+		return self.active
 
 
 class FakeComboSetter(ComboSetter):
@@ -14,11 +43,7 @@ class FakeComboSetter(ComboSetter):
 
 
 def _make_combo(rows):
-	store = Gtk.ListStore(str, str, bool)
-	for label, action, custom in rows:
-		store.append((label, action, custom))
-	cb = Gtk.ComboBox.new_with_model(store)
-	return cb
+	return FakeComboBox(rows)
 
 
 def test_canonical_strips_enum_prefixes():
@@ -79,13 +104,13 @@ def test_set_cb_matches_trigger_combo():
 
 def test_set_cb_still_fails_on_unknown_key():
 	setter = FakeComboSetter()
-	cb = _make_combo([("Move Keyboard", "OSK.move()", False)])
+	cb = _make_combo([["Move Keyboard", "OSK.move()", False]])
 	assert not setter.set_cb(cb, "button(KEY_UP)", keyindex=1)
 	assert cb.get_active() == -1
 
 
 def test_set_cb_exact_match_preferred():
 	setter = FakeComboSetter()
-	cb = _make_combo([("X", "button(Keys.KEY_UP)", False)])
+	cb = _make_combo([["X", "button(Keys.KEY_UP)", False]])
 	assert setter.set_cb(cb, "button(Keys.KEY_UP)", keyindex=1)
 	assert cb.get_active() == 0
