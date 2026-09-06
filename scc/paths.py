@@ -42,6 +42,19 @@ def get_default_profiles_path():
 	return os.path.join(get_share_path(), "default_profiles")
 
 
+def get_cache_path():
+	"""
+	Returns directory where cache files are stored.
+	~/.cache/scc under normal conditions.
+
+	This directory may not exist.
+	"""
+	cachedir = os.path.expanduser("~/.cache")
+	if "XDG_CACHE_HOME" in os.environ:
+		cachedir = os.environ['XDG_CACHE_HOME']
+	return os.path.join(cachedir, "scc")
+
+
 def get_menuicons_path():
 	"""
 	Returns directory where menu icons are stored.
@@ -90,7 +103,7 @@ def get_controller_icons_path():
 	"""
 	Returns directory where controller icons are stored.
 	~/.config/scc/controller-icons under normal conditions.
-	
+
 	This directory may not exist.
 	"""
 	return os.path.join(get_config_path(), "controller-icons")
@@ -102,7 +115,7 @@ def get_default_controller_icons_path():
 	Probably something like /usr/share/scc/images/controller-icons,
 	or ./images/controller-icons if program is being started from
 	extracted source tarball.
-	
+
 	This directory should always exist.
 	"""
 	return os.path.join(get_share_path(), "images", "controller-icons")
@@ -139,7 +152,7 @@ def get_pid_file():
 def get_daemon_socket():
 	"""
 	Returns path to socket that can be used to controll sccdaemon.
-	
+
 	~/.config/scc/daemon.socket under normal conditions.
 	"""
 	return os.path.join(get_config_path(), "daemon.socket")

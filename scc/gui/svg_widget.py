@@ -257,6 +257,26 @@ class SVGWidget(Gtk.EventBox):
 
 
 	@staticmethod
+	def invert_svg_file_to_string(filename):
+		try:
+			with open(filename, "r") as fh:
+				tree = ET.fromstring(fh.read().encode("utf-8"), parser=XML_PARSER())
+		except Exception:
+			log.exception("invert_svg_file_to_string: Failed to process %s", filename)
+			return None
+		for el in tree.iter():
+			if 'style' in el.attrib:
+				el.attrib['style'] = el.attrib['style'].replace(
+					"currentColor", "#000000")
+			for k in ("fill", "stroke"):
+				if el.attrib.get(k) == "currentColor":
+					el.attrib[k] = "#000000"
+		SVGEditor.invert_colors(tree, 0.9)
+		xml = ET.tostring(tree)
+		return xml.encode("utf-8") if isinstance(xml, str) else xml
+
+
+	@staticmethod
 	def render_svg_file(filename, inverted=False, brightness=1.0, size=None, tint=None):
 		"""
 		Renders an SVG file to a GdkPixbuf.Pixbuf.
@@ -650,11 +670,11 @@ class SVGEditor(object):
 						changed = True
 				if changed:
 					el.attrib['style'] = ";".join("%s:%s" % (k, v) for k, v in style.items())
-				# Named-color shorthands like fill="red" as attributes
-				for k in ("fill", "stroke"):
-					v = el.attrib.get(k)
-					if v and v not in ("none", "transparent"):
-						el.attrib[k] = SVGEditor._invert_color(v, brightness)
+			# Named-color shorthands like fill="red" as attributes
+			for k in ("fill", "stroke"):
+				v = el.attrib.get(k)
+				if v and v not in ("none", "transparent"):
+					el.attrib[k] = SVGEditor._invert_color(v, brightness)
 			for ch in el:
 				walk(ch)
 		walk(tree)

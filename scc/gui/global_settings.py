@@ -134,6 +134,11 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 				.set_active(self.app.config['gui']['autokill_daemon']))
 		(self.builder.get_object("cbNewRelease")
 				.set_active(self.app.config['gui']['news']['enabled']))
+		mode = self.app.config['gui'].get('tray_icon_mode', 'system')
+		if mode not in ('system', 'dark', 'light'):
+			mode = 'system'
+		(self.builder.get_object("cbTrayIconMode")
+				.set_active(('system', 'dark', 'light').index(mode)))
 		mode = self.app.config['gui'].get('svg_invert_mode', 'system')
 		if mode not in ('system', 'inverted', 'normal'):
 			mode = 'system'
@@ -354,6 +359,8 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 			self.builder.get_object("cbSvgInvertMode").get_active()]
 		self.app.config['gui']['svg_invert_brightness'] = (
 			self.builder.get_object("sclSvgInvertBrightness").get_value() / 100.0)
+		self.app.config['gui']['tray_icon_mode'] = ('system', 'dark', 'light')[
+			self.builder.get_object("cbTrayIconMode").get_active()]
 		
 		# Save
 		self.app.save_config()
@@ -369,16 +376,16 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		mode = ('system', 'inverted', 'normal')[cb.get_active()]
 		self.app.config['gui']['svg_invert_mode'] = mode
 		self.app.save_config()
-		self.app.apply_svg_invert_mode()
-	
-	
-	def on_cbSvgInvertMode_changed(self, cb):
-		if self._recursing: return
-		mode = ('system', 'inverted', 'normal')[cb.get_active()]
-		self.app.config['gui']['svg_invert_mode'] = mode
-		self.app.save_config()
 		if self.app._dark_mode_settings is not None:
 			self.app.on_dark_mode_changed(self.app._dark_mode_settings, None)
+	
+	
+	def on_cbTrayIconMode_changed(self, cb):
+		if self._recursing: return
+		mode = ('system', 'dark', 'light')[cb.get_active()]
+		self.app.config['gui']['tray_icon_mode'] = mode
+		self.app.save_config()
+		self.app.refresh_tray_icon()
 	
 	
 	def on_sclSvgInvertBrightness_value_changed(self, scale):

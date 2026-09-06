@@ -23,7 +23,7 @@ from scc.tools import check_access, find_gksudo, profile_is_override, nameof
 from scc.tools import get_profile_name, profile_is_default, find_profile
 from scc.constants import SCButtons, STICK, RSTICK, STICK_PAD_MAX
 from scc.constants import DAEMON_VERSION, LEFT, RIGHT
-from scc.paths import get_config_path, get_profiles_path
+from scc.paths import get_config_path, get_profiles_path, get_cache_path
 from scc.custom import load_custom_module
 from scc.modifiers import NameModifier
 from scc.actions import NoAction
@@ -31,7 +31,7 @@ from scc.profile import Profile
 from scc.config import Config
 
 import scc.osd.menu_generators
-import os, sys, platform, re, json, logging
+import os, sys, platform, re, json, logging, hashlib
 from urllib.parse import unquote as url_unquote
 log = logging.getLogger("App")
 
@@ -78,6 +78,8 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		self.recursing = False
 		self.statusicon = None
 		self.status = "unknown"
+		self._tray_needs_dark = None
+		self._cached_tray_icons = {}
 		self.context_menu_for = None
 		self.daemon_changed_profile = False
 		self.osd_mode = False	# In OSD mode, only active profile can be editted
@@ -99,6 +101,8 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		if self._dark_mode_settings is not None:
 			self._dark_mode_settings.connect(
 				"notify::gtk-application-prefer-dark-theme", self.on_dark_mode_changed)
+			self._dark_mode_settings.connect(
+				"notify::gtk-theme-name", self.on_dark_mode_changed)
 
 
 	def setup_widgets(self):
@@ -165,12 +169,31 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		headerbar(self.builder.get_object("hbWindow"))
 
 
+	def is_dark_theme(self):
+		"""
+		Returns True if GTK is currently using a dark theme. Checks the
+		'prefer dark' flag first, then falls back to luminance of the actual
+		theme background, which catches themes that switch dark mode by name
+		without setting the flag.
+		"""
+		settings = Gtk.Settings.get_default()
+		if settings is not None and settings.get_property(
+					"gtk-application-prefer-dark-theme"):
+			return True
+		window = getattr(self, "window", None)
+		if window is None:
+			return False
+		ctx = window.get_style_context()
+		bg = ctx.get_background_color(Gtk.StateFlags.NORMAL)
+		luma = 0.2126 * bg.red + 0.7152 * bg.green + 0.0722 * bg.blue
+		return luma < 0.5
+
+
 	def get_svg_invert(self):
 		"""
 		Returns (inverted, brightness) describing how SVGs should currently be
 		rendered, honoring gui.svg_invert_mode: "inverted" always inverts,
-		"normal" never inverts, "system" (default) follows the GTK dark-theme
-		flag, falling back to luminance of the actual theme background.
+		"normal" never inverts, "system" (default) follows is_dark_theme().
 		"""
 		mode = self.config.get("gui", {}).get("svg_invert_mode", "system")
 		if mode == "inverted":
@@ -178,18 +201,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		elif mode == "normal":
 			dark = False
 		else:
-			dark = False
-			settings = Gtk.Settings.get_default()
-			if settings is not None:
-				dark = bool(settings.get_property(
-						"gtk-application-prefer-dark-theme"))
-			window = getattr(self, "window", None)
-			if window is not None:
-				ctx = window.get_style_context()
-				bg = ctx.get_background_color(Gtk.StateFlags.NORMAL)
-				luma = 0.2126 * bg.red + 0.7152 * bg.green + 0.0722 * bg.blue
-				if dark != (luma < 0.5):
-					dark = luma < 0.5
+			dark = self.is_dark_theme()
 		brightness = self.config.get("gui", {}).get("svg_invert_brightness", 0.8)
 		try:
 			brightness = float(brightness)
@@ -215,6 +227,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 			background.set_inverted(dark, brightness)
 		self.refresh_side_icons()
 		self.refresh_daemon_status_icon()
+		GLib.idle_add(self.refresh_tray_icon)
 
 	def refresh_daemon_status_icon(self):
 		""" Re-render the daemon status menu button icon to match current inversion """
@@ -224,6 +237,64 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 			if imgDaemonStatus is not None and os.path.exists(icon):
 				inverted, brightness = self.get_svg_invert()
 				imgDaemonStatus.set_from_pixbuf(SVGWidget.render_svg_file(icon, inverted, brightness))
+
+
+	def get_tray_icon_file(self, status=None):
+		"""
+		Returns path to SVG file that should be used as tray icon, honoring
+		dark mode.
+
+		Inverted icons are rendered into cache directory and reused.
+		"""
+		if status is None:
+			status = self.status
+		src = os.path.join(self.imagepath, "scc-statusicon-%s.svg" % (status,))
+		if not os.path.exists(src):
+			src = os.path.join(self.imagepath, "scc-%s.svg" % (status,))
+		if not os.path.exists(src):
+			return None
+		mode = self.config.get("gui", {}).get("tray_icon_mode", "system")
+		if mode == "dark":
+			dark = True
+		elif mode == "light":
+			dark = False
+		else:
+			dark = self.is_dark_theme()
+		self._tray_needs_dark = dark
+		if dark is not True:
+			return src
+		if "_dark_data" not in self._cached_tray_icons.get(src, {}):
+			data = SVGWidget.invert_svg_file_to_string(src)
+			self._cached_tray_icons[src] = {"_dark_data": data}
+		data = self._cached_tray_icons[src]["_dark_data"]
+		if data is None:
+			return src
+		dst = os.path.join(get_cache_path(), "tray-icons",
+							"%s-%s-dark.svg" % (os.path.basename(src)[:-4],
+							hashlib.sha256(data).hexdigest()[:12]))
+		if dst not in self._cached_tray_icons[src] and not os.path.isfile(dst):
+			try:
+				cachedir = os.path.dirname(dst)
+				if not os.path.isdir(cachedir):
+					os.makedirs(cachedir)
+				with open(dst, "wb") as fh:
+					fh.write(data)
+				log.info("Created inverted tray icon: %s", dst)
+			except Exception as e:
+				log.warning("Failed to save %s: %s", dst, e)
+				return src
+			self._cached_tray_icons[src][dst] = True
+		return dst
+
+
+	def refresh_tray_icon(self):
+		""" Re-sets tray icon after change """
+		if not self.statusicon:
+			return False
+		path = self.get_tray_icon_file()
+		if path is not None:
+			self.statusicon.set(path, _("SC Controller"))
+		return False
 
 
 	def hide_test_markers(self, *a):
@@ -378,7 +449,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		self.statusicon.connect('clicked', self.on_statusicon_clicked)
 		if not self.statusicon.is_clickable():
 			self.builder.get_object("mnuShowWindowTray").set_visible(True)
-		GLib.idle_add(self.statusicon.set, "scc-%s" % (self.status,), _("SC Controller"))
+		GLib.idle_add(self.refresh_tray_icon)
 
 
 	def destroy_statusicon(self):
@@ -1557,8 +1628,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		mnuEmulationEnabledTray.set_sensitive(True)
 		self.window.set_icon_from_file(icon)
 		self.status = status
-		if self.statusicon:
-			GLib.idle_add(self.statusicon.set, "scc-%s" % (self.status,), _("SC Controller"))
+		GLib.idle_add(self.refresh_tray_icon)
 		self.recursing = True
 		if status == "alive":
 			btDaemon.set_tooltip_text(_("Emulation is active"))

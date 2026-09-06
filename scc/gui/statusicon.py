@@ -11,6 +11,8 @@ import os
 import sys
 import logging
 
+import gi
+gi.require_version("Gtk", "3.0")
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gtk
@@ -65,6 +67,7 @@ class StatusIcon(GObject.GObject):
 		self.__icon      = "scc-unknown"
 		self.__text      = ""
 		self.__force     = force
+		self.__last_set  = (None, None)
 
 	def get_active(self):
 		"""
@@ -90,6 +93,9 @@ class StatusIcon(GObject.GObject):
 		@param {String} text
 		       Some text that indicates what the application is currently doing (generally this be used for the tooltip)
 		"""
+		if (icon, text) == self.__last_set:
+			return False
+		self.__last_set = (icon, text)
 		if not icon.endswith("-0"): # si-syncthing-0
 			# Ignore first syncing icon state to prevent the icon from flickering
 			# into the main notification bar during initialization
@@ -99,6 +105,7 @@ class StatusIcon(GObject.GObject):
 			self._set_visible(False)
 		else:
 			self._set_visible(self.__visible)
+		return True
 
 	def hide(self):
 		"""
@@ -163,6 +170,20 @@ class StatusIcon(GObject.GObject):
 		@internal
 		"""
 		return self.__popupmenu
+
+	def _get_icon_file(self, name=None):
+		"""
+		@internal
+
+		Returns path to icon file to load.
+		"""
+		name = self._get_icon(name)
+		if os.path.isabs(name):
+			return name
+		path = os.path.join(self._get_icon_path(), name + ".svg")
+		if os.path.exists(path):
+			return path
+		return None
 
 	def _set_visible(self, visible):
 		"""
@@ -232,28 +253,37 @@ class StatusIconGTK3(StatusIcon):
 		self._tray = None
 
 	def set(self, icon=None, text=None):
-		StatusIcon.set(self, icon, text)
+		if not StatusIcon.set(self, icon, text):
+			return
 
 		name = self._get_icon(icon)
-		has_icon = Gtk.IconTheme.get_default().has_icon(name)
-		if not has_icon:
-			path = os.path.join(self._get_icon_path(), name + ".svg")
-			if os.path.exists(path):
-				self._tray.set_from_file(path)
-				log.debug("StatusIconGTK3.set: name=%r has_icon=False using file=%s", name, path)
-			else:
-				self._tray.set_from_icon_name(name)
-				log.debug("StatusIconGTK3.set: name=%r has_icon=False using icon_name (file missing)", name)
-		else:
+		self._tray.set_tooltip_text(self._get_text(text))
+		if not self._tray.is_embedded():
+			log.debug("StatusIconGTK3.set: name=%r skipped, not embedded", name)
+			return
+		if Gtk.IconTheme.get_default().has_icon(name):
 			self._tray.set_from_icon_name(name)
 			log.debug("StatusIconGTK3.set: name=%r has_icon=True using icon_name", name)
-		self._tray.set_tooltip_text(self._get_text(text))
+		else:
+			path = self._get_icon_file(name)
+			if path is not None:
+				self._tray.set_from_file(path)
+				log.debug("StatusIconGTK3.set: name=%r using file=%s", name, path)
+			else:
+				self._tray.set_from_icon_name(name)
+				log.debug("StatusIconGTK3.set: name=%r using icon_name (file missing)", name)
 
 	def _on_embedded_change(self, *args):
 		# Without an icon update at this point GTK might consider the icon embedded and visible even through
 		# it can't actually be seen...
 		try:
-			self._tray.set_from_file(os.path.join(self._get_icon_path(), self._get_icon() + ".svg"))
+			if self._tray.is_embedded():
+				path = self._get_icon_file()
+				if path is not None:
+					self._tray.set_from_file(path)
+				else:
+					# Fall back to the name-based lookup if the file is not available
+					self._tray.set_from_icon_name(self._get_icon())
 		except GLib.Error:
 			# Fall back to the name-based lookup if the file is not available
 			self._tray.set_from_icon_name(self._get_icon())
@@ -287,6 +317,8 @@ class StatusIconAppIndicator(StatusIconDBus):
 		StatusIcon.__init__(self, *args, **kwargs)
 
 		try:
+			import gi
+			gi.require_version("AppIndicator3", "0.1")
 			from gi.repository import AppIndicator3 as appindicator
 
 			self._status_active  = appindicator.IndicatorStatus.ACTIVE
@@ -316,11 +348,12 @@ class StatusIconAppIndicator(StatusIconDBus):
 		self._tray = None
 
 	def set(self, icon=None, text=None):
-		StatusIcon.set(self, icon, text)
+		if not StatusIcon.set(self, icon, text):
+			return
 
 		name = self._get_icon(icon)
-		path = os.path.join(self._get_icon_path(), name + ".svg")
-		if os.path.exists(path):
+		path = self._get_icon_file(name)
+		if path is not None:
 			self._tray.set_icon_full(path, self._get_text(text))
 			log.info("StatusIconAppIndicator.set: name=%r using file=%s", name, path)
 		else:

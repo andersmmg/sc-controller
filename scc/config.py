@@ -45,6 +45,7 @@ class Config(object):
 									# from 'Virtual core pointer' core device.
 		"gui": {
 			# GUI-only settings
+			"tray_icon_mode" : "system",	# system, dark (inverted) or light (original)
 			"enable_status_icon" : False,
 			"minimize_to_status_icon" : True,
 			"minimize_on_start" : False,

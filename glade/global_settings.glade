@@ -2119,7 +2119,7 @@ grips, triggers, finger positions on both pads and stick angle.</property>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
-                    <property name="top_attach">8</property>
+                    <property name="top_attach">10</property>
                   </packing>
                 </child>
                 <child>
@@ -2238,6 +2238,38 @@ grips, triggers, finger positions on both pads and stick angle.</property>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
+                    <property name="top_attach">11</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="lblTrayIconMode">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="margin_left">30</property>
+                    <property name="margin_top">15</property>
+                    <property name="label" translatable="yes">Tray Icon Colors</property>
+                    <property name="xalign">0</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">8</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkComboBoxText" id="cbTrayIconMode">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="margin_left">30</property>
+                    <property name="margin_top">5</property>
+                    <signal name="changed" handler="on_cbTrayIconMode_changed" swapped="no"/>
+                    <items>
+                      <item translatable="yes">Follow system dark mode</item>
+                      <item translatable="yes">Dark mode (inverted icon)</item>
+                      <item translatable="yes">Light mode (original icon)</item>
+                    </items>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
                     <property name="top_attach">9</property>
                   </packing>
                 </child>
@@ -2277,7 +2309,7 @@ grips, triggers, finger positions on both pads and stick angle.</property>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
-                    <property name="top_attach">10</property>
+                    <property name="top_attach">12</property>
                   </packing>
                 </child>
                 <child>
@@ -2295,7 +2327,7 @@ grips, triggers, finger positions on both pads and stick angle.</property>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
-                    <property name="top_attach">11</property>
+                    <property name="top_attach">13</property>
                   </packing>
                 </child>
                 <child>
@@ -2309,7 +2341,7 @@ grips, triggers, finger positions on both pads and stick angle.</property>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
-                    <property name="top_attach">12</property>
+                    <property name="top_attach">14</property>
                   </packing>
                 </child>
                 <child>
@@ -2327,7 +2359,7 @@ grips, triggers, finger positions on both pads and stick angle.</property>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
-                    <property name="top_attach">13</property>
+                    <property name="top_attach">15</property>
                   </packing>
                 </child>
               </object>
