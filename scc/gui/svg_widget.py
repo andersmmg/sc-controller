@@ -37,6 +37,8 @@ XML_PARSER = lambda: ET.XMLParser(target=ET.TreeBuilder(element_factory=_Element
 class SVGWidget(Gtk.EventBox):
 	FILENAME = "background.svg"
 	CACHE_SIZE = 50
+	PIXBUF_CACHE_SIZE = 100
+	_pixbuf_cache = OrderedDict()
 
 	__gsignals__ = {
 			# Raised when mouse is over defined area
@@ -277,10 +279,43 @@ class SVGWidget(Gtk.EventBox):
 
 
 	@staticmethod
+	def _file_cache_key(filename, *params):
+		"""
+		Builds cache key for static render helpers
+		"""
+		try:
+			mtime = os.stat(filename).st_mtime_ns
+		except OSError:
+			mtime = -1
+		return (filename, mtime) + params
+
+
+	@staticmethod
+	def _cached_render(key, render_cb):
+		cache = SVGWidget._pixbuf_cache
+		pixbuf = cache.get(key)
+		if pixbuf is not None:
+			cache.move_to_end(key)
+			return pixbuf
+		pixbuf = render_cb()
+		while len(cache) >= SVGWidget.PIXBUF_CACHE_SIZE:
+			cache.popitem(False)
+		cache[key] = pixbuf
+		return pixbuf
+
+
+	@staticmethod
 	def render_svg_file(filename, inverted=False, brightness=1.0, size=None, tint=None):
 		"""
-		Renders an SVG file to a GdkPixbuf.Pixbuf.
+		Renders and caches an SVG file to a GdkPixbuf.Pixbuf
 		"""
+		key = SVGWidget._file_cache_key(filename, inverted, brightness, size, tint)
+		return SVGWidget._cached_render(key, lambda: SVGWidget._render_svg_file(
+					filename, inverted, brightness, size, tint))
+
+
+	@staticmethod
+	def _render_svg_file(filename, inverted=False, brightness=1.0, size=None, tint=None):
 		with open(filename, "r") as fh:
 			return SVGWidget.render_svg(fh.read(),
 								inverted, brightness, {}, size, tint)
@@ -288,10 +323,14 @@ class SVGWidget(Gtk.EventBox):
 
 	@staticmethod
 	def render_cropped_svg_file(filename, height=32, tint=None, max_width=None):
-		"""
-		Renders an SVG file, crops transparent borders away and scales
-		the artwork
-		"""
+
+		key = SVGWidget._file_cache_key(filename, height, tint, max_width)
+		return SVGWidget._cached_render(key, lambda: SVGWidget._render_cropped_svg_file(
+					filename, height, tint, max_width))
+
+
+	@staticmethod
+	def _render_cropped_svg_file(filename, height=32, tint=None, max_width=None):
 		rendered = SVGWidget.render_svg_file(filename, size=(256, 256), tint=tint)
 		px = rendered.get_pixels()
 		w, h = rendered.get_width(), rendered.get_height()
