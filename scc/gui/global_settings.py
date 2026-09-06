@@ -172,10 +172,9 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 	def _load_color(self, w, dct, key):
 		""" Common part of load_colors """
 		if w:
-			success, color = Gdk.Color.parse("#%s" % (self.app.config[dct][key],))
-			if not success:
-				success, color = Gdk.Color.parse("#%s" % (self.app.config[dct][key],))
-			w.set_color(color)
+			rgba = Gdk.RGBA()
+			rgba.parse("#%s" % (self.app.config[dct][key],))
+			w.set_rgba(rgba)
 	
 	
 	def load_colors(self):
@@ -290,20 +289,20 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		"""
 		Called when user selects color.
 		"""
-		# Following lambdas converts Gdk.Color into #rrggbb notation.
-		# Gdk.Color can do similar, except it uses #rrrrggggbbbb notation that
+		# Following lambda converts Gdk.RGBA into #rrggbb notation.
+		# Gdk.RGBA can do similar, except it uses #rrrrggggbbbb notation that
 		# is not understood by Gdk css parser....
 		cbOSDColorPreset = self.builder.get_object("cbOSDColorPreset")
 		striphex = lambda a: hex(a).strip("0x").zfill(2)
-		tohex = lambda a: "".join([ striphex(int(x * 0xFF)) for x in a.to_floats() ])
+		tohex = lambda a: "".join([ striphex(int(x * 0xFF)) for x in (a.red, a.green, a.blue) ])
 		for k in self.app.config["osd_colors"]:
 			w = self.builder.get_object("cb%s" % (k,))
 			if w:
-				self.app.config["osd_colors"][k] = tohex(w.get_color())
+				self.app.config["osd_colors"][k] = tohex(w.get_rgba())
 		for k in self.app.config["osk_colors"]:
 			w = self.builder.get_object("cbosk_%s" % (k,))
 			if w:
-				self.app.config["osk_colors"][k] = tohex(w.get_color())
+				self.app.config["osk_colors"][k] = tohex(w.get_rgba())
 		self.app.config["osd_color_theme"] = None
 		self.set_cb(cbOSDColorPreset, "None")
 		self.app.save_config()

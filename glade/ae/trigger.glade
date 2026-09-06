@@ -68,8 +68,8 @@
   <object class="GtkGrid" id="trigger">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="margin_left">40</property>
-    <property name="margin_right">40</property>
+    <property name="margin_start">40</property>
+    <property name="margin_end">40</property>
     <property name="row_spacing">5</property>
     <property name="column_spacing">2</property>
     <child>
@@ -101,8 +101,8 @@
               <object class="GtkSeparator" id="separator1">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_left">5</property>
-                <property name="margin_right">5</property>
+                <property name="margin_start">5</property>
+                <property name="margin_end">5</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -160,8 +160,8 @@
               <object class="GtkSeparator" id="separator2">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_left">5</property>
-                <property name="margin_right">5</property>
+                <property name="margin_start">5</property>
+                <property name="margin_end">5</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -195,13 +195,13 @@
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
-        <property name="margin_left">10</property>
+        <property name="margin_start">10</property>
         <signal name="clicked" handler="on_btFullPressedClear_clicked" swapped="no"/>
         <child>
           <object class="GtkImage" id="image1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="stock">gtk-clear</property>
+            <property name="icon-name">gtk-clear</property>
           </object>
         </child>
       </object>
@@ -215,13 +215,13 @@
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
-        <property name="margin_left">10</property>
+        <property name="margin_start">10</property>
         <signal name="clicked" handler="on_btPartPresedClear_clicked" swapped="no"/>
         <child>
           <object class="GtkImage" id="image7">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="stock">gtk-clear</property>
+            <property name="icon-name">gtk-clear</property>
           </object>
         </child>
       </object>
@@ -235,13 +235,13 @@
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
-        <property name="margin_left">10</property>
+        <property name="margin_start">10</property>
         <signal name="clicked" handler="on_btFullyPresedClear_clicked" swapped="no"/>
         <child>
           <object class="GtkImage" id="image8">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="stock">gtk-clear</property>
+            <property name="icon-name">gtk-clear</property>
           </object>
         </child>
       </object>
@@ -323,14 +323,14 @@
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
-        <property name="margin_left">10</property>
+        <property name="margin_start">10</property>
         <property name="margin_top">20</property>
         <signal name="clicked" handler="on_btAnalogClear_clicked" swapped="no"/>
         <child>
           <object class="GtkImage" id="image2">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="stock">gtk-clear</property>
+            <property name="icon-name">gtk-clear</property>
           </object>
         </child>
       </object>
@@ -412,13 +412,13 @@
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
-        <property name="margin_left">10</property>
+        <property name="margin_start">10</property>
         <signal name="clicked" handler="on_btARangeStartClear_clicked" swapped="no"/>
         <child>
           <object class="GtkImage" id="image3">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="stock">gtk-clear</property>
+            <property name="icon-name">gtk-clear</property>
           </object>
         </child>
       </object>
@@ -432,13 +432,13 @@
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
-        <property name="margin_left">10</property>
+        <property name="margin_start">10</property>
         <signal name="clicked" handler="on_btARangeEndClear_clicked" swapped="no"/>
         <child>
           <object class="GtkImage" id="image4">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="stock">gtk-clear</property>
+            <property name="icon-name">gtk-clear</property>
           </object>
         </child>
       </object>
@@ -574,13 +574,13 @@
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
-        <property name="margin_left">10</property>
+        <property name="margin_start">10</property>
         <signal name="clicked" handler="on_btTimeOutClear_clicked" swapped="no"/>
         <child>
           <object class="GtkImage" id="image5">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="stock">gtk-clear</property>
+            <property name="icon-name">gtk-clear</property>
           </object>
         </child>
       </object>

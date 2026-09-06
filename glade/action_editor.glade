@@ -166,8 +166,8 @@
       <object class="GtkGrid" id="grEditor">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="margin_left">10</property>
-        <property name="margin_right">10</property>
+        <property name="margin_start">10</property>
+        <property name="margin_end">10</property>
         <property name="margin_top">10</property>
         <property name="margin_bottom">10</property>
         <child>
@@ -175,7 +175,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="no_show_all">True</property>
-            <property name="margin_right">20</property>
+            <property name="margin_end">20</property>
             <property name="margin_bottom">2</property>
             <property name="hexpand">True</property>
             <property name="activates_default">True</property>
@@ -230,7 +230,7 @@
           <object class="GtkBox" id="vbActionButtons">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_right">20</property>
+            <property name="margin_end">20</property>
             <property name="margin_top">5</property>
             <property name="hexpand">True</property>
             <property name="spacing">4</property>
@@ -247,8 +247,8 @@
           <object class="GtkLabel" id="lblActionType">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_left">20</property>
-            <property name="margin_right">20</property>
+            <property name="margin_start">20</property>
+            <property name="margin_end">20</property>
             <property name="label" translatable="yes">Action Type</property>
             <property name="xalign">0</property>
             <attributes>
@@ -265,8 +265,8 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="no_show_all">True</property>
-            <property name="margin_left">20</property>
-            <property name="margin_right">50</property>
+            <property name="margin_start">20</property>
+            <property name="margin_end">50</property>
             <property name="margin_bottom">2</property>
             <property name="label" translatable="yes">Action Name</property>
             <property name="xalign">0</property>
@@ -320,8 +320,8 @@
                   <object class="GtkGrid" id="grRotation">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin_left">5</property>
-                    <property name="margin_right">5</property>
+                    <property name="margin_start">5</property>
+                    <property name="margin_end">5</property>
                     <property name="margin_top">5</property>
                     <child>
                       <object class="GtkCheckButton" id="cbOSD">
@@ -329,7 +329,6 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
                         <property name="margin_bottom">5</property>
-                        <property name="xalign">0</property>
                         <property name="draw_indicator">True</property>
                         <signal name="toggled" handler="update_modifiers" swapped="no"/>
                         <child>
@@ -371,7 +370,7 @@
                       <object class="GtkLabel" id="lblRotation">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
+                        <property name="margin_start">10</property>
                         <property name="label" translatable="yes">Angle</property>
                         <property name="ellipsize">end</property>
                         <property name="xalign">0</property>
@@ -404,13 +403,13 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="margin_left">5</property>
+                        <property name="margin_start">5</property>
                         <signal name="clicked" handler="on_btClearRotation_clicked" swapped="no"/>
                         <child>
                           <object class="GtkImage" id="image9">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -425,7 +424,6 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
                         <property name="margin_bottom">5</property>
-                        <property name="xalign">0</property>
                         <property name="draw_indicator">True</property>
                         <signal name="toggled" handler="update_modifiers" swapped="no"/>
                         <child>
@@ -451,7 +449,6 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
-                        <property name="xalign">0</property>
                         <property name="draw_indicator">True</property>
                         <signal name="toggled" handler="on_cbPreview_toggled" swapped="no"/>
                         <child>
@@ -476,8 +473,8 @@
                       <object class="GtkLabel" id="lblFriction">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
-                        <property name="margin_right">5</property>
+                        <property name="margin_start">10</property>
+                        <property name="margin_end">5</property>
                         <property name="label" translatable="yes">Friction</property>
                         <property name="ellipsize">end</property>
                         <property name="xalign">0</property>
@@ -511,13 +508,13 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="margin_left">5</property>
+                        <property name="margin_start">5</property>
                         <signal name="clicked" handler="on_btClearFriction_clicked" swapped="no"/>
                         <child>
                           <object class="GtkImage" id="image13">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -569,8 +566,8 @@
                   <object class="GtkGrid" id="grSensitivity">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin_left">5</property>
-                    <property name="margin_right">5</property>
+                    <property name="margin_start">5</property>
+                    <property name="margin_end">5</property>
                     <property name="margin_top">5</property>
                     <child>
                       <object class="GtkLabel" id="lblSensitivityHeader">
@@ -592,7 +589,7 @@
                       <object class="GtkLabel" id="lblSensX">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
+                        <property name="margin_start">10</property>
                         <property name="label" translatable="yes">X</property>
                         <property name="ellipsize">end</property>
                         <property name="xalign">0</property>
@@ -630,7 +627,7 @@
                           <object class="GtkImage" id="image1">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -643,7 +640,7 @@
                       <object class="GtkLabel" id="lblSensY">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
+                        <property name="margin_start">10</property>
                         <property name="label" translatable="yes">Y</property>
                         <property name="ellipsize">end</property>
                         <property name="xalign">0</property>
@@ -681,7 +678,7 @@
                           <object class="GtkImage" id="image2">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -694,7 +691,7 @@
                       <object class="GtkLabel" id="lblSensZ">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
+                        <property name="margin_start">10</property>
                         <property name="label" translatable="yes">Roll</property>
                         <property name="ellipsize">end</property>
                         <property name="xalign">0</property>
@@ -732,7 +729,7 @@
                           <object class="GtkImage" id="image3">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -822,8 +819,8 @@
                   <object class="GtkGrid" id="grFeedback">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin_left">5</property>
-                    <property name="margin_right">5</property>
+                    <property name="margin_start">5</property>
+                    <property name="margin_end">5</property>
                     <property name="margin_top">5</property>
                     <property name="row_spacing">2</property>
                     <property name="column_spacing">10</property>
@@ -831,7 +828,7 @@
                       <object class="GtkLabel" id="lblFPeriod">
                         <property name="can_focus">False</property>
                         <property name="no_show_all">True</property>
-                        <property name="margin_left">10</property>
+                        <property name="margin_start">10</property>
                         <property name="label" translatable="yes">Period</property>
                         <property name="ellipsize">end</property>
                         <property name="xalign">0</property>
@@ -874,7 +871,7 @@
                           <object class="GtkImage" id="image4">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -893,7 +890,7 @@
                           <object class="GtkImage" id="image5">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -928,7 +925,7 @@
                           <object class="GtkImage" id="image6">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -975,7 +972,7 @@
                       <object class="GtkLabel" id="lblFFrequency">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
+                        <property name="margin_start">10</property>
                         <property name="label" translatable="yes">Frequency</property>
                         <property name="ellipsize">end</property>
                         <property name="xalign">0</property>
@@ -992,7 +989,7 @@
                       <object class="GtkLabel" id="lblFAmplitude">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
+                        <property name="margin_start">10</property>
                         <property name="label" translatable="yes">Strength</property>
                         <property name="ellipsize">end</property>
                         <property name="xalign">0</property>
@@ -1009,7 +1006,7 @@
                       <object class="GtkLabel" id="lblFeedbackSide">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
+                        <property name="margin_start">10</property>
                         <property name="label" translatable="yes">Side</property>
                         <property name="ellipsize">end</property>
                         <property name="xalign">0</property>
@@ -1028,7 +1025,6 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
                         <property name="margin_bottom">5</property>
-                        <property name="xalign">0</property>
                         <property name="draw_indicator">True</property>
                         <signal name="toggled" handler="update_modifiers" swapped="no"/>
                         <child>
@@ -1070,8 +1066,8 @@
                   <object class="GtkGrid" id="grDeadzone">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin_left">5</property>
-                    <property name="margin_right">5</property>
+                    <property name="margin_start">5</property>
+                    <property name="margin_end">5</property>
                     <property name="margin_top">5</property>
                     <property name="row_spacing">2</property>
                     <property name="column_spacing">10</property>
@@ -1079,7 +1075,7 @@
                       <object class="GtkLabel" id="lblDZUpper">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
+                        <property name="margin_start">10</property>
                         <property name="label" translatable="yes">Upper</property>
                         <property name="ellipsize">end</property>
                         <property name="xalign">0</property>
@@ -1096,7 +1092,7 @@
                       <object class="GtkLabel" id="lblDZLower">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
+                        <property name="margin_start">10</property>
                         <property name="label" translatable="yes">Lower</property>
                         <property name="ellipsize">end</property>
                         <property name="xalign">0</property>
@@ -1151,7 +1147,7 @@
                           <object class="GtkImage" id="image8">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -1170,7 +1166,7 @@
                           <object class="GtkImage" id="image7">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -1185,7 +1181,6 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
                         <property name="margin_bottom">5</property>
-                        <property name="xalign">0</property>
                         <property name="draw_indicator">True</property>
                         <signal name="toggled" handler="update_modifiers" swapped="no"/>
                         <child>
@@ -1212,7 +1207,6 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
                         <property name="margin_top">5</property>
-                        <property name="xalign">0</property>
                         <property name="draw_indicator">True</property>
                         <signal name="toggled" handler="update_modifiers" swapped="no"/>
                         <child>
@@ -1237,7 +1231,7 @@
                       <object class="GtkLabel" id="lblDeadzoneMode">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
+                        <property name="margin_start">10</property>
                         <property name="label" translatable="yes">Mode</property>
                         <property name="ellipsize">end</property>
                         <property name="xalign">0</property>
@@ -1254,7 +1248,7 @@
                       <object class="GtkComboBox" id="cbDeadzoneMode">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
+                        <property name="margin_start">10</property>
                         <property name="model">lstDeadzoneMode</property>
                         <property name="active">0</property>
                         <signal name="changed" handler="update_modifiers" swapped="no"/>
@@ -1292,8 +1286,8 @@
                   <object class="GtkGrid" id="grSmoothing">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin_left">5</property>
-                    <property name="margin_right">5</property>
+                    <property name="margin_start">5</property>
+                    <property name="margin_end">5</property>
                     <property name="margin_top">5</property>
                     <property name="row_spacing">2</property>
                     <property name="column_spacing">10</property>
@@ -1301,7 +1295,7 @@
                       <object class="GtkLabel" id="lblSmoothFilter">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
+                        <property name="margin_start">10</property>
                         <property name="label" translatable="yes">Filter</property>
                         <property name="ellipsize">end</property>
                         <property name="xalign">0</property>
@@ -1318,7 +1312,7 @@
                       <object class="GtkLabel" id="lblSmoothWeight">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
+                        <property name="margin_start">10</property>
                         <property name="label" translatable="yes">Weight</property>
                         <property name="ellipsize">end</property>
                         <property name="xalign">0</property>
@@ -1335,7 +1329,7 @@
                       <object class="GtkLabel" id="lblSmoothLevel">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
+                        <property name="margin_start">10</property>
                         <property name="label" translatable="yes">Level</property>
                         <property name="ellipsize">end</property>
                         <property name="xalign">0</property>
@@ -1406,7 +1400,7 @@
                           <object class="GtkImage" id="image12">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -1425,7 +1419,7 @@
                           <object class="GtkImage" id="image11">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -1444,7 +1438,7 @@
                           <object class="GtkImage" id="image10">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -1459,7 +1453,6 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
                         <property name="margin_bottom">5</property>
-                        <property name="xalign">0</property>
                         <property name="draw_indicator">True</property>
                         <signal name="toggled" handler="update_modifiers" swapped="no"/>
                         <child>
@@ -1510,8 +1503,8 @@
           <object class="GtkLabel" id="lblAddedWidget">
             <property name="can_focus">False</property>
             <property name="no_show_all">True</property>
-            <property name="margin_left">20</property>
-            <property name="margin_right">50</property>
+            <property name="margin_start">20</property>
+            <property name="margin_end">50</property>
             <property name="margin_top">10</property>
             <property name="margin_bottom">7</property>
             <property name="label">(Widget)</property>
@@ -1530,7 +1523,7 @@
           <object class="GtkBox" id="vbAddedWidget">
             <property name="can_focus">False</property>
             <property name="no_show_all">True</property>
-            <property name="margin_right">20</property>
+            <property name="margin_end">20</property>
             <property name="margin_bottom">7</property>
             <property name="orientation">vertical</property>
             <child>
@@ -1587,13 +1580,15 @@
         </child>
         <child>
           <object class="GtkButton" id="btOK">
-            <property name="label">gtk-ok</property>
+            <property name="label" translatable="yes">_OK</property>
+            <property name="use_underline">True</property>
+            <property name="always_show_image">True</property>
+            <property name="image">imgstockok</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="can_default">True</property>
             <property name="has_default">True</property>
             <property name="receives_default">True</property>
-            <property name="use_stock">True</property>
             <signal name="clicked" handler="on_btOK_clicked" swapped="no"/>
             <style>
               <class name="suggested-action"/>
@@ -1606,11 +1601,13 @@
         </child>
         <child>
           <object class="GtkButton" id="btClear">
-            <property name="label">gtk-clear</property>
+            <property name="label" translatable="yes">_Clear</property>
+            <property name="use_underline">True</property>
+            <property name="always_show_image">True</property>
+            <property name="image">imgstockclear</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <property name="use_stock">True</property>
             <signal name="clicked" handler="on_btClear_clicked" swapped="no"/>
           </object>
           <packing>
@@ -1662,5 +1659,15 @@
         <col id="2" translatable="yes">trackball</col>
       </row>
     </data>
+  </object>
+  <object class="GtkImage" id="imgstockclear">
+    <property name="visible">False</property>
+    <property name="can_focus">False</property>
+    <property name="icon-name">gtk-clear</property>
+  </object>
+  <object class="GtkImage" id="imgstockok">
+    <property name="visible">False</property>
+    <property name="can_focus">False</property>
+    <property name="icon-name">gtk-ok</property>
   </object>
 </interface>

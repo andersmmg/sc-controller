@@ -178,7 +178,6 @@ class ImportSccprofile(object):
 		cbImportNone =		self.builder.get_object("cbImportPackageNone")
 		rvAdvanced =		self.builder.get_object("rvImportPackageAdvanced")
 		btNext.set_label('Apply')
-		btNext.set_use_stock(True)
 		main_name = txName2.get_text()
 		if self.check_name(main_name):
 			btNext.set_sensitive(True)

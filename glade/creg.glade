@@ -97,8 +97,8 @@
           <object class="GtkGrid" id="grDevices">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_left">10</property>
-            <property name="margin_right">10</property>
+            <property name="margin_start">10</property>
+            <property name="margin_end">10</property>
             <property name="margin_top">10</property>
             <property name="margin_bottom">10</property>
             <child>
@@ -121,8 +121,8 @@
               <object class="GtkLabel" id="label5">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_left">20</property>
-                <property name="margin_right">20</property>
+                <property name="margin_start">20</property>
+                <property name="margin_end">20</property>
                 <property name="margin_bottom">10</property>
                 <property name="label" translatable="yes">This dialog allows to setup traditional controllers to be used with SC Controller.
 
@@ -188,7 +188,6 @@ Please, select your controller from list bellow and click Next.</property>
                 <property name="receives_default">False</property>
                 <property name="halign">end</property>
                 <property name="hexpand">True</property>
-                <property name="xalign">1</property>
                 <property name="draw_indicator">True</property>
                 <signal name="toggled" handler="refresh_devices" swapped="no"/>
               </object>
@@ -199,12 +198,14 @@ Please, select your controller from list bellow and click Next.</property>
             </child>
             <child>
               <object class="GtkButton" id="btnRefresh">
-                <property name="label">gtk-refresh</property>
+                <property name="label" translatable="yes">_Refresh</property>
+                <property name="use_underline">True</property>
+                <property name="always_show_image">True</property>
+                <property name="image">imgstockrefresh</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="relief">half</property>
-                <property name="use_stock">True</property>
                 <signal name="clicked" handler="refresh_devices" swapped="no"/>
               </object>
               <packing>
@@ -222,8 +223,8 @@ Please, select your controller from list bellow and click Next.</property>
           <object class="GtkGrid" id="grSettings">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_left">10</property>
-            <property name="margin_right">10</property>
+            <property name="margin_start">10</property>
+            <property name="margin_end">10</property>
             <property name="margin_top">10</property>
             <property name="margin_bottom">10</property>
             <child>
@@ -283,7 +284,7 @@ Please, select options that are best describing controller you are configuring.<
               <object class="GtkLabel" id="label4">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_right">10</property>
+                <property name="margin_end">10</property>
                 <property name="margin_top">20</property>
                 <property name="label" translatable="yes">Labels</property>
                 <property name="xalign">0</property>
@@ -301,7 +302,7 @@ Please, select options that are best describing controller you are configuring.<
               <object class="GtkComboBox" id="cbControllerButtons">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_right">10</property>
+                <property name="margin_end">10</property>
                 <property name="model">lstButtons</property>
                 <property name="active">0</property>
                 <signal name="changed" handler="refresh_controller_image" swapped="no"/>
@@ -351,8 +352,8 @@ Please, select options that are best describing controller you are configuring.<
               <object class="GtkRevealer" id="rvController">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_left">10</property>
-                <property name="margin_right">10</property>
+                <property name="margin_start">10</property>
+                <property name="margin_end">10</property>
                 <property name="margin_top">20</property>
                 <property name="margin_bottom">10</property>
                 <property name="hexpand">True</property>
@@ -383,8 +384,8 @@ Please, select options that are best describing controller you are configuring.<
               <object class="GtkLabel" id="label6">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_left">10</property>
-                <property name="margin_right">10</property>
+                <property name="margin_start">10</property>
+                <property name="margin_end">10</property>
                 <property name="margin_top">10</property>
                 <property name="hexpand">True</property>
                 <property name="label" translatable="yes">&lt;b&gt;Input Mappings&lt;/b&gt;
@@ -407,8 +408,8 @@ If anything is assigned incorrectly, click on button on image to (re)assign phys
               <object class="GtkLabel" id="label7">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_left">10</property>
-                <property name="margin_right">10</property>
+                <property name="margin_start">10</property>
+                <property name="margin_end">10</property>
                 <property name="hexpand">True</property>
                 <property name="label" translatable="yes">Red colored controls are not assigned.</property>
                 <property name="wrap">True</property>
@@ -425,10 +426,9 @@ If anything is assigned incorrectly, click on button on image to (re)assign phys
               </packing>
             </child>
             <child>
-              <object class="GtkAlignment" id="alController">
+              <object class="GtkBox" id="alController">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="xscale">0</property>
                 <child>
                   <object class="GtkFixed" id="fxController">
                     <property name="width_request">32</property>
@@ -436,6 +436,10 @@ If anything is assigned incorrectly, click on button on image to (re)assign phys
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                   </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                  </packing>
                 </child>
               </object>
               <packing>
@@ -448,14 +452,14 @@ If anything is assigned incorrectly, click on button on image to (re)assign phys
               <object class="GtkRevealer" id="rvAdditionalOptions">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_left">10</property>
-                <property name="margin_right">10</property>
+                <property name="margin_start">10</property>
+                <property name="margin_end">10</property>
                 <child>
                   <object class="GtkGrid" id="grAdditionalOptions">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin_left">20</property>
-                    <property name="margin_right">20</property>
+                    <property name="margin_start">20</property>
+                    <property name="margin_end">20</property>
                     <child>
                       <object class="GtkCheckButton" id="cbEmulateC">
                         <property name="label" translatable="yes">Emulate center (guide) button by pressing Back + Start at once</property>
@@ -490,7 +494,7 @@ If anything is assigned incorrectly, click on button on image to (re)assign phys
                       <object class="GtkLabel" id="lblLeftStick">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">40</property>
+                        <property name="margin_start">40</property>
                         <property name="label" translatable="yes">Left stick</property>
                         <property name="xalign">0</property>
                       </object>
@@ -503,7 +507,7 @@ If anything is assigned incorrectly, click on button on image to (re)assign phys
                       <object class="GtkLabel" id="lblRigthStick">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">40</property>
+                        <property name="margin_start">40</property>
                         <property name="label" translatable="yes">Right stick</property>
                         <property name="xalign">0</property>
                       </object>
@@ -516,7 +520,7 @@ If anything is assigned incorrectly, click on button on image to (re)assign phys
                       <object class="GtkLabel" id="lblDPAD">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">40</property>
+                        <property name="margin_start">40</property>
                         <property name="label" translatable="yes">D-Pad</property>
                         <property name="xalign">0</property>
                       </object>
@@ -662,8 +666,8 @@ If anything is assigned incorrectly, click on button on image to (re)assign phys
               <object class="GtkExpander" id="exAdditionalOptions">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="margin_left">10</property>
-                <property name="margin_right">10</property>
+                <property name="margin_start">10</property>
+                <property name="margin_end">10</property>
                 <property name="margin_top">20</property>
                 <signal name="activate" handler="on_exAdditionalOptions_activate" swapped="no"/>
                 <child>
@@ -690,8 +694,8 @@ If anything is assigned incorrectly, click on button on image to (re)assign phys
               <object class="GtkExpander" id="exRawData">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="margin_left">10</property>
-                <property name="margin_right">10</property>
+                <property name="margin_start">10</property>
+                <property name="margin_end">10</property>
                 <property name="margin_top">5</property>
                 <signal name="activate" handler="on_exRawData_activate" swapped="no"/>
                 <child>
@@ -718,8 +722,8 @@ If anything is assigned incorrectly, click on button on image to (re)assign phys
               <object class="GtkRevealer" id="rvRawData">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_left">10</property>
-                <property name="margin_right">10</property>
+                <property name="margin_start">10</property>
+                <property name="margin_end">10</property>
                 <property name="vexpand">True</property>
                 <child>
                   <object class="GtkScrolledWindow" id="swRawData">
@@ -784,7 +788,7 @@ If anything is assigned incorrectly, click on button on image to (re)assign phys
                           <object class="GtkImage" id="imgHIDWarning">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-dialog-warning</property>
+                            <property name="icon-name">gtk-dialog-warning</property>
                             <property name="icon_size">6</property>
                           </object>
                           <packing>
@@ -844,8 +848,8 @@ That means your account lacks permissons needed to read controller exclusivelly.
             <property name="name">01</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_left">20</property>
-            <property name="margin_right">20</property>
+            <property name="margin_start">20</property>
+            <property name="margin_end">20</property>
             <property name="margin_top">20</property>
             <child>
               <object class="GtkLabel" id="label8">
@@ -872,7 +876,7 @@ is enabled in Settings or here:</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
-                <property name="margin_left">20</property>
+                <property name="margin_start">20</property>
                 <property name="margin_top">20</property>
                 <property name="margin_bottom">20</property>
                 <property name="draw_indicator">True</property>
@@ -918,11 +922,10 @@ future inputs or even crash.</property>
               <object class="GtkImage" id="imgDS4">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_left">5</property>
-                <property name="margin_right">30</property>
-                <property name="xalign">0.5</property>
-                <property name="yalign">0</property>
-                <property name="stock">gtk-missing-image</property>
+                <property name="margin_start">5</property>
+                <property name="margin_end">30</property>
+                <property name="valign">start</property>
+                <property name="icon-name">image-missing</property>
                 <property name="icon_size">6</property>
               </object>
               <packing>
@@ -990,8 +993,8 @@ future inputs or even crash.</property>
         <property name="name">vb687i</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="margin_left">10</property>
-        <property name="margin_right">10</property>
+        <property name="margin_start">10</property>
+        <property name="margin_end">10</property>
         <property name="margin_top">10</property>
         <property name="margin_bottom">10</property>
         <property name="orientation">vertical</property>
@@ -1014,15 +1017,17 @@ future inputs or even crash.</property>
         </child>
         <child>
           <object class="GtkButton" id="btCancelInput">
-            <property name="label">gtk-cancel</property>
+            <property name="label" translatable="yes">_Cancel</property>
+            <property name="use_underline">True</property>
+            <property name="always_show_image">True</property>
+            <property name="image">imgstockcancel</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <property name="margin_left">50</property>
-            <property name="margin_right">50</property>
+            <property name="margin_start">50</property>
+            <property name="margin_end">50</property>
             <property name="margin_top">10</property>
             <property name="margin_bottom">10</property>
-            <property name="use_stock">True</property>
             <signal name="clicked" handler="on_btCancelInput_clicked" swapped="no"/>
           </object>
           <packing>
@@ -1087,5 +1092,15 @@ future inputs or even crash.</property>
         <signal name="activate" handler="on_mnuStickmove_activate" swapped="no"/>
       </object>
     </child>
+  </object>
+  <object class="GtkImage" id="imgstockcancel">
+    <property name="visible">False</property>
+    <property name="can_focus">False</property>
+    <property name="icon-name">gtk-cancel</property>
+  </object>
+  <object class="GtkImage" id="imgstockrefresh">
+    <property name="visible">False</property>
+    <property name="can_focus">False</property>
+    <property name="icon-name">gtk-refresh</property>
   </object>
 </interface>

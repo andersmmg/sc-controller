@@ -744,7 +744,7 @@ class ControllerRegistration(Editor):
 					mnuStick._what = what
 				mnuStickPress.set_sensitive(what != "DPAD")
 				mnuStick._axes = [ self._axis_data[index] for index in axes ]
-				mnuStick.popup(None, None, None, None, 1, Gtk.get_current_event_time())
+				mnuStick.popup_at_pointer(None)
 			elif what in TRIGGER_AREAS:
 				self._grabber = TriggerGrabber(self, self._axis_data[TRIGGER_AREAS[what]])
 			elif hasattr(SCButtons, what):

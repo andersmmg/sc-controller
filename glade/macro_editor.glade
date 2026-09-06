@@ -38,8 +38,8 @@
       <object class="GtkGrid" id="grid1">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="margin_left">10</property>
-        <property name="margin_right">10</property>
+        <property name="margin_start">10</property>
+        <property name="margin_end">10</property>
         <property name="margin_top">10</property>
         <property name="margin_bottom">10</property>
         <child>
@@ -47,7 +47,7 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="no_show_all">True</property>
-            <property name="margin_right">20</property>
+            <property name="margin_end">20</property>
             <property name="margin_bottom">4</property>
             <property name="label" translatable="yes">Action Name</property>
             <property name="ellipsize">end</property>
@@ -79,7 +79,7 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="no_show_all">True</property>
-            <property name="margin_right">20</property>
+            <property name="margin_end">20</property>
             <property name="margin_bottom">4</property>
             <property name="label" translatable="yes">Macro Type</property>
             <property name="ellipsize">end</property>
@@ -161,7 +161,7 @@
               <object class="GtkEntry" id="entAction">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="margin_right">10</property>
+                <property name="margin_end">10</property>
                 <property name="activates_default">True</property>
               </object>
               <packing>
@@ -176,7 +176,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="margin_left">5</property>
+                <property name="margin_start">5</property>
                 <property name="use_underline">True</property>
                 <signal name="clicked" handler="on_btAddAction_clicked" swapped="no"/>
               </object>
@@ -238,7 +238,7 @@
           <object class="GtkLabel" id="lblAddedWidget">
             <property name="can_focus">False</property>
             <property name="no_show_all">True</property>
-            <property name="margin_right">20</property>
+            <property name="margin_end">20</property>
             <property name="margin_bottom">5</property>
             <property name="label" translatable="yes">(Widget)</property>
             <property name="xalign">0</property>
@@ -286,13 +286,15 @@
         </child>
         <child>
           <object class="GtkButton" id="btOK">
-            <property name="label">gtk-ok</property>
+            <property name="label" translatable="yes">_OK</property>
+            <property name="use_underline">True</property>
+            <property name="always_show_image">True</property>
+            <property name="image">imgstockok</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="can_default">True</property>
             <property name="has_default">True</property>
             <property name="receives_default">True</property>
-            <property name="use_stock">True</property>
             <signal name="clicked" handler="on_btOK_clicked" swapped="no"/>
             <style>
               <class name="suggested-action"/>
@@ -305,11 +307,13 @@
         </child>
         <child>
           <object class="GtkButton" id="btClear">
-            <property name="label">gtk-clear</property>
+            <property name="label" translatable="yes">_Clear</property>
+            <property name="use_underline">True</property>
+            <property name="always_show_image">True</property>
+            <property name="image">imgstockclear</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <property name="use_stock">True</property>
             <signal name="clicked" handler="on_btClear_clicked" swapped="no"/>
           </object>
           <packing>
@@ -341,5 +345,15 @@
         <col id="1" translatable="yes">Release</col>
       </row>
     </data>
+  </object>
+  <object class="GtkImage" id="imgstockclear">
+    <property name="visible">False</property>
+    <property name="can_focus">False</property>
+    <property name="icon-name">gtk-clear</property>
+  </object>
+  <object class="GtkImage" id="imgstockok">
+    <property name="visible">False</property>
+    <property name="can_focus">False</property>
+    <property name="icon-name">gtk-ok</property>
   </object>
 </interface>

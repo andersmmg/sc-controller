@@ -37,8 +37,8 @@
           <object class="GtkGrid" id="grid1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_left">10</property>
-            <property name="margin_right">10</property>
+            <property name="margin_start">10</property>
+            <property name="margin_end">10</property>
             <property name="margin_top">10</property>
             <property name="margin_bottom">5</property>
             <property name="column_homogeneous">True</property>
@@ -65,7 +65,7 @@
                 <property name="height_request">400</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="margin_left">5</property>
+                <property name="margin_start">5</property>
                 <property name="margin_top">5</property>
                 <property name="hexpand">True</property>
                 <property name="vexpand">True</property>
@@ -106,7 +106,7 @@
               <object class="GtkScrolledWindow" id="swCategories">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="margin_right">5</property>
+                <property name="margin_end">5</property>
                 <property name="margin_top">5</property>
                 <property name="shadow_type">in</property>
                 <child>
@@ -150,8 +150,8 @@
           <object class="GtkRevealer" id="rvLicense">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_left">10</property>
-            <property name="margin_right">10</property>
+            <property name="margin_start">10</property>
+            <property name="margin_end">10</property>
             <property name="margin_bottom">5</property>
             <child>
               <object class="GtkLabel" id="lblLicense">
@@ -192,13 +192,15 @@
         </child>
         <child>
           <object class="GtkButton" id="btOk">
-            <property name="label">gtk-ok</property>
+            <property name="label" translatable="yes">_OK</property>
+            <property name="use_underline">True</property>
+            <property name="always_show_image">True</property>
+            <property name="image">imgstockok</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="can_default">True</property>
             <property name="has_default">True</property>
             <property name="receives_default">True</property>
-            <property name="use_stock">True</property>
             <signal name="clicked" handler="on_btOk_clicked" swapped="no"/>
             <style>
               <class name="suggested-action"/>
@@ -211,5 +213,10 @@
         </child>
       </object>
     </child>
+  </object>
+  <object class="GtkImage" id="imgstockok">
+    <property name="visible">False</property>
+    <property name="can_focus">False</property>
+    <property name="icon-name">gtk-ok</property>
   </object>
 </interface>

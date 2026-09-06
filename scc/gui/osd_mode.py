@@ -9,13 +9,14 @@ keyboard. This mapper emulates input events on it using GTK methods.
 Mouse movement (but not buttons) are passed to uinput as usuall.
 """
 from __future__ import unicode_literals
-from gi.repository import Gtk, Gdk, GLib
+from gi.repository import Gtk, Gdk, GLib, GdkX11
 
 from scc.gui.gdk_to_key import KEY_TO_GDK, KEY_TO_KEYCODE
 from scc.gui.daemon_manager import ControllerManager
 from scc.osd.slave_mapper import SlaveMapper
 from scc.constants import SCButtons
 from scc.uinput import Keys, Scans
+from scc.lib import xwrappers as X
 
 import os, logging
 log = logging.getLogger("OSDModMapper")
@@ -51,11 +52,8 @@ class OSDModeKeyboard(object):
 	def __init__(self, mapper):
 		self.mapper = mapper
 		self.display = Gdk.Display.get_default()
-		self.manager = self.display.get_device_manager()
-		self.device = [ x for x in
-			self.manager.list_devices(Gdk.DeviceType.MASTER)
-			if x.get_source() == Gdk.InputSource.KEYBOARD
-		][0]	
+		self.seat = self.display.get_default_seat()
+		self.device = self.seat.get_keyboard()
 	
 	def pressEvent(self, keys):
 		for k in keys:
@@ -85,11 +83,8 @@ class OSDModeMouse(object):
 	def __init__(self, mapper):
 		self.mapper = mapper
 		self.display = Gdk.Display.get_default()
-		self.manager = self.display.get_device_manager()
-		self.device = [ x for x in
-			self.manager.list_devices(Gdk.DeviceType.MASTER)
-			if x.get_source() == Gdk.InputSource.MOUSE
-		][0]
+		self.seat = self.display.get_default_seat()
+		self.device = self.seat.get_pointer()
 	
 	
 	def synEvent(self, *a):
@@ -100,8 +95,8 @@ class OSDModeMouse(object):
 		tp = Gdk.EventType.BUTTON_PRESS if val else Gdk.EventType.BUTTON_RELEASE
 		event = Gdk.Event.new(tp)
 		event.button = int(key) - Keys.BTN_LEFT + 1
-		window, event.x, event.y = Gdk.Window.at_pointer()
-		screen, x, y, mask = Gdk.Display.get_default().get_pointer()
+		window, event.x, event.y = self.device.get_window_at_position()
+		trash, x, y = self.device.get_position()
 		event.x_root, event.y_root = x, y
 		
 		gtk_window = None
@@ -190,11 +185,18 @@ class OSDModeMappings(object):
 	
 	def move_around(self, *a):
 		if self.first_window is None:
-			active = self.window.get_window().get_screen().get_active_window()
-			if active is None:
+			dpy = X.Display(hash(GdkX11.x11_get_default_xdisplay()))
+			active_xid = X.get_current_window(dpy)
+			if not active_xid or active_xid == X.get_default_root_window(dpy):
 				return
-			else:
-				self.first_window = active
+			try:
+				self.first_window = GdkX11.X11Window.foreign_new_for_display(
+					Gdk.Display.get_default(), active_xid)
+			except TypeError:
+				# Active window XID is stale or bogus
+				return
+			if self.first_window is None:
+				return
 		
 		tx, ty = self.get_target_position()
 		self.window.get_window().move(tx, ty)

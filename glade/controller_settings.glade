@@ -151,8 +151,8 @@
       <object class="GtkGrid" id="grid12">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="margin_left">10</property>
-        <property name="margin_right">10</property>
+        <property name="margin_start">10</property>
+        <property name="margin_end">10</property>
         <property name="margin_top">10</property>
         <property name="margin_bottom">10</property>
         <child>
@@ -176,8 +176,8 @@
           <object class="GtkScale" id="sclLED">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="margin_left">10</property>
-            <property name="margin_right">10</property>
+            <property name="margin_start">10</property>
+            <property name="margin_end">10</property>
             <property name="margin_top">5</property>
             <property name="hexpand">True</property>
             <property name="adjustment">adjLED</property>
@@ -244,8 +244,8 @@
           <object class="GtkEntry" id="txName">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="margin_left">20</property>
-            <property name="margin_right">20</property>
+            <property name="margin_start">20</property>
+            <property name="margin_end">20</property>
             <signal name="changed" handler="save_config" swapped="no"/>
           </object>
           <packing>
@@ -259,7 +259,7 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="valign">start</property>
-            <property name="margin_right">10</property>
+            <property name="margin_end">10</property>
             <property name="width_request">170</property>
             <property name="hexpand">False</property>
           </object>
@@ -272,7 +272,7 @@
           <object class="GtkBox" id="bxColorArea">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_left">10</property>
+            <property name="margin_start">10</property>
             <property name="spacing">15</property>
             <child>
               <object class="GtkBox" id="bxColorsCol">
@@ -437,8 +437,8 @@
               <object class="GtkGrid" id="grTouchpadRotation">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_left">20</property>
-                <property name="margin_right">20</property>
+                <property name="margin_start">20</property>
+                <property name="margin_end">20</property>
                 <child>
                   <object class="GtkLabel" id="label5">
                     <property name="visible">True</property>
@@ -523,7 +523,7 @@
                       <object class="GtkImage" id="image48">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="stock">gtk-clear</property>
+                        <property name="icon-name">gtk-clear</property>
                       </object>
                     </child>
                   </object>
@@ -542,7 +542,7 @@
                       <object class="GtkImage" id="image56">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="stock">gtk-clear</property>
+                        <property name="icon-name">gtk-clear</property>
                       </object>
                     </child>
                   </object>
@@ -592,8 +592,8 @@
           <object class="GtkRevealer" id="rvMenuButtons">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_left">20</property>
-            <property name="margin_right">20</property>
+            <property name="margin_start">20</property>
+            <property name="margin_end">20</property>
             <child>
               <object class="GtkGrid" id="grMenuButtons">
                 <property name="visible">True</property>
@@ -723,7 +723,7 @@
                       <object class="GtkImage" id="image1">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="stock">gtk-clear</property>
+                        <property name="icon-name">gtk-clear</property>
                       </object>
                     </child>
                   </object>
@@ -742,7 +742,7 @@
                       <object class="GtkImage" id="image2">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="stock">gtk-clear</property>
+                        <property name="icon-name">gtk-clear</property>
                       </object>
                     </child>
                   </object>
@@ -761,7 +761,7 @@
                       <object class="GtkImage" id="image3">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="stock">gtk-clear</property>
+                        <property name="icon-name">gtk-clear</property>
                       </object>
                     </child>
                   </object>

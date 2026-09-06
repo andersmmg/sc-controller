@@ -27,7 +27,6 @@
                 <property name="receives_default">False</property>
                 <property name="halign">start</property>
                 <property name="valign">end</property>
-                <property name="xalign">0</property>
                 <property name="draw_indicator">True</property>
                 <signal name="toggled" handler="on_cbRepeat_toggled" swapped="no"/>
               </object>
@@ -47,7 +46,6 @@
                 <property name="receives_default">False</property>
                 <property name="halign">start</property>
                 <property name="valign">end</property>
-                <property name="xalign">0</property>
                 <property name="draw_indicator">True</property>
                 <signal name="toggled" handler="on_cbToggle_toggled" swapped="no"/>
               </object>
@@ -113,13 +111,13 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="halign">start</property>
-                    <property name="margin_left">5</property>
+                    <property name="margin_start">5</property>
                     <signal name="clicked" handler="on_btnGrabAnother_clicked" swapped="no"/>
                     <child>
                       <object class="GtkImage" id="imgPlus">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="stock">gtk-add</property>
+                        <property name="icon-name">gtk-add</property>
                       </object>
                     </child>
                   </object>

@@ -220,9 +220,9 @@ class SVGWidget(Gtk.EventBox):
 		Parses color expressed as RRGGBB (as in config) and returns
 		three floats of r, g, b, a (range 0 to 1)
 		"""
-		b, color = Gdk.Color.parse("#" + colorstr.strip("#"))
-		if b:
-			return color.red_float, color.green_float, color.blue_float, 1
+		rgba = Gdk.RGBA()
+		if rgba.parse("#" + colorstr.strip("#")):
+			return rgba.red, rgba.green, rgba.blue, 1
 		return 1, 0, 1, 1	# uggly purple
 
 

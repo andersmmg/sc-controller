@@ -43,15 +43,15 @@
       <object class="GtkGrid" id="grid1">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="margin_left">10</property>
-        <property name="margin_right">10</property>
+        <property name="margin_start">10</property>
+        <property name="margin_end">10</property>
         <property name="margin_top">10</property>
         <property name="margin_bottom">10</property>
         <child>
           <object class="GtkLabel" id="label1">
             <property name="can_focus">False</property>
             <property name="no_show_all">True</property>
-            <property name="margin_right">20</property>
+            <property name="margin_end">20</property>
             <property name="margin_bottom">4</property>
             <property name="label" translatable="yes">Action Name</property>
             <property name="ellipsize">end</property>
@@ -87,7 +87,7 @@
               <object class="GtkComboBox" id="cbButtonChooser">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_right">5</property>
+                <property name="margin_end">5</property>
                 <property name="hexpand">True</property>
                 <property name="model">lstControllerButtons</property>
                 <property name="active">0</property>
@@ -109,13 +109,13 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="margin_left">5</property>
+                <property name="margin_start">5</property>
                 <signal name="clicked" handler="on_btAddAction_clicked" swapped="no"/>
                 <child>
                   <object class="GtkImage" id="image2">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="stock">gtk-add</property>
+                    <property name="icon-name">gtk-add</property>
                   </object>
                 </child>
               </object>
@@ -147,8 +147,8 @@
                   <object class="GtkGrid" id="grActions">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin_left">10</property>
-                    <property name="margin_right">10</property>
+                    <property name="margin_start">10</property>
+                    <property name="margin_end">10</property>
                     <property name="margin_top">10</property>
                     <property name="row_spacing">5</property>
                     <property name="column_spacing">15</property>
@@ -163,7 +163,7 @@
                           <object class="GtkImage" id="image1">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -241,8 +241,8 @@
                   <object class="GtkGrid" id="grHold">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin_left">10</property>
-                    <property name="margin_right">10</property>
+                    <property name="margin_start">10</property>
+                    <property name="margin_end">10</property>
                     <property name="margin_top">10</property>
                     <property name="row_spacing">5</property>
                     <property name="column_spacing">15</property>
@@ -257,7 +257,7 @@
                           <object class="GtkImage" id="image3">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -321,8 +321,8 @@
                         <property name="width_request">150</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">10</property>
-                        <property name="margin_right">10</property>
+                        <property name="margin_start">10</property>
+                        <property name="margin_end">10</property>
                         <property name="label" translatable="yes">Hold Time</property>
                         <property name="xalign">0</property>
                         <attributes>
@@ -339,7 +339,7 @@
                       <object class="GtkScale" id="sclHoldTime">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="margin_right">5</property>
+                        <property name="margin_end">5</property>
                         <property name="hexpand">True</property>
                         <property name="adjustment">adjTime</property>
                         <property name="round_digits">1</property>
@@ -363,7 +363,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>
-                    <property name="margin_left">5</property>
+                    <property name="margin_start">5</property>
                     <property name="margin_top">5</property>
                     <property name="draw_indicator">True</property>
                     <signal name="toggled" handler="on_cbHoldFeedback_toggled" swapped="no"/>
@@ -393,14 +393,14 @@
                       <object class="GtkBox" id="vbHoldFeedbackAmplitude">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_left">25</property>
+                        <property name="margin_start">25</property>
                         <child>
                           <object class="GtkLabel" id="lblHoldFeedbackAmplitude">
                             <property name="width_request">150</property>
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="margin_left">10</property>
-                            <property name="margin_right">10</property>
+                            <property name="margin_start">10</property>
+                            <property name="margin_end">10</property>
                             <property name="label" translatable="yes">Effect Amplitude</property>
                             <property name="xalign">0</property>
                             <attributes>
@@ -417,7 +417,7 @@
                           <object class="GtkScale" id="sclHoldFeedback">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="margin_right">10</property>
+                            <property name="margin_end">10</property>
                             <property name="hexpand">True</property>
                             <property name="adjustment">adjHoldFeedback</property>
                             <property name="round_digits">0</property>
@@ -466,8 +466,8 @@
                   <object class="GtkGrid" id="grDoubleClick">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin_left">10</property>
-                    <property name="margin_right">10</property>
+                    <property name="margin_start">10</property>
+                    <property name="margin_end">10</property>
                     <property name="margin_top">10</property>
                     <property name="margin_bottom">5</property>
                     <property name="row_spacing">5</property>
@@ -483,7 +483,7 @@
                           <object class="GtkImage" id="image4">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="stock">gtk-clear</property>
+                            <property name="icon-name">gtk-clear</property>
                           </object>
                         </child>
                       </object>
@@ -542,14 +542,14 @@
                   <object class="GtkBox" id="vbDoubleClickTime">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin_left">10</property>
-                    <property name="margin_right">10</property>
+                    <property name="margin_start">10</property>
+                    <property name="margin_end">10</property>
                     <child>
                       <object class="GtkLabel" id="lblDoubleClickTime">
                         <property name="width_request">150</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="margin_right">10</property>
+                        <property name="margin_end">10</property>
                         <property name="label" translatable="yes">Double-click Time</property>
                         <property name="xalign">0</property>
                         <attributes>
@@ -611,7 +611,7 @@
           <object class="GtkLabel" id="lblAddedWidget">
             <property name="can_focus">False</property>
             <property name="no_show_all">True</property>
-            <property name="margin_right">20</property>
+            <property name="margin_end">20</property>
             <property name="margin_bottom">5</property>
             <property name="label" translatable="yes">(Widget)</property>
             <property name="xalign">0</property>
@@ -654,7 +654,7 @@
                   <object class="GtkLabel" id="lblSoftLevel">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin_left">5</property>
+                    <property name="margin_start">5</property>
                     <property name="label" translatable="yes">Soft Pull Level</property>
                   </object>
                   <packing>
@@ -667,8 +667,8 @@
                   <object class="GtkScale" id="sclSoftLevel">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="margin_left">5</property>
-                    <property name="margin_right">5</property>
+                    <property name="margin_start">5</property>
+                    <property name="margin_end">5</property>
                     <property name="adjustment">adjSoftLevel</property>
                     <property name="round_digits">2</property>
                     <property name="value_pos">right</property>
@@ -710,13 +710,15 @@
         </child>
         <child>
           <object class="GtkButton" id="btOK">
-            <property name="label">gtk-ok</property>
+            <property name="label" translatable="yes">_OK</property>
+            <property name="use_underline">True</property>
+            <property name="always_show_image">True</property>
+            <property name="image">imgstockok</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="can_default">True</property>
             <property name="has_default">True</property>
             <property name="receives_default">True</property>
-            <property name="use_stock">True</property>
             <signal name="clicked" handler="on_btOK_clicked" swapped="no"/>
             <style>
               <class name="suggested-action"/>
@@ -729,11 +731,13 @@
         </child>
         <child>
           <object class="GtkButton" id="btClear">
-            <property name="label">gtk-clear</property>
+            <property name="label" translatable="yes">_Clear</property>
+            <property name="use_underline">True</property>
+            <property name="always_show_image">True</property>
+            <property name="image">imgstockclear</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <property name="use_stock">True</property>
             <signal name="clicked" handler="on_btClear_clicked" swapped="no"/>
           </object>
           <packing>
@@ -743,5 +747,15 @@
         </child>
       </object>
     </child>
+  </object>
+  <object class="GtkImage" id="imgstockclear">
+    <property name="visible">False</property>
+    <property name="can_focus">False</property>
+    <property name="icon-name">gtk-clear</property>
+  </object>
+  <object class="GtkImage" id="imgstockok">
+    <property name="visible">False</property>
+    <property name="can_focus">False</property>
+    <property name="icon-name">gtk-ok</property>
   </object>
 </interface>

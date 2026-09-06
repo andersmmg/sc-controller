@@ -62,7 +62,7 @@ class GestureDisplay(OSDWindow):
 
 		self._left_draw  = GestureDraw(self.SIZE, self._left_detector)
 		# self._right_draw = GestureDraw(self.SIZE, self._right_detector)
-		sep = Gtk.VSeparator()
+		sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
 		sep.set_name("osd-gesture-separator")
 
 		self.parent.attach(self._left_draw,  0, 0, 1, 1)

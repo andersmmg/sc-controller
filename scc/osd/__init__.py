@@ -159,12 +159,24 @@ class OSDWindow(Gtk.Window):
 		Returns geometry of active screen or None if active screen
 		cannot be determined.
 		"""
-		screen = self.get_window().get_screen()
-		active_window = screen.get_active_window()
-		if active_window:
-			monitor = screen.get_monitor_at_window(active_window)
-			if monitor is not None:
-				return screen.get_monitor_geometry(monitor)
+		display = self.get_window().get_display()
+		if isinstance(display, GdkX11.X11Display):
+			dpy = X.Display(hash(GdkX11.x11_get_default_xdisplay()))
+			active_xid = X.get_current_window(dpy)
+			if active_xid and active_xid != X.get_default_root_window(dpy):
+				try:
+					active_window = GdkX11.X11Window.foreign_new_for_display(
+						display, active_xid)
+				except TypeError:
+					# XID is stale or bogus
+					active_window = None
+				if active_window:
+					monitor = display.get_monitor_at_window(active_window)
+					if monitor is not None:
+						return monitor.get_geometry()
+		monitor = display.get_monitor_at_window(self.get_window())
+		if monitor is not None:
+			return monitor.get_geometry()
 		return None
 
 
@@ -173,6 +185,10 @@ class OSDWindow(Gtk.Window):
 		x, y = self.position
 		width, height = self.get_window_size()
 		geometry = self.get_active_screen_geometry()
+		if geometry is None:
+			primary = self.get_window().get_display().get_primary_monitor()
+			if primary is not None:
+				geometry = primary.get_geometry()
 		if geometry:
 			if x < 0:
 				x = x + geometry.x + geometry.width - width
@@ -196,10 +212,13 @@ class OSDWindow(Gtk.Window):
 		self.get_window().set_override_redirect(True)
 
 		x, y = self.compute_position()
-		if x < 0:	# Negative X position is counted from right border
-			x = Gdk.Screen.width() - self.get_allocated_width() + x + 1
-		if y < 0:	# Negative Y position is counted from bottom border
-			y = Gdk.Screen.height() - self.get_allocated_height() + y + 1
+		primary = self.get_window().get_display().get_primary_monitor()
+		if primary is not None:
+			primary_geometry = primary.get_geometry()
+			if x < 0:	# Negative X position is counted from right border
+				x = primary_geometry.width - self.get_allocated_width() + x + 1
+			if y < 0:	# Negative Y position is counted from bottom border
+				y = primary_geometry.height - self.get_allocated_height() + y + 1
 
 		self.move(x, y)
 		Gtk.Window.show(self)

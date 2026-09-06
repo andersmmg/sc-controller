@@ -423,7 +423,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 			btRGRIP = self.builder.get_object("btRGRIP")
 			btC = self.builder.get_object("btC")
 			btC.get_parent().remove(btC)
-			btC.set_margin_right(0)
+			btC.set_margin_end(0)
 			btRGRIP.get_parent().pack_start(btC, False, True, 0)
 			btRGRIP.get_parent().reorder_child(btC, 5)
 			# Move 'GYRO' button to middle of image (where C was)
@@ -616,8 +616,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		mnuEPress.set_visible(for_id in STICKS + PADS)
 		mnuEPressS.set_visible(mnuEPress.get_visible())
 
-		mnuPopup.popup(None, None, None, None,
-			3, Gtk.get_current_event_time())
+		mnuPopup.popup_at_pointer(None)
 
 
 	def save_config(self):
@@ -962,8 +961,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 	def on_background_button_press(self, trash, event):
 		if event.button == 3:
 			mnuImage = self.builder.get_object("mnuImage")
-			mnuImage.popup(None, None, None, None,
-				3, Gtk.get_current_event_time())
+			mnuImage.popup_at_pointer(None)
 
 
 	def on_mnu_change_background_image(self, mnu, *a):
@@ -1117,8 +1115,8 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		sepSwitchers = self.builder.get_object("sepSwitchers")
 
 		ps = ProfileSwitcher(self.imagepath, self.config, self)
-		ps.set_margin_left(margin_left)
-		ps.set_margin_right(margin_right)
+		ps.set_margin_start(margin_left)
+		ps.set_margin_end(margin_right)
 		ps.connect('right-clicked', self.on_profile_right_clicked)
 		ps.connect('switch-to-clicked', self.on_switch_to_clicked)
 
@@ -1362,8 +1360,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 
 		mnuPS = self.builder.get_object("mnuPS")
 		mnuPS.ps = ps
-		mnuPS.popup(None, None, None, None,
-			3, Gtk.get_current_event_time())
+		mnuPS.popup_at_pointer(None)
 
 
 	def on_mnuConfigureController_activate(self, *a):

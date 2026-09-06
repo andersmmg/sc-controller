@@ -267,7 +267,7 @@ class Menu(OSDWindow):
 				item.callback = self.show_submenu
 				label1 = widget.get_children()[0]
 				label2 = Gtk.Label(_(">>"))
-				label2.set_property("margin-left", 30)
+				label2.set_margin_start(30)
 				box = Gtk.Box(Gtk.Orientation.HORIZONTAL)
 				widget.remove(label1)
 				box.pack_start(label1, True, True, 1)
@@ -328,7 +328,9 @@ class Menu(OSDWindow):
 			screen_height = m.get_geometry().height
 		except:
 			y_offset = 0
-			screen_height = self.get_window().get_screen().get_height()
+			primary = self.get_window().get_display().get_primary_monitor()
+			screen_height = primary.get_geometry().height if primary \
+				else 600
 		y -= y_offset
 		if y < 50:
 			wx, wy = self.get_window().get_position()
@@ -402,6 +404,8 @@ class Menu(OSDWindow):
 			else:
 				self._confirm_with = SCButtons.LPADTOUCH.name
 
+		self._control_with_dpad = (controller.get_flags() & ControllerFlags.HAS_DPAD) != 0
+
 		if getattr(self.args, "use_cursor", False):
 			# As special case, using LEFT pad on controller with
 			# actual DPAD should not display cursor
@@ -421,8 +425,7 @@ class Menu(OSDWindow):
 		def success(*a):
 			log.error("Sucessfully locked input")
 		locks = [ self._control_with, self._confirm_with, self._cancel_with ]
-		if self.controller.get_flags() & ControllerFlags.HAS_DPAD != 0:
-			self._control_with_dpad = True
+		if self._control_with_dpad:
 			if self._control_with == "STICK":
 				# SC1-style shared stick/pad: capture the left pad too, as the
 				# direction it doubles as should reach the menu.

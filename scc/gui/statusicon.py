@@ -15,6 +15,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import GObject
 from gi.repository import GLib
+from gi.repository import Gio
 from gi.repository import Gtk
 
 from scc.gui.dwsnc import IS_UNITY, IS_GNOME
@@ -53,7 +54,7 @@ class StatusIcon(GObject.GObject):
 			"is the icon user-visible?",
 			"does the icon back-end think that anything is might be shown to the user?",
 			True,
-			GObject.PARAM_READWRITE if hasattr(GObject, "PARAM_READWRITE") else GObject.ParamFlags.READWRITE
+			GObject.ParamFlags.READWRITE
 		)
 	}
 
@@ -267,7 +268,7 @@ class StatusIconGTK3(StatusIcon):
 		else:
 			path = self._get_icon_file(name)
 			if path is not None:
-				self._tray.set_from_file(path)
+				self._tray.set_from_gicon(Gio.FileIcon.new(Gio.File.new_for_path(path)))
 				log.debug("StatusIconGTK3.set: name=%r using file=%s", name, path)
 			else:
 				self._tray.set_from_icon_name(name)
@@ -280,7 +281,7 @@ class StatusIconGTK3(StatusIcon):
 			if self._tray.is_embedded():
 				path = self._get_icon_file()
 				if path is not None:
-					self._tray.set_from_file(path)
+					self._tray.set_from_gicon(Gio.FileIcon.new(Gio.File.new_for_path(path)))
 				else:
 					# Fall back to the name-based lookup if the file is not available
 					self._tray.set_from_icon_name(self._get_icon())
@@ -297,7 +298,7 @@ class StatusIconGTK3(StatusIcon):
 			self.set_property("active", is_embedded)
 
 	def _on_rclick(self, si, button, time):
-		self._get_popupmenu().popup(None, None, None, None, button, time)
+		self._get_popupmenu().popup_at_pointer(None)
 
 	def _set_visible(self, active):
 		StatusIcon._set_visible(self, active)

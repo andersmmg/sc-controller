@@ -635,6 +635,15 @@ class SC2BTDriver(object):
 			# HIDRaw takes ownership of fh
 			dev = HIDRaw(fh)
 			c = SC2BTDevice(self, syspath, dev)
+		except (OSError, IOError) as e:
+			fh.close()
+			if syspath in self.reconnecting:
+				log.debug("SC2 reconnect attempt failed: %s", e)
+			else:
+				log.error("SC2 setup failed with IO error, "
+					"scheduling reconnect: %s", e)
+			self.retry(syspath)
+			return None
 		except Exception as e:
 			fh.close()
 			if syspath in self.reconnecting:

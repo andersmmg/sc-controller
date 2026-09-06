@@ -20,11 +20,13 @@
             <property name="layout_style">end</property>
             <child>
               <object class="GtkButton" id="btnClose">
-                <property name="label">gtk-close</property>
+                <property name="label" translatable="yes">_Close</property>
+                <property name="use_underline">True</property>
+                <property name="always_show_image">True</property>
+                <property name="image">imgstockclose</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_stock">True</property>
                 <signal name="clicked" handler="on_dialog_response" swapped="no"/>
               </object>
               <packing>
@@ -44,8 +46,8 @@
           <object class="GtkBox" id="vb3">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_left">50</property>
-            <property name="margin_right">50</property>
+            <property name="margin_start">50</property>
+            <property name="margin_end">50</property>
             <property name="margin_top">10</property>
             <property name="margin_bottom">10</property>
             <property name="orientation">vertical</property>
@@ -167,5 +169,10 @@ See the &lt;a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0.html"&gt;GN
     <child>
       <placeholder/>
     </child>
+  </object>
+  <object class="GtkImage" id="imgstockclose">
+    <property name="visible">False</property>
+    <property name="can_focus">False</property>
+    <property name="icon-name">gtk-close</property>
   </object>
 </interface>

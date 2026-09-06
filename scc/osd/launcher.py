@@ -156,8 +156,9 @@ class Launcher(OSDWindow):
 
 	def pack_items(self, parent, items):
 		for item in items:
-			if hasattr(item.widget, "set_alignment"):
-				item.widget.set_alignment(0.5, 0.5)
+			if hasattr(item.widget, "set_xalign"):
+				item.widget.set_xalign(0.5)
+				item.widget.set_yalign(0.5)
 			self._buttons.pack_end(item.widget, True, True, 0)
 
 
