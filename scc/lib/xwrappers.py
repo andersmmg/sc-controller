@@ -18,9 +18,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from ctypes import CDLL, POINTER, c_void_p, Structure, byref, cast
+from ctypes import CDLL, POINTER, c_void_p, Structure, byref, cast, CFUNCTYPE
 from ctypes import c_long, c_ulong, c_int, c_uint, c_short, c_char_p
 from ctypes import c_ushort, c_ubyte, c_char_p, c_bool
+from threading import RLock
 
 
 def _load_lib(*names):
@@ -120,6 +121,90 @@ ANYPROPERTYTYPE	= 0
 SUCCESS			= 0
 
 ISVIEWABLE		= 2
+POINTER_ROOT	= 1
+
+
+# Error handling
+
+class XErrorEvent(Structure):
+	_fields_ = [
+		('type', c_int),
+		('display', c_void_p),
+		('resourceid', XID),
+		('serial', c_ulong),
+		('error_code', c_ubyte),
+		('request_code', c_ubyte),
+		('minor_code', c_ubyte),
+	]
+
+XErrorHandler = CFUNCTYPE(c_int, POINTER(XErrorEvent))
+
+_trap_lock = RLock()
+_trap_errors = []
+_trap_depth = 0
+
+
+def _error_handler(event):
+	""" Error handler installed while ErrorTrap is active """
+	if event:
+		e = event.contents
+		_trap_errors.append((e.error_code, e.request_code))
+	return 0
+
+
+_p_error_handler = XErrorHandler(_error_handler)
+
+sync = libX11.XSync
+sync.argtypes = [ c_void_p, c_bool ]
+_set_error_handler = libX11.XSetErrorHandler
+_set_error_handler.argtypes = [ XErrorHandler ]
+_set_error_handler.restype = XErrorHandler
+
+
+class XError(Exception):
+	"""
+	Exception raised by ErrorTrap when X server reports an error.
+	"""
+	def __init__(self, error_code, request_code):
+		Exception.__init__(self,
+			"X error %s on request %s" % (error_code, request_code))
+		self.error_code = error_code
+		self.request_code = request_code
+
+
+class ErrorTrap(object):
+	"""
+	Context manager to catch X errors for debugging.
+
+	Because X errors are async this is the only way I could
+	catch them reliably.
+	"""
+	def __init__(self, dpy):
+		self.dpy = dpy
+		self.errors = []
+
+	def __enter__(self):
+		global _trap_depth
+		_trap_lock.acquire()
+		if _trap_depth == 0:
+			# Only outermost trap uses handler
+			del _trap_errors[:]
+			self._previous = _set_error_handler(_p_error_handler)
+		_trap_depth += 1
+		self._outer = _trap_depth == 1
+		return self
+
+	def __exit__(self, exc_type, exc_value, tb):
+		global _trap_depth
+		_trap_depth -= 1
+		if self._outer:
+			sync(self.dpy, False)
+			_set_error_handler(self._previous)
+			self.errors += _trap_errors
+		_trap_lock.release()
+		if self._outer and exc_type is None and self.errors:
+			raise XError(*self.errors[0])
+		return False
 
 
 # Functions
@@ -275,30 +360,45 @@ def get_xkb_state(dpy):
 
 
 def get_window_size(dpy, window):
-	attrs = XWindowAttributes()
-	get_window_attributes(dpy, window, byref(attrs))
-	return attrs.width, attrs.height
+	try:
+		with ErrorTrap(dpy):
+			attrs = XWindowAttributes()
+			get_window_attributes(dpy, window, byref(attrs))
+			return attrs.width, attrs.height
+	except XError:
+		# Window is gone
+		return 0, 0
 
 
 def is_window_visible(dpy, window):
 	""" Return True if window mapping state is IsViewable """
-	attrs = XWindowAttributes()
-	get_window_attributes(dpy, window, byref(attrs))
-	return attrs.map_state == ISVIEWABLE
+	try:
+		with ErrorTrap(dpy):
+			attrs = XWindowAttributes()
+			get_window_attributes(dpy, window, byref(attrs))
+			return attrs.map_state == ISVIEWABLE
+	except XError:
+		# Window is gone
+		return False
 
 
 def get_window_geometry(dpy, win):
 	""" Returns window x,y,width,height """
-	attrs = XWindowAttributes()
-	get_window_attributes(dpy, win, byref(attrs))
-	x, y = c_int(), c_int()
-	trash = XID()
-	if translate_coordinates(dpy, win, get_default_root_window(dpy),
-			0, 0, byref(x), byref(y), byref(trash)):
-		return x.value, y.value, attrs.width, attrs.height
-	else:
-		# translate_coordinates failed
-		return attrs.x, attrs.y, attrs.width, attrs.height
+	try:
+		with ErrorTrap(dpy):
+			attrs = XWindowAttributes()
+			get_window_attributes(dpy, win, byref(attrs))
+			x, y = c_int(), c_int()
+			trash = XID()
+			if translate_coordinates(dpy, win, get_default_root_window(dpy),
+					0, 0, byref(x), byref(y), byref(trash)):
+				return x.value, y.value, attrs.width, attrs.height
+			else:
+				# translate_coordinates failed
+				return attrs.x, attrs.y, attrs.width, attrs.height
+	except XError:
+		# Window is gone
+		return 0, 0, 0, 0
 
 
 def get_screen_size(dpy):
@@ -316,11 +416,16 @@ def get_mouse_pos(dpy, relative_to=None):
 	x, y = c_int(), c_int()
 	child_x, child_y = c_int(), c_int()
 	mask = c_uint()
-	
-	query_pointer(dpy, relative_to, byref(root_return), byref(child),
-		byref(x), byref(y),
-		byref(child_x), byref(child_y), byref(mask))
-	return x.value, y.value
+
+	try:
+		with ErrorTrap(dpy):
+			query_pointer(dpy, relative_to, byref(root_return), byref(child),
+				byref(x), byref(y),
+				byref(child_x), byref(child_y), byref(mask))
+			return x.value, y.value
+	except XError:
+		# Window is gone
+		return 0, 0
 
 
 def set_mouse_pos(dpy, x, y, relative_to=None):
@@ -330,8 +435,17 @@ def set_mouse_pos(dpy, x, y, relative_to=None):
 	"""
 	if relative_to is None:
 		relative_to = get_default_root_window(dpy)
-	warp_pointer(dpy, 0, relative_to, 0, 0, 0, 0, x, y)
-	flush(dpy)
+	if relative_to == get_default_root_window(dpy):
+		warp_pointer(dpy, 0, relative_to, 0, 0, 0, 0, x, y)
+		flush(dpy)
+		return
+	try:
+		with ErrorTrap(dpy):
+			warp_pointer(dpy, 0, relative_to, 0, 0, 0, 0, x, y)
+			flush(dpy)
+	except XError:
+		# Window is gone
+		pass
 
 
 def get_window_prop(dpy, window, prop_name, max_size=2):
@@ -339,17 +453,22 @@ def get_window_prop(dpy, window, prop_name, max_size=2):
 	Returns (nitems, property) of specified window or (-1, None) if anything fails.
 	Returned 'property' is POINTER(c_void_p) and has to be freed using X.free().
 	"""
-	prop_atom = intern_atom(dpy, prop_name, False)
-	type_return, format_return = Atom(), Atom()
-	nitems, bytes_after = c_ulong(), c_ulong()
-	prop = c_void_p()
-	
-	if SUCCESS == get_window_property(dpy, window,
-				prop_atom, 0, max_size, False, ANYPROPERTYTYPE,
-				byref(type_return), byref(format_return), byref(nitems),
-				byref(bytes_after), byref(prop)):
-		return nitems.value, prop
-	return -1, None
+	try:
+		with ErrorTrap(dpy):
+			prop_atom = intern_atom(dpy, prop_name, False)
+			type_return, format_return = Atom(), Atom()
+			nitems, bytes_after = c_ulong(), c_ulong()
+			prop = c_void_p()
+
+			if SUCCESS == get_window_property(dpy, window,
+						prop_atom, 0, max_size, False, ANYPROPERTYTYPE,
+						byref(type_return), byref(format_return), byref(nitems),
+						byref(bytes_after), byref(prop)):
+				return nitems.value, prop
+			return -1, None
+	except XError:
+		# Window is gone
+		return -1, None
 
 
 def get_current_window(dpy):
@@ -363,11 +482,11 @@ def get_current_window(dpy):
 		rv = cast(prop, POINTER(Atom)).contents.value
 		free(prop)
 		return rv
-	
+
 	# Fall-back to something what probably can't work anyway
 	win, revert_to = XID(), c_int()
 	get_input_focus(dpy, byref(win), byref(revert_to))
-	if win == 0:
+	if win == 0 or win == POINTER_ROOT:
 		return get_default_root_window(dpy)
 	return win
 
@@ -407,12 +526,17 @@ def get_window_class(dpy, window):
 	"""
 	s = alloc_class_hint()
 	if s:
-		if get_class_hint(dpy, window, s):
-			value = s.contents.res_name.decode('utf-8'), s.contents.res_class.decode('utf-8')
-			free(s)
-			return value
+		try:
+			with ErrorTrap(dpy):
+				if get_class_hint(dpy, window, s):
+					value = s.contents.res_name.decode('utf-8'), s.contents.res_class.decode('utf-8')
+					free(s)
+					return value
+		except XError:
+			# Window is gone
+			pass
 		free(s)
-	
+
 	return None, None
 
 

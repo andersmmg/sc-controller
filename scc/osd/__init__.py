@@ -164,16 +164,18 @@ class OSDWindow(Gtk.Window):
 			dpy = X.Display(hash(GdkX11.x11_get_default_xdisplay()))
 			active_xid = X.get_current_window(dpy)
 			if active_xid and active_xid != X.get_default_root_window(dpy):
-				try:
-					active_window = GdkX11.X11Window.foreign_new_for_display(
-						display, active_xid)
-				except TypeError:
-					# XID is stale or bogus
-					active_window = None
-				if active_window:
-					monitor = display.get_monitor_at_window(active_window)
-					if monitor is not None:
-						return monitor.get_geometry()
+				x, y, w, h = X.get_window_geometry(dpy, active_xid)
+				if w > 0 and h > 0:
+					best, best_area = None, 0
+					for i in range(display.get_n_monitors()):
+						m = display.get_monitor(i)
+						g = m.get_geometry()
+						dx = max(0, min(x + w, g.x + g.width) - max(x, g.x))
+						dy = max(0, min(y + h, g.y + g.height) - max(y, g.y))
+						if dx * dy > best_area:
+							best, best_area = m, dx * dy
+					if best is not None:
+						return best.get_geometry()
 		monitor = display.get_monitor_at_window(self.get_window())
 		if monitor is not None:
 			return monitor.get_geometry()

@@ -111,7 +111,10 @@ class WindowListMenuGenerator(MenuGenerator):
 			xid = int(menuitem.id)
 			display = Gdk.Display.get_default()
 			window = GdkX11.X11Window.foreign_new_for_display(display, xid)
-			window.focus(0)
+			if window is not None:
+				dpy = X.Display(hash(GdkX11.x11_get_default_xdisplay()))
+				with X.ErrorTrap(dpy):
+					window.focus(0)
 		except Exception as e:
 			log.error("Failed to activate window")
 			log.error(traceback.format_exc())
@@ -128,8 +131,11 @@ class WindowListMenuGenerator(MenuGenerator):
 		wlist = cast(wlist, POINTER(X.XID))[0:count]
 		for win in wlist:
 			if not skip_taskbar in X.get_wm_state(dpy, win):
-				title = X.get_window_title(dpy, win)[0:self.MAX_LENGHT]
-				menuitem = MenuItem(str(win), title)
+				title = X.get_window_title(dpy, win)
+				if title is None:
+					# Window is gone or has no title
+					title = "(no title)"
+				menuitem = MenuItem(str(win), title[0:self.MAX_LENGHT])
 				menuitem.callback = WindowListMenuGenerator.callback
 				rv.append(menuitem)
 		return rv

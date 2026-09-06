@@ -281,6 +281,11 @@ class Condition(object):
 			# Empty condition matches nothing
 			return False
 		
+		if not window_title or wm_class is None:
+			# Window properties could not be determined (window is gone,
+			# has no title, etc.)
+			return False
+		
 		if self.wm_class:
 			if self.wm_class != wm_class[0] and self.wm_class != wm_class[1]:
 				# Window class matching is enabled and window doesn't match
@@ -347,9 +352,12 @@ class AutoswitchOptsMenuGenerator(MenuGenerator):
 		
 		self.title = X.get_window_title(menuhandler.xdisplay, win)
 		self.wm_class = X.get_window_class(menuhandler.xdisplay, win)
+		if self.title is None:
+			# Active window has no title or is gone
+			self.title = ""
 		self.assigned_prof = None
 		self.conds = AutoSwitcher.parse_conditions(Config())
-		if self.title and "-" in self.title:
+		if "-" in self.title:
 			self.title = self.title.split("-")[-1]
 		for c in self.conds:
 			if c.matches(self.title, self.wm_class):
@@ -357,7 +365,7 @@ class AutoswitchOptsMenuGenerator(MenuGenerator):
 				break
 		if win:
 			display_title = self.title or _("No Title")
-			rv.append(self.mk_item(None, _("Current Window: %s") % (self.title[0:25],)))
+			rv.append(self.mk_item(None, _("Current Window: %s") % (self.title[0:25] or _("No Title"),)))
 			if self.assigned_prof:
 				rv.append(self.mk_item(None, _("Assigned Profile: %s") % (self.assigned_prof,)))
 			else:
