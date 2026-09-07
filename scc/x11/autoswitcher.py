@@ -11,7 +11,7 @@ from scc.menu_data import MenuGenerator, MenuItem, Separator, MENU_GENERATORS
 from scc.special_actions import ChangeProfileAction
 from scc.parser import TalkingActionParser
 from scc.paths import get_daemon_socket
-from scc.lib import xwrappers as X
+from scc.lib import activewindow
 from scc.tools import find_profile
 from scc.actions import Action
 from scc.mapper import Mapper
@@ -23,9 +23,8 @@ log = logging.getLogger("AutoSwitcher")
 
 class AutoSwitcher(object):
 	INTERVAL = 1
-	
+
 	def __init__(self):
-		self.dpy = X.open_display(os.environ["DISPLAY"].encode("utf-8"))
 		self.lock = threading.Lock()
 		self.thread = threading.Thread(target=self.connect_daemon)
 		self.config = Config()
@@ -38,8 +37,8 @@ class AutoSwitcher(object):
 		self.current_profile = None
 		self.current_window = None
 		self.conds = AutoSwitcher.parse_conditions(self.config)
-	
-	
+
+
 	@staticmethod
 	def parse_conditions(config):
 		""" Parses conditions from config """
@@ -59,14 +58,14 @@ class AutoSwitcher(object):
 				log.error(e)
 		log.debug("Parsed %s autoswitcher conditions", len(conds))
 		return conds
-	
-	
+
+
 	@staticmethod
 	def assign(conds, title, wm_class, profile):
 		c = Condition(wm_class=wm_class[0])
 		conds[c] = ChangeProfileAction(profile)
-	
-	
+
+
 	@staticmethod
 	def unassign(conds, title, wm_class, action):
 		"""
@@ -83,8 +82,8 @@ class AutoSwitcher(object):
 					del conds[c]
 					count += 1
 		log.debug("Removed %s autoswitcher conditions", count)
-	
-	
+
+
 	def connect_daemon(self, *a):
 		try:
 			self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -94,7 +93,7 @@ class AutoSwitcher(object):
 			log.error("Failed to connect to scc-daemon")
 			os._exit(1)
 			return
-		buffer = ""
+		buffer = b""
 		while self.exit_code is None:
 			r = self.socket.recv(1024)
 			self.lock.acquire()
@@ -104,8 +103,9 @@ class AutoSwitcher(object):
 				os._exit(2)
 				return
 			buffer += r
-			while "\n" in buffer:
-				line, buffer = buffer.split("\n", 1)
+			while b"\n" in buffer:
+				line, buffer = buffer.split(b"\n", 1)
+				line = line.decode("utf-8", "replace")
 				if line.startswith("Version:"):
 					version = line.split(":", 1)[-1].strip()
 					log.debug("Connected to daemon, version %s", version)
@@ -120,31 +120,32 @@ class AutoSwitcher(object):
 				elif line.startswith("Controller Count:"):
 					self.enabled = int(line.split(":")[-1]) > 0
 					log.debug("Enabled: %s", self.enabled)
-			
+
 			self.lock.release()
-	
-	
+
+
 	def check(self, *a):
-		w = X.get_current_window(self.dpy)
+		w = activewindow.get_active_window()
 		if w == self.current_window or not self.current_profile:
 			# Window not switched or profile is not known yet
 			return
 		self.current_window = w
-		log.debug("Window switched: %s", w)
-		pars = X.get_window_title(self.dpy, w), X.get_window_class(self.dpy, w)
-
-		if pars[0] is None:
-			pars = ("",pars[1])
-
-		if pars[1] is None:
-			pars = (pars[0], ("",""))
+		if w is None:
+			return
+		title, wm_class = w
+		log.debug("Window switched: %s / %s", wm_class[0], title)
+		if title is None:
+			title = ""
+		if wm_class is None or wm_class == (None, None):
+			wm_class = ("", "")
+		pars = (title, wm_class)
 		for c in self.conds:
 			if c.matches(*pars):
 				action = self.conds[c]
 				action.button_press(self.mapper)
 				action.button_release(self.mapper)
-	
-	
+
+
 	def on_sa_profile(self, mapper, action):
 		profile_name = action.profile
 		path = find_profile(profile_name)
@@ -164,8 +165,8 @@ class AutoSwitcher(object):
 						return
 		else:
 			log.error("Cannot switch to profile '%s', profile file not found", self.conds[c])
-	
-	
+
+
 	def on_sa_turnoff(self, mapper, action):
 		with self.lock:
 			try:
@@ -173,8 +174,8 @@ class AutoSwitcher(object):
 			except:
 				log.error("Socket write failed")
 				os._exit(2)
-	
-	
+
+
 	def on_sa_restart(self, *a):
 		with self.lock:
 			try:
@@ -182,13 +183,13 @@ class AutoSwitcher(object):
 			except:
 				log.error("Socket write failed")
 				os._exit(2)
-	
-	
+
+
 	def sigint(self, *a):
 		log.error("break")
 		os._exit(0)
-	
-	
+
+
 	def run(self):
 		self.thread.start()
 		log.debug("AutoSwitcher started")
@@ -202,14 +203,14 @@ class AutoSwitcher(object):
 class Condition(object):
 	"""
 	Represents AutoSwitcher condition loaded from configuration file.
-	
+
 	Currently, there are 4 ways to match window:
 	By exact title, by part of title, by regexp aplied on title and by matching
 	window class.
 	It's possible to combine all three types of title matching with window class
 	matching.
 	"""
-	
+
 	def __init__(self, exact_title=None, title=None, regexp=None, wm_class=None):
 		"""
 		At least one parameter has to be specified; regexp has to be
@@ -222,13 +223,13 @@ class Condition(object):
 			self.regexp = re.compile(self.regexp)
 		self.wm_class = wm_class
 		self.empty = not ( title or title or regexp or wm_class )
-	
-	
+
+
 	def __str__(self):
 		return "<Condition title=%s, exact_title=%s, regexp=%s, wm_class=%s>" % (
 			self.title, self.exact_title, self.regexp, self.wm_class)
-	
-	
+
+
 	def describe(self):
 		"""
 		Returns string that describes condition in human-readable form.
@@ -246,15 +247,15 @@ class Condition(object):
 		if rv:
 			return _(" and ").join(rv)
 		return _("matches nothing")
-	
-	
+
+
 	@staticmethod
 	def parse(data):
 		if 'regexp' in data:
 			data = dict(data)
 			data['regexp'] = re.compile(data['regexp'])
 		return Condition(**data)
-	
+
 	def encode(self):
 		"""
 		Returns Condition in dict that can be stored in json configuration
@@ -269,47 +270,47 @@ class Condition(object):
 		if self.wm_class:
 			rv['wm_class'] = self.wm_class
 		return rv
-	
-	
+
+
 	def matches(self, window_title, wm_class):
 		"""
 		Returns True if condition matches provided window properties.
-		
-		wm_class is what xwrappers.get_window_class returns, tuple of two strings.
+
+		wm_class is tuple of (class, res_name)
 		"""
 		if self.empty:
 			# Empty condition matches nothing
 			return False
-		
+
 		if not window_title or wm_class is None:
 			# Window properties could not be determined (window is gone,
 			# has no title, etc.)
 			return False
-		
+
 		if self.wm_class:
 			if self.wm_class != wm_class[0] and self.wm_class != wm_class[1]:
 				# Window class matching is enabled and window doesn't match
 				return False
-			
+
 		if self.exact_title and self.exact_title != window_title:
 			# Matching exact title is enabled, but title doesn't match
 			return False
-		
+
 		if self.title and self.title not in window_title:
 			# Matching part of title is enabled, but doesn't match
 			return False
-		
+
 		if self.regexp and not self.regexp.match(window_title):
 			# Matching by regexp is enabled, but regexp doesn't match
 			return False
-		
+
 		return True
 
 
 class AutoswitchOptsMenuGenerator(MenuGenerator):
 	""" Generates entire Autoswich Options submenu """
 	GENERATOR_NAME = "autoswitch"
-	
+
 	def callback(self, menu, daemon, controller, menuitem):
 		def on_response(*a):
 			menu.quit(-2)
@@ -335,50 +336,48 @@ class AutoswitchOptsMenuGenerator(MenuGenerator):
 			daemon.request("Reconfigure.\n", on_response, on_response)
 		else:
 			on_response()
-	
-	
+
+
 	def describe(self):
 		return _("[ All Profiles ]")
-	
-	
+
+
 	def generate(self, menuhandler):
 		rv = []
-		win = X.get_current_window(menuhandler.xdisplay)
-		if not win:
+		w = activewindow.get_active_window()
+		if not w:
 			# Bail out if active window cannot be determined
 			rv.append(self.mk_item(None, _("No active window")))
 			rv.append(self.mk_item("as::close", _("Close")))
 			return rv
-		
-		self.title = X.get_window_title(menuhandler.xdisplay, win)
-		self.wm_class = X.get_window_class(menuhandler.xdisplay, win)
+
+		self.title, self.wm_class = w
 		if self.title is None:
-			# Active window has no title or is gone
+			# Active window has no title
 			self.title = ""
+		if self.wm_class is None or self.wm_class == (None, None):
+			self.wm_class = ("", "")
 		self.assigned_prof = None
 		self.conds = AutoSwitcher.parse_conditions(Config())
-		if "-" in self.title:
-			self.title = self.title.split("-")[-1]
 		for c in self.conds:
 			if c.matches(self.title, self.wm_class):
 				self.assigned_prof = self.conds[c]
 				break
-		if win:
-			display_title = self.title or _("No Title")
-			rv.append(self.mk_item(None, _("Current Window: %s") % (self.title[0:25] or _("No Title"),)))
-			if self.assigned_prof:
-				rv.append(self.mk_item(None, _("Assigned Profile: %s") % (self.assigned_prof,)))
-			else:
-				rv.append(self.mk_item(None, _("No Profile Assigned")))
-			rv.append(Separator())
-			rv.append(Separator())
-			rv.append(Separator())
-			if self.assigned_prof:
-				rv.append(self.mk_item("as::unassign", _("Unassign Profile")))
-			rv.append(self.mk_item("as::assign", _("Assign Current Profile")))
+		display_title = self.title or _("No Title")
+		rv.append(self.mk_item(None, _("Current Window: %s") % (self.title[0:25] or _("No Title"),)))
+		if self.assigned_prof:
+			rv.append(self.mk_item(None, _("Assigned Profile: %s") % (self.assigned_prof,)))
+		else:
+			rv.append(self.mk_item(None, _("No Profile Assigned")))
+		rv.append(Separator())
+		rv.append(Separator())
+		rv.append(Separator())
+		if self.assigned_prof:
+			rv.append(self.mk_item("as::unassign", _("Unassign Profile")))
+		rv.append(self.mk_item("as::assign", _("Assign Current Profile")))
 		return rv
-	
-	
+
+
 	def mk_item(self, id, title, **kws):
 		""" Creates menu item and assigns callback """
 		menuitem = MenuItem(id, title)

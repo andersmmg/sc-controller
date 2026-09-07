@@ -20,6 +20,11 @@ def _sigint_break(code=0):
 	signal.signal(signal.SIGINT, handler)
 
 
+def _prefer_x11_backend():
+	if "WAYLAND_DISPLAY" in os.environ and "DISPLAY" in os.environ:
+		os.environ["GDK_BACKEND"] = "x11"
+
+
 def scc():
 	from scc.scripts import main
 	main()
@@ -78,6 +83,7 @@ def sc_controller():
 
 def osd_dialog():
 	_sigint_break(-1)
+	_prefer_x11_backend()
 	import gi
 	gi.require_version('Gtk', '3.0')
 	gi.require_version('Rsvg', '2.0')
@@ -98,6 +104,7 @@ def osd_dialog():
 
 def osd_keyboard():
 	_sigint_break(0)
+	_prefer_x11_backend()
 	import gi
 	gi.require_version('Gtk', '3.0')
 	gi.require_version('Rsvg', '2.0')
@@ -116,6 +123,7 @@ def osd_keyboard():
 
 def osd_launcher():
 	_sigint_break(-1)
+	_prefer_x11_backend()
 	import gi
 	gi.require_version('Gtk', '3.0')
 	gi.require_version('Rsvg', '2.0')
@@ -134,6 +142,7 @@ def osd_launcher():
 
 def osd_menu():
 	_sigint_break(-1)
+	_prefer_x11_backend()
 	import gi
 	gi.require_version('Gtk', '3.0')
 	gi.require_version('Rsvg', '2.0')
@@ -154,6 +163,7 @@ def osd_menu():
 
 def osd_message():
 	_sigint_break(0)
+	_prefer_x11_backend()
 	import gi
 	gi.require_version('Gtk', '3.0')
 	gi.require_version('Rsvg', '2.0')
@@ -172,6 +182,7 @@ def osd_message():
 
 def osd_radial_menu():
 	_sigint_break(-1)
+	_prefer_x11_backend()
 	import gi
 	gi.require_version('Gtk', '3.0')
 	gi.require_version('Rsvg', '2.0')
@@ -192,6 +203,7 @@ def osd_radial_menu():
 
 def osd_show_bindings():
 	_sigint_break(-1)
+	_prefer_x11_backend()
 	import gi
 	gi.require_version('Gtk', '3.0')
 	gi.require_version('Rsvg', '2.0')

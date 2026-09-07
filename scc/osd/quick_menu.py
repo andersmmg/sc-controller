@@ -195,6 +195,8 @@ class QuickMenu(Menu):
 	def on_submenu_closed(self, *a):
 		# Quickmenu can have submenus, but everything cancels at once when
 		# last Quickmenu in hierarchy is canceled or timeouts
+		if self._submenu is None:
+			return
 		if self._submenu.get_exit_code() in (0, -2):
 			self._menuid = self._submenu._menuid
 		self._selected = self._submenu._selected

@@ -13,7 +13,6 @@ if not os.environ.get("SCC_SHARED") and os.path.isdir(os.path.join(_ROOT, "glade
 	os.environ["SCC_SHARED"] = _ROOT
 
 from scc.x11.autoswitcher import AutoSwitcher
-from scc.lib import xwrappers as X
 from scc.tools import set_logging_level, find_profile
 from scc.paths import get_daemon_socket
 from scc.config import Config
@@ -28,8 +27,8 @@ if __name__ == "__main__":
 	init_logging(suffix=" AS ")
 	set_logging_level('debug' in sys.argv, 'debug' in sys.argv)
 	
-	if "DISPLAY" not in os.environ:
-		log.error("DISPLAY env variable not set.")
+	if "DISPLAY" not in os.environ and "WAYLAND_DISPLAY" not in os.environ:
+		log.error("Neither DISPLAY nor WAYLAND_DISPLAY env variable is set.")
 		sys.exit(1)
 	
 	d = AutoSwitcher()

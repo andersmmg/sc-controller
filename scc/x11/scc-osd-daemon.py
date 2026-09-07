@@ -34,6 +34,8 @@ import traceback
 
 from gi.repository import Gdk, GdkX11, GLib
 
+GLib.set_prgname("scc-osd-daemon")
+
 from scc.config import Config
 from scc.gui.daemon_manager import DaemonManager
 from scc.osd import OSDWindow

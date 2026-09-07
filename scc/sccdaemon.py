@@ -430,9 +430,10 @@ class SCCDaemon(Daemon):
 			self.xdisplay = None
 			return
 
-		self.xdisplay = X.open_display(os.environ["DISPLAY"].encode("utf-8"))
+		display = os.environ.get("DISPLAY")
+		self.xdisplay = X.open_display(display.encode("utf-8")) if display else None
 		if self.xdisplay:
-			log.debug("Connected to XServer %s", os.environ["DISPLAY"])
+			log.debug("Connected to XServer %s", display)
 
 			for c in self.controllers:
 				if c.get_mapper():
@@ -441,12 +442,12 @@ class SCCDaemon(Daemon):
 				m.set_xdisplay(self.xdisplay)
 			if not self.alone:
 				self.subprocs.append(Subprocess("scc-osd-daemon", True))
-				if len(Config()["autoswitch"]):
-					# Start scc-autoswitch-daemon only if there are some switch rules defined
-					self.subprocs.append(Subprocess("scc-autoswitch-daemon", True))
 		else:
 			log.warning("Failed to connect to XServer. Some functionality will be unavailable")
 			self.xdisplay = None
+		if len(Config()["autoswitch"]):
+			# Start scc-autoswitch-daemon if there are some switch rules defined
+			self.subprocs.append(Subprocess("scc-autoswitch-daemon", True))
 
 
 	def init_mapper(self):
@@ -869,7 +870,7 @@ class SCCDaemon(Daemon):
 					c.apply_config(cfg.get_controller_config(c.get_id()))
 				# Start or stop scc-autoswitch-daemon as needed
 				need_autoswitch_daemon = len(cfg["autoswitch"]) > 0
-				if need_autoswitch_daemon and self.xdisplay and not self.autoswitch_daemon:
+				if need_autoswitch_daemon and not self.autoswitch_daemon:
 					self.subprocs.append(Subprocess("scc-autoswitch-daemon", True))
 				elif not need_autoswitch_daemon and self.autoswitch_daemon:
 					self._remove_subproccess("scc-autoswitch-daemon")

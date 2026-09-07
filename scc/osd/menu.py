@@ -59,6 +59,7 @@ class Menu(OSDWindow):
 		self.add(self.f)
 
 		self._submenu = None
+		self._quitting = False
 		self._scon = StickController()
 		self._scon.connect("direction", self.on_stick_direction)
 		self._is_submenu = False
@@ -320,34 +321,37 @@ class Menu(OSDWindow):
 
 
 	def _check_on_screen_position(self, quick=False):
+		gdk_window = self.get_window()
+		if gdk_window is None:
+			return
 		x, y = Menu._get_on_screen_position(self._selected.widget)
 		try:
-			m = self.get_window().get_display().get_monitor_at_window(self.get_window())
+			m = gdk_window.get_display().get_monitor_at_window(gdk_window)
 			assert m
 			y_offset = m.get_geometry().y
 			screen_height = m.get_geometry().height
 		except:
 			y_offset = 0
-			primary = self.get_window().get_display().get_primary_monitor()
+			primary = gdk_window.get_display().get_primary_monitor()
 			screen_height = primary.get_geometry().height if primary \
 				else 600
 		y -= y_offset
 		if y < 50:
-			wx, wy = self.get_window().get_position()
+			wx, wy = gdk_window.get_position()
 			if quick:
 				wy = 50 - (y - wy)
 			else:
 				wy += 5
 				GLib.timeout_add(2, self._check_on_screen_position)
-			self.get_window().move(wx, wy)
+			gdk_window.move(wx, wy)
 		if y > screen_height - 100:
-			wx, wy = self.get_window().get_position()
+			wx, wy = gdk_window.get_position()
 			if quick:
 				wy = screen_height - 100 - (y - wy)
 			else:
 				wy -= 5
 				GLib.timeout_add(2, self._check_on_screen_position)
-			self.get_window().move(wx, wy)
+			gdk_window.move(wx, wy)
 
 
 	def _connect_handlers(self):
@@ -436,12 +440,18 @@ class Menu(OSDWindow):
 
 
 	def quit(self, code=-2):
+		self._quitting = True
 		if not self._is_submenu:
 			if self.get_controller():
 				self.get_controller().unlock_all()
 			for source, eid in self._eh_ids:
 				source.disconnect(eid)
 			self._eh_ids = []
+		if self._submenu is not None and not self._submenu._quitting:
+			# make sure submenus close too
+			submenu = self._submenu
+			self._submenu = None
+			submenu.quit(code)
 		OSDWindow.quit(self, code)
 
 
@@ -474,6 +484,8 @@ class Menu(OSDWindow):
 
 	def on_submenu_closed(self, *a):
 		self.set_name("osd-menu")
+		if self._submenu is None:
+			return
 		if self._submenu.get_exit_code() in (0, -2):
 			self._menuid = self._submenu._menuid
 			self._selected = self._submenu._selected

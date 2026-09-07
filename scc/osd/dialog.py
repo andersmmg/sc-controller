@@ -230,7 +230,10 @@ class Dialog(OSDWindow):
 		self._confirm_with = ccfg["menu_confirm"] if self.args.confirm_with == DEFAULT else self.args.confirm_with
 		self._cancel_with = ccfg["menu_cancel"] if self.args.cancel_with == DEFAULT else self.args.cancel_with
 
-		self._eh_ids += [ (self.controller, self.controller.connect('event', self.on_event)) ]
+		self._eh_ids += [
+			(self.controller, self.controller.connect('event', self.on_event)),
+			(self.controller, self.controller.connect('lost', self.on_controller_lost)),
+		]
 		locks = [ self._control_with, self._confirm_with, self._cancel_with ]
 		self.controller.lock(success, self.on_failed_to_lock, *locks)
 

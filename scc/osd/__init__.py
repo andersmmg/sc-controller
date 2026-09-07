@@ -146,8 +146,12 @@ class OSDWindow(Gtk.Window):
 
 
 	def make_window_clicktrough(self):
+		gdk_window = self.get_window()
+		if not isinstance(gdk_window, GdkX11.X11Window):
+			log.warning("Window clicktrough not available on this GDK backend")
+			return
 		dpy = X.Display(hash(GdkX11.x11_get_default_xdisplay()))		# I have no idea why this works...
-		win = X.XID(self.get_window().get_xid())
+		win = X.XID(gdk_window.get_xid())
 		reg = X.create_region(dpy, None, 0)
 		X.set_window_shape_region (dpy, win, X.SHAPE_BOUNDING, 0, 0, 0)
 		X.set_window_shape_region (dpy, win, X.SHAPE_INPUT, 0, 0, reg)
@@ -211,7 +215,8 @@ class OSDWindow(Gtk.Window):
 	def show(self):
 		self.get_children()[0].show_all()
 		self.realize()
-		self.get_window().set_override_redirect(True)
+		if isinstance(self.get_window(), GdkX11.X11Window):
+			self.get_window().set_override_redirect(True)
 
 		x, y = self.compute_position()
 		primary = self.get_window().get_display().get_primary_monitor()

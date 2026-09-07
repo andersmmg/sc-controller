@@ -76,6 +76,8 @@ class Area(OSDWindow, TimerManager):
 		Uses shape extension to create hole in window...
 		Area needs only border, rest should be transparent.
 		"""
+		if not isinstance(self.get_window(), GdkX11.X11Window):
+			return
 		width, height = self.size
 		dpy = X.Display(hash(GdkX11.x11_get_default_xdisplay()))		# I have no idea why this works...
 		wid = X.XID(self.get_window().get_xid())

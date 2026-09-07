@@ -196,6 +196,9 @@ class RadialMenu(Menu):
 	def show(self):
 		OSDWindow.show(self)
 
+		if not isinstance(self.get_window(), GdkX11.X11Window):
+			return
+
 		from ctypes import byref
 
 		pb = self.b.get_pixbuf()
