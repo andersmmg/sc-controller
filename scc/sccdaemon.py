@@ -68,6 +68,7 @@ class SCCDaemon(Daemon):
 		self.cemuhook = None
 		self.default_mapper = None
 		self.free_mappers = [ ]
+		self._controller_profiles = {}
 		self.clients = set()
 		self.cwd = os.getcwd()
 
@@ -512,6 +513,15 @@ class SCCDaemon(Daemon):
 		else:
 			# New controller, but no mapper created
 			mapper = self.init_mapper()
+
+		profile = self._controller_profiles.get(c.get_id())
+		if profile:
+			try:
+				mapper.profile.load(profile).compress()
+			except Exception as e:
+				log.warning("Failed to restore profile for %s: %s", c, e)
+				self.load_default_profile(mapper)
+		else:
 			self.load_default_profile(mapper)
 		mapper.set_controller(c)
 		c.set_mapper(mapper)
@@ -533,6 +543,9 @@ class SCCDaemon(Daemon):
 		mapper = c.mapper
 		if mapper:
 			mapper.release_virtual_buttons()
+			profile = mapper.profile.get_filename()
+			if profile:
+				self._controller_profiles[c.get_id()] = profile
 		c.disconnected()
 
 		with self.lock:
@@ -546,8 +559,16 @@ class SCCDaemon(Daemon):
 				# is disconnected, it's reassigned to next available controller
 				swap_c = self.controllers[0]
 				swap_mapper = swap_c.get_mapper()
+				swap_profile = swap_mapper.profile.get_filename()
+				if swap_profile:
+					self._controller_profiles[swap_c.get_id()] = swap_profile
 				swap_mapper.set_controller(None)
 				swap_c.set_mapper(mapper)
+				if swap_profile:
+					try:
+						mapper.profile.load(swap_profile).compress()
+					except Exception as e:
+						log.warning("Failed to restore profile for %s: %s", swap_c, e)
 				mapper.set_controller(swap_c)
 				self.free_mappers.append(swap_mapper)
 				log.debug("Reassigned default_mapper to %s", swap_c)

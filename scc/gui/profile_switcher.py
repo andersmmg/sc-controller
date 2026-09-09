@@ -348,8 +348,11 @@ class ProfileSwitcher(Gtk.EventBox, UserDataManager):
 
 
 	def get_file(self):
-		""" Returns set profile as GIO file or None if there is no any """
-		return None
+		"""Returns the currently selected profile as a GIO file."""
+		active = self._combo.get_active_iter()
+		if active is None:
+			return None
+		return self._model.get_value(active, 1)
 
 
 	def set_controller(self, c):
@@ -361,6 +364,8 @@ class ProfileSwitcher(Gtk.EventBox, UserDataManager):
 			name = self.config.get_controller_config(c.get_id())["name"]
 			self._icon.set_tooltip_text(name)
 			self._signal = c.connect('profile-changed', self.on_profile_changed)
+			if c.get_profile():
+				self.set_profile(c.get_profile(), True)
 		else:
 			self._icon.set_tooltip_text(_("Profile"))
 		self.update_icon()

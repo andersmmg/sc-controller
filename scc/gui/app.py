@@ -370,7 +370,8 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 				do_loading()
 				return
 		if not first:
-			stckEditor.set_transition_type(Gtk.StackTransitionType.SLIDE_DOWN)
+			do_loading()
+			return
 		stckEditor.set_visible_child(lblEmpty)
 		GLib.timeout_add(stckEditor.get_transition_duration(), do_loading)
 
@@ -875,16 +876,24 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 
 
 	def on_switch_to_clicked(self, ps, *a):
-		""" Switches editor to another controller """
+		"""Switches the editor and input test to another controller."""
 		ps0 = self.profile_switchers[0]
-		if ps == ps0: return
+		if ps == ps0:
+			return
 
 		c, p = ps.get_controller(), ps.get_profile_name()
 		c0, p0 = ps0.get_controller(), ps0.get_profile_name()
+		profile_file = ps.get_file()
 
-		ps0.set_controller(c); ps0.set_profile(p)
-		ps.set_controller(c0); ps.set_profile(p0)
+		ps0.set_controller(c)
+		ps0.set_profile(p)
+		ps.set_controller(c0)
+		ps.set_profile(p0)
+		ps0.set_switch_to_enabled(False)
+		ps.set_switch_to_enabled(True)
 
+		if profile_file is not None:
+			self.load_profile(profile_file)
 		self.load_gui_config_for_controller(c, False)
 		self.enable_test_mode()
 
@@ -1078,48 +1087,115 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		self.set_daemon_status("alive", True)
 		if not self.release_notes_visible():
 			self.hide_error()
+		was_just_started = self.just_started
 		self.just_started = False
 		if self.osd_mode:
 			self.enable_osd_mode()
-		elif self.profile_switchers[0].get_file() is not None and not self.just_started:
-			self.dm.set_profile(self.current_file.get_path())
+		elif self.profile_switchers[0].get_file() is not None and not was_just_started:
+			controller = self.profile_switchers[0].get_controller()
+			if controller:
+				controller.set_profile(self.current_file.get_path())
+			else:
+				self.dm.set_profile(self.current_file.get_path())
 		GLib.timeout_add_seconds(1, self.check)
 		self.enable_test_mode()
 
 
 	def on_daemon_ccunt_changed(self, daemon, count):
-		if self.controller_count == 0:
-			# First controller connected
-			#
-			# 'event' signal should be connected only on first controller,
-			# so this block is executed only when number of connected
-			# controllers changes from 0 to 1
-			if len(self.dm.get_controllers()) > 0:
-				c = self.dm.get_controllers()[0]
-				self.load_gui_config_for_controller(c, first=True)
-				self.enable_test_mode()
-		if count > self.controller_count:
-			# Controller added
-			while len(self.profile_switchers) < count:
-				s = self.add_switcher()
-		elif count < self.controller_count:
-			# Controller removed
-			while len(self.profile_switchers) > max(1, count):
-				s = self.profile_switchers.pop()
-				s.set_controller(None)
-				self.remove_switcher(s)
-			self.hide_test_markers()
+		"""Reconcile profile switchers with the daemon's controller list.
 
-		# Assign controllers to widgets
-		for i in range(0, count):
-			c = self.dm.get_controllers()[i]
-			self.profile_switchers[i].set_controller(c)
+		The daemon list is ordered by connection, so its positions are not stable
+		when a controller is unplugged or reconnects. Keep switchers associated
+		with controller IDs instead of assigning them by position.
+		"""
+		controllers = self.dm.get_controllers()
+		old_switchers = self.profile_switchers[:]
+		switchers_by_id = {
+			ps.get_controller().get_id(): ps
+			for ps in old_switchers
+			if ps.get_controller() is not None
+		}
+		old_primary = old_switchers[0] if old_switchers else None
+		old_primary_controller = (
+			old_primary.get_controller() if old_primary else None)
+		connected_ids = {c.get_id() for c in controllers}
 
-		if count < 1:
-			# Special case, no controllers are connected, but one widget
-			# has to stay on screen
+		# Keep editing the same controller if it is still connected. If it was
+		# removed, promote the daemon's first controller to the editor.
+		if (old_primary_controller is not None
+				and old_primary_controller.get_id() in connected_ids):
+			primary_controller = old_primary_controller
+		else:
+			primary_controller = controllers[0] if controllers else None
+
+		wanted = []
+		if primary_controller is None and old_primary is not None:
+			# Keep the placeholder widget when all controllers are gone.
+			wanted.append(old_primary)
+		if primary_controller is not None:
+			primary_id = primary_controller.get_id()
+			primary = switchers_by_id.pop(primary_id, None)
+			if primary is None:
+				# Reuse the empty initial switcher when possible.
+				if old_primary and old_primary.get_controller() is None:
+					primary = old_primary
+				else:
+					primary = self.add_switcher()
+					self.profile_switchers.pop()
+			wanted.append(primary)
+
+		for c in controllers:
+			if c is primary_controller:
+				continue
+			ps = switchers_by_id.pop(c.get_id(), None)
+			if ps is None:
+				ps = self.add_switcher()
+				self.profile_switchers.pop()
+			wanted.append(ps)
+
+		# Remove only switchers belonging to controllers no longer present.
+		for ps in old_switchers:
+			if ps not in wanted:
+				ps.set_controller(None)
+				self.remove_switcher(ps)
+
+		self.profile_switchers = wanted
+		if primary_controller is not None:
+			ordered_controllers = [primary_controller] + [
+				c for c in controllers if c is not primary_controller]
+			for index, (ps, c) in enumerate(zip(
+					self.profile_switchers, ordered_controllers)):
+				ps.set_controller(c)
+				ps.set_switch_to_enabled(index > 0)
+
+		vb_switchers = self.builder.get_object("vbSwitchers")
+		separator = self.builder.get_object("sepSwitchers")
+		if len(self.profile_switchers) > 1:
+			for index, ps in enumerate(reversed(self.profile_switchers), 1):
+				vb_switchers.reorder_child(ps, index)
+			separator.set_visible(True)
+		else:
+			separator.set_visible(False)
+
+		if primary_controller is None:
+			# Keep one empty widget visible when no controllers are connected.
+			if not self.profile_switchers:
+				self.profile_switchers = [self.add_switcher()]
 			self.profile_switchers[0].set_controller(None)
+			self.profile_switchers[0].set_switch_to_enabled(False)
 			self.load_gui_config_for_controller(None, first=True)
+			self.hide_test_markers()
+		else:
+			self.load_gui_config_for_controller(
+				primary_controller, first=self.controller_count == 0)
+			if old_primary_controller is not primary_controller:
+				profile = primary_controller.get_profile()
+				if profile:
+					self.profile_switchers[0].set_profile(profile, True)
+					profile_file = self.profile_switchers[0].get_file()
+					if profile_file is not None:
+						self.load_profile(profile_file)
+			self.enable_test_mode()
 
 		self.controller_count = count
 
@@ -1195,10 +1271,9 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		if self.dm.is_alive() and not self.osd_mode:
 			if self.test_mode_controller:
 				self.test_mode_controller.unlock_all()
-			try:
-				c = self.dm.get_controllers()[0]
-			except IndexError:
-				# Zero controllers
+			c = self.profile_switchers[0].get_controller()
+			if c is None:
+				# Zero controllers, or the UI has not been assigned one yet.
 				return
 			if c:
 				c.unlock_all()
@@ -1344,6 +1419,8 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 
 
 	def on_daemon_event_observer(self, daemon, c, what, data):
+		if not self.osd_mode_mapper and c is not self.test_mode_controller:
+			return
 		if self.osd_mode_mapper:
 			self.osd_mode_mapper.handle_event(daemon, what, data)
 		elif what in (STICK, RSTICK):
