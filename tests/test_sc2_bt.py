@@ -1,3 +1,4 @@
+import errno
 import os
 import struct
 
@@ -139,6 +140,59 @@ def test_state_report_parsed_and_dispatched(monkeypatch):
 	assert state.gpitch == -5
 	assert state.groll == -10
 	assert state.gyaw == 15
+
+
+def test_bluetooth_input_smoothing_averages_analog_reports(monkeypatch):
+	dev, daemon, driver, hidraw = make_device()
+	dev.mapper = FakeMapper()
+	reports = [
+		make_state_report(stick=(0, 0), gyro=(0, 0, 0)),
+		make_state_report(stick=(300, -300), gyro=(0, 0, 0)),
+		make_state_report(stick=(600, -600), gyro=(0, 0, 0)),
+	]
+	monkeypatch.setattr(os, "read", lambda fd, n: reports.pop(0))
+
+	dev._input()
+	dev._input()
+	dev._input()
+
+	assert [state.stick_x for old, state in dev.mapper.inputs] == [0, 150, 300]
+	assert [state.stick_y for old, state in dev.mapper.inputs] == [0, -150, -300]
+
+
+def test_touchpad_contact_does_not_jump_from_zero(monkeypatch):
+	dev, daemon, driver, hidraw = make_device()
+	dev.mapper = FakeMapper()
+	touch = 1 << 25
+	reports = [
+		make_state_report(pads=(0, 0, 0, 0)),
+		make_state_report(buttons=touch, pads=(900, -400, 0, 0)),
+		make_state_report(buttons=touch, pads=(900, -400, 0, 0)),
+	]
+	monkeypatch.setattr(os, "read", lambda fd, n: reports.pop(0))
+
+	dev._input()
+	dev._input()
+	dev._input()
+
+	assert dev.mapper.inputs[1][1].lpad_x == 900
+	assert dev.mapper.inputs[1][1].lpad_y == -400
+	assert dev.mapper.inputs[2][1].lpad_x == 900
+	assert dev.mapper.inputs[2][1].lpad_y == -400
+
+
+def test_nonblocking_read_error_does_not_start_disconnect_probe(monkeypatch):
+	dev, daemon, driver, hidraw = make_device()
+	dev.mapper = FakeMapper()
+
+	def would_block(fd, n):
+		raise BlockingIOError(errno.EAGAIN, "temporarily unavailable")
+
+	monkeypatch.setattr(os, "read", would_block)
+	dev._input()
+
+	assert daemon.scheduler.tasks == []
+	assert daemon.removed == []
 
 
 def test_touchpad_data_zeroed_when_not_touched(monkeypatch):

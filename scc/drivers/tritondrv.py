@@ -23,6 +23,7 @@ controller has ~50ms haptic safety timeout, and one-shot click (0x82)
 for discrete haptic events
 """
 
+import errno
 import logging
 import math
 import struct
@@ -38,6 +39,7 @@ from scc.constants import (
 	SCButtons,
 )
 from scc.controller import Controller
+from scc.drivers.input_smoothing import InputSmoother
 from scc.drivers.usb import USBDevice, register_hotplug_device
 from scc.lib import usb1
 from scc.lib.hidraw import HIDRaw
@@ -88,7 +90,8 @@ RUMBLE_INTERVAL			= 0.040
 # Delay between SC2 BT reconnection attempts
 BT_RETRY_INTERVAL		= 1.0
 BT_PROBE_INTERVAL		= 0.25
-BT_PROBE_RETRIES		= 3
+BT_PROBE_RETRIES			= 3
+BT_DIAGNOSTIC_INTERVAL		= 5.0
 
 # Interface numbers of controller slots on the dongle
 DONGLE_SLOT_INTERFACES	= (2, 3, 4, 5)
@@ -504,8 +507,14 @@ class SC2Controller(Controller):
 			q_w, q_x, q_y, q_z,
 		)
 
+		state = self._prepare_input_state(state)
 		old_state, self._old_state = self._old_state, state
 		self.mapper.input(self, old_state, state)
+
+
+	def _prepare_input_state(self, state):
+		"""Hook for transports that need to normalize input reports."""
+		return state
 
 
 	def on_battery(self, data):
@@ -712,6 +721,11 @@ class SC2BTDevice(SC2Controller):
 		self._poller = driver.daemon.get_poller()
 		self._probe_count = 0
 		self._probing = False
+		self._input_smoother = InputSmoother()
+		self._last_input_time = None
+		self._last_diagnostic = 0.0
+		self._read_errors = 0
+		self._empty_reads = 0
 		self._id = "sc2bt:%s" % (
 			hidrawdev.getPhysicalAddress().decode("utf-8", "ignore")
 					.replace(":", ""), )
@@ -772,6 +786,12 @@ class SC2BTDevice(SC2Controller):
 		self.daemon.get_scheduler().schedule(BT_PROBE_INTERVAL, probe)
 
 
+	def _prepare_input_state(self, state):
+		"""Smooth BLE analog reports while keeping button edges immediate."""
+		trash, current = self._input_smoother.process(state)
+		return current
+
+
 	def _send_feature(self, data):
 		"""
 		Sends 64B feature report over hidraw, similar ot USB
@@ -800,11 +820,20 @@ class SC2BTDevice(SC2Controller):
 	def _input(self, *a):
 		try:
 			data = os.read(self._fileno, 64)
-		except (OSError, IOError):
+		except (OSError, IOError) as e:
+			# hidraw may be non-blocking.  EAGAIN means the poll event was
+			# already consumed, not that the Bluetooth link is gone.
+			if getattr(e, "errno", None) in (errno.EAGAIN, errno.EWOULDBLOCK):
+				return
+			self._read_errors += 1
+			self._log_read_diagnostics()
 			self._io_error("read")
 			return
 		if not data:
+			self._empty_reads += 1
+			self._log_read_diagnostics()
 			return
+		self._last_input_time = time.monotonic()
 		try:
 			if data[0] in (REPORT_STATE, REPORT_STATE_BLE, REPORT_STATE_TIMESTAMP):
 				self.input(data)
@@ -814,6 +843,15 @@ class SC2BTDevice(SC2Controller):
 			log.error("Failed to handle SC2 BT data")
 			log.error(e)
 			log.error(traceback.format_exc())
+
+
+	def _log_read_diagnostics(self):
+		now = time.monotonic()
+		if now - self._last_diagnostic < BT_DIAGNOSTIC_INTERVAL:
+			return
+		self._last_diagnostic = now
+		log.warning("SC2 Bluetooth input instability: %d read errors, %d "
+			"empty reads", self._read_errors, self._empty_reads)
 
 
 	def _disconnect(self):

@@ -9,6 +9,7 @@ from scc.lib.hidparse import UsagePage, parse_report_descriptor
 from scc.lib.hidparse import GenericDesktopPage, AXES
 from scc.drivers.usb import register_hotplug_device, unregister_hotplug_device
 from scc.drivers.usb import USBDevice
+from scc.drivers.input_smoothing import InputSmoother
 from scc.constants import STICK_PAD_MIN, STICK_PAD_MAX
 from scc.constants import SCButtons, ControllerFlags
 from scc.drivers.evdevdrv import FIRST_BUTTON, TRIGGERS, parse_axis
@@ -17,6 +18,7 @@ from scc.paths import get_config_path
 from scc.tools import find_library
 from scc.scheduler import Scheduler
 from scc.lib import IntEnum
+from scc.lib.hidraw import HIDRaw
 
 import os, json, ctypes, sys, logging
 log = logging.getLogger("HID")
@@ -235,7 +237,7 @@ class HIDController(USBDevice, Controller):
 			hid_descriptor = self.handle.getRawDescriptor(
 					LIBUSB_DT_REPORT, 0, 512)
 		with open("report", "wb") as fh:
-			fh.write(b"".join([ chr(x) for x in hid_descriptor ]))
+			fh.write(bytes(hid_descriptor))
 		self._build_hid_decoder(hid_descriptor, config, max_size)
 		self._packet_size = self._decoder.packet_size
 	
@@ -347,13 +349,13 @@ class HIDController(USBDevice, Controller):
 								if config:
 									target, axis_data = self._build_axis_maping(next_axis, config)
 									if axis_data:
-										axis_data.byte_offset = total / 8
+										axis_data.byte_offset = total // 8
 										axis_data.bit_offset = total % 8
 										axis_data.size = size
 										self._decoder.axes[target] = axis_data
 								else:
 									self._decoder.axes[next_axis] = AxisData(mode = AxisMode.AXIS_NO_SCALE)
-									self._decoder.axes[next_axis].byte_offset = total / 8
+									self._decoder.axes[next_axis].byte_offset = total // 8
 									self._decoder.axes[next_axis].bit_offset = total % 8
 									self._decoder.axes[next_axis].size = size
 								next_axis = next_axis + 1
@@ -368,12 +370,12 @@ class HIDController(USBDevice, Controller):
 							if config:
 								target, axis_data = self._build_axis_maping(next_axis, config, AxisMode.HATSWITCH)
 								if axis_data:
-									axis_data.byte_offset = total / 8
+									axis_data.byte_offset = total // 8
 									axis_data.bit_offset = total % 8
 									self._decoder.axes[target] = axis_data
 							else:
 								self._decoder.axes[next_axis] = AxisData(mode = AxisMode.HATSWITCH)
-								self._decoder.axes[next_axis].byte_offset = total / 8
+								self._decoder.axes[next_axis].byte_offset = total // 8
 								self._decoder.axes[next_axis].bit_offset = total % 8
 								self._decoder.axes[next_axis].data.hatswitch.min = STICK_PAD_MIN
 								self._decoder.axes[next_axis].data.hatswitch.max = STICK_PAD_MAX
@@ -394,7 +396,7 @@ class HIDController(USBDevice, Controller):
 						log.debug("Found %s buttons at bit %s", count, total)
 						self._decoder.buttons = ButtonData(
 							enabled = True,
-							byte_offset = total / 8,
+							byte_offset = total // 8,
 							bit_offset = total % 8,
 							size = buttons_size,
 							button_count = count,
@@ -405,7 +407,7 @@ class HIDController(USBDevice, Controller):
 						log.debug("Skipped over %s bits for %s at bit %s", count * size, kind, total)
 						total += count * size
 		
-		self._decoder.packet_size = total / 8
+		self._decoder.packet_size = total // 8
 		if total % 8 > 0:
 			self._decoder.packet_size += 1
 		if self._decoder.packet_size > max_size:
@@ -449,7 +451,7 @@ class HIDController(USBDevice, Controller):
 			if full_path:
 				log.debug("Loading descriptor from '%s'", full_path)
 				with open(full_path, "rb") as fh:
-					return [ ord(x) for x in fh.read(1024) ]
+					return list(fh.read(1024))
 		except Exception as e:
 			log.exception(e)
 		return None
@@ -553,14 +555,84 @@ class HIDController(USBDevice, Controller):
 		pass
 
 
+class HIDRawController(HIDController):
+	"""Generic Bluetooth HID controller using the kernel hidraw transport."""
+
+	def __init__(self, daemon, syspath, hidrawdev, config_file, config,
+			vendor, product):
+		self._ready = False
+		self.daemon = daemon
+		self.syspath = syspath
+		self.config_file = config_file
+		self._hidrawdev = hidrawdev
+		self._fileno = hidrawdev._device.fileno()
+		self._vendor = vendor
+		self._product = product
+		self._packet_size = 64
+		descriptor = hidrawdev.getRawReportDescriptor()
+		self._build_hid_decoder(descriptor, config, 64)
+		self._packet_size = self._decoder.packet_size
+		Controller.__init__(self)
+		self._id = self._generate_hidraw_id()
+		self._input_smoother = InputSmoother()
+		self._poller = daemon.get_poller()
+		self._poller.register(self._fileno, self._poller.POLLIN, self.input)
+		daemon.get_device_monitor().add_remove_callback(syspath, self.close)
+		self._ready = True
+		daemon.add_controller(self)
+
+
+	def _generate_hidraw_id(self):
+		base = "hidbt%.4x:%.4x" % (self._vendor, self._product)
+		identifier = base
+		index = 1
+		while identifier in self.daemon.get_active_ids():
+			identifier = "%s:%s" % (base, index)
+			index += 1
+		return identifier
+
+
+	def __repr__(self):
+		return "<HID Bluetooth %.4x:%.4x>" % (
+			self._vendor, self._product)
+
+
+	def input(self, endpoint=None, data=None):
+		try:
+			data = os.read(self._fileno, self._packet_size)
+		except BlockingIOError:
+			return
+		except OSError as e:
+			log.warning("Bluetooth HID read failed for %s: %s", self._id, e)
+			self.close()
+			return
+		if not data or not _lib.decode(ctypes.byref(self._decoder), data):
+			return
+		old_state, state = self._input_smoother.process(
+			self._decoder.state, self._decoder.old_state)
+		if self.mapper:
+			self.mapper.input(self, old_state, state)
+
+
+	def close(self, *a):
+		if not self._ready:
+			return
+		self._ready = False
+		self._poller.unregister(self._fileno)
+		self.daemon.remove_controller(self)
+		self._hidrawdev._device.close()
+
+
 class HIDDrv(object):
 	
 	def __init__(self, daemon):
 		self.registered = set()
+		self.bt_registered = set()
+		self.bt_callbacks = {}
 		self.config_files = {}
 		self.configs = {}
-		self.scan_files()
 		self.daemon = daemon
+		self.scan_files()
 	
 	
 	def hotplug_cb(self, device, handle):
@@ -570,6 +642,43 @@ class HIDDrv(object):
 				self.config_files[vid, pid], self.configs[vid, pid])
 			return controller
 		return None
+
+
+	def bluetooth_hotplug_cb(self, syspath, vid, pid):
+		if (vid, pid) not in self.configs:
+			return None
+		hidrawname = self.daemon.get_device_monitor().get_hidraw(syspath)
+		if hidrawname is None:
+			return None
+		fh = None
+		try:
+			fh = open(os.path.join("/dev", hidrawname), "w+b")
+			dev = HIDRaw(fh)
+			return HIDRawController(self.daemon, syspath, dev,
+				self.config_files[vid, pid], self.configs[vid, pid], vid, pid)
+		except Exception as e:
+			try:
+				if fh is not None:
+					fh.close()
+			except Exception:
+				pass
+			log.error("Failed to open Bluetooth HID %.4x:%.4x: %s",
+				vid, pid, e)
+			return None
+
+
+	def _register_bluetooth(self, vid, pid):
+		key = ("bluetooth", vid, pid)
+		monitor = self.daemon.get_device_monitor()
+		if key in getattr(monitor, "dev_added_cbs", {}):
+			log.debug("Bluetooth %.4x:%.4x is handled by another driver",
+				vid, pid)
+			return
+		callback = lambda syspath, vendor, product: self.bluetooth_hotplug_cb(
+			syspath, vendor, product)
+		monitor.add_callback("bluetooth", vid, pid, callback, None)
+		self.bt_callbacks[vid, pid] = callback
+		self.bt_registered.add((vid, pid))
 	
 	
 	def scan_files(self):
@@ -596,7 +705,7 @@ class HIDDrv(object):
 					log.warning("Ignoring file that cannot be parsed: %s", name)
 					continue
 				
-				self.config_files[vid, pid] = config_file.decode("utf-8")
+				self.config_files[vid, pid] = config_file
 				self.configs[vid, pid] = config
 				known.add((vid, pid))
 		
@@ -604,6 +713,8 @@ class HIDDrv(object):
 			vid, pid = new
 			register_hotplug_device(self.hotplug_cb, vid, pid)
 			self.registered.add(new)
+			if new not in self.bt_registered:
+				self._register_bluetooth(vid, pid)
 		
 		for removed in self.registered - known:
 			vid, pid = removed

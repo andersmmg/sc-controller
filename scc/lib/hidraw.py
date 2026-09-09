@@ -72,7 +72,7 @@ class HIDRaw(object):
         self._ioctl(_HIDIOCGRDESCSIZE, size, True)
         descriptor.size = size
         self._ioctl(_HIDIOCGRDESC, descriptor, True)
-        return ''.join(chr(x) for x in descriptor.value[:size.value])
+        return bytes(descriptor.value[:size.value])
 
     # TODO: decode descriptor into a python object
     #def getReportDescriptor(self):

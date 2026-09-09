@@ -12,6 +12,7 @@ from scc.constants import ControllerFlags
 from scc.tools import find_library
 from scc.drivers.sc_dongle import SCPacketType, SCPacketLength, SCConfigType
 from scc.drivers.sc_dongle import SCController
+from scc.drivers.input_smoothing import InputSmoother
 from math import sin, cos
 import os, sys, struct, ctypes, logging
 
@@ -136,6 +137,10 @@ class SCByBt(SCController):
 		self._c_data_ptr = ctypes.byref(self._c_data)
 		self._old_state = self._c_data.old_state
 		self._state = self._c_data.state
+		self._input_smoother = InputSmoother(fields=(
+			"ltrig", "rtrig", "stick_x", "stick_y",
+			"lpad_x", "lpad_y", "rpad_x", "rpad_y",
+		))
 		self._poller = self.daemon.get_poller()
 		if self._poller:
 			self._poller.register(self._fileno, self._poller.POLLIN, self._input)
@@ -287,6 +292,7 @@ class SCByBt(SCController):
 		pass
 
 
+
 	def _input(self, *a):
 		r = self.driver._lib.read_input(self._c_data_ptr)
 
@@ -303,7 +309,9 @@ class SCByBt(SCController):
 					self._state.rpad_x = int(rx * c - ry * s)
 					self._state.rpad_y = int(rx * s + ry * c)
 
-				self.mapper.input(self, self._old_state, self._state)
+				old_state, state = self._input_smoother.process(
+					self._state, self._old_state)
+				self.mapper.input(self, old_state, state)
 			self._safe_flush()
 		elif r > 1:
 			log.error("Read Failed")
