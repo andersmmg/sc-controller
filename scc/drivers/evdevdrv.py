@@ -252,14 +252,13 @@ class EvdevController(Controller):
 
 	def test_input(self, event):
 		if event.type == ecodes.EV_KEY:
-			if event.code >= FIRST_BUTTON:
-				if event.value:
-					print("ButtonPress", event.code)
+			if event.value:
+				print("ButtonPress", event.code)
 
-				else:
-					print("ButtonRelease", event.code)
+			else:
+				print("ButtonRelease", event.code)
 
-				sys.stdout.flush()
+			sys.stdout.flush()
 		elif event.type == ecodes.EV_ABS:
 			print("Axis", event.code, event.value)
 
