@@ -24,8 +24,8 @@ AREA_TO_ACTION = {
 	'START'				: (ButtonAction, Keys.BTN_START),
 	'A'					: (ButtonAction, Keys.BTN_A),
 	'B'					: (ButtonAction, Keys.BTN_B),
-	'X'					: (ButtonAction, Keys.BTN_X),
-	'Y'					: (ButtonAction, Keys.BTN_Y),
+	'X'					: (ButtonAction, Keys.BTN_WEST),
+	'Y'					: (ButtonAction, Keys.BTN_NORTH),
 
 	# Media keys
 	'KEY_PREVIOUSSONG'	: (ButtonAction, Keys.KEY_PREVIOUSSONG),

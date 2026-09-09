@@ -1485,8 +1485,8 @@ class ButtonAction(HapticEnabledAction, Action):
 		Keys.BTN_SELECT	: "< Select",
 		Keys.BTN_A		: "A Button",
 		Keys.BTN_B		: "B Button",
-		Keys.BTN_X		: "X Button",
-		Keys.BTN_Y		: "Y Button",
+		Keys.BTN_NORTH	: "Y Button",
+		Keys.BTN_WEST		: "X Button",
 
 		Keys.KEY_PREVIOUSSONG	: "<< Song",
 		Keys.KEY_STOP			: "Stop",
