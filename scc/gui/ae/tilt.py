@@ -16,6 +16,7 @@ from scc.gui.ae import AEComponent, describe_action
 from scc.gui.ae.menu_action import MenuActionCofC
 from scc.gui.binding_editor import BindingEditor
 from scc.gui.action_editor import ActionEditor
+from scc.gui.svg_widget import SVGWidget
 
 
 import os, logging
@@ -34,6 +35,15 @@ class TiltComponent(AEComponent, BindingEditor):
 		AEComponent.__init__(self, app, editor)
 		BindingEditor.__init__(self, app)
 		self._recursing = False
+
+
+	def load(self):
+		if not AEComponent.load(self):
+			return False
+		self.builder.get_object("imgControllerSide").set_from_pixbuf(
+			SVGWidget.render_svg_file(os.path.join(self.app.imagepath, "controller-side.svg"),
+				*self.app.get_svg_invert()))
+		return True
 		self.actions = [ NoAction() ] * 6
 	
 	

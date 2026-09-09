@@ -170,12 +170,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkImage" id="image1">
+          <object class="GtkImage" id="imgControllerSide">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="margin_start">10</property>
             <property name="margin_end">10</property>
-            <property name="pixbuf">../../images/controller-side.svg</property>
           </object>
           <packing>
             <property name="left_attach">1</property>

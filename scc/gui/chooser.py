@@ -39,6 +39,7 @@ class Chooser(Editor):
 			parent = self.builder.get_object(id)
 			if parent is not None:
 				image = SVGWidget(os.path.join(self.app.imagepath, self.IMAGES[id]))
+				image.set_inverted(*self.app.get_svg_invert())
 				image.connect('hover', self.on_background_area_hover)
 				image.connect('leave', self.on_background_area_hover, None)
 				image.connect('click', self.on_background_area_click)
