@@ -173,9 +173,17 @@ class HIDDecoder(ctypes.Structure):
 HIDDecoderPtr = ctypes.POINTER(HIDDecoder)
 
 
-_lib = find_library('libhiddrv')
-_lib.decode.restype = bool
-_lib.decode.argtypes = [ HIDDecoderPtr, ctypes.c_char_p ]
+_lib = None
+
+
+def _decode(decoder, data):
+	"""Decodes one HID report, loading the optional native helper on demand."""
+	global _lib
+	if _lib is None:
+		_lib = find_library('libhiddrv')
+		_lib.decode.restype = bool
+		_lib.decode.argtypes = [ HIDDecoderPtr, ctypes.c_char_p ]
+	return _lib.decode(decoder, data)
 
 
 class HIDController(USBDevice, Controller):
@@ -499,7 +507,7 @@ class HIDController(USBDevice, Controller):
 	
 	
 	def test_input(self, endpoint, data):
-		if not _lib.decode(ctypes.byref(self._decoder), data):
+		if not _decode(ctypes.byref(self._decoder), data):
 			# Returns True if anything changed
 			return
 		# Note: This is quite slow, but good enough for test mode
@@ -526,7 +534,7 @@ class HIDController(USBDevice, Controller):
 	
 	
 	def input(self, endpoint, data):
-		if _lib.decode(ctypes.byref(self._decoder), data):
+		if _decode(ctypes.byref(self._decoder), data):
 			if self.mapper:
 				self.mapper.input(self,
 						self._decoder.old_state, self._decoder.state)
@@ -606,7 +614,7 @@ class HIDRawController(HIDController):
 			log.warning("Bluetooth HID read failed for %s: %s", self._id, e)
 			self.close()
 			return
-		if not data or not _lib.decode(ctypes.byref(self._decoder), data):
+		if not data or not _decode(ctypes.byref(self._decoder), data):
 			return
 		old_state, state = self._input_smoother.process(
 			self._decoder.state, self._decoder.old_state)

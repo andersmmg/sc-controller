@@ -69,7 +69,7 @@ def test_generic_bluetooth_hidraw_input_is_smoothed(monkeypatch):
 	controller.mapper = FakeMapper()
 
 	monkeypatch.setattr(hiddrv.os, "read", lambda fd, size: b"report")
-	monkeypatch.setattr(hiddrv._lib, "decode", lambda decoder, data: True)
+	monkeypatch.setattr(hiddrv, "_decode", lambda decoder, data: True)
 
 	controller._decoder.state = HIDControllerInput(stick_x=0)
 	controller.input()
