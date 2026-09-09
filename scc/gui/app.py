@@ -143,6 +143,8 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		self.background.connect('button-press-event', self.on_background_button_press)
 		self.main_area.put(self.background, 0, 0)
 
+		self.show_editor_placeholder(_("Waiting for the SC Controller daemon…"))
+
 		if self._dark_mode_settings is not None:
 			self.on_dark_mode_changed(self._dark_mode_settings, None)
 		self.main_area.put(vbc, 0, 0) # (self.IMAGE_SIZE[0] / 2) - 90, self.IMAGE_SIZE[1] - 100)
@@ -297,6 +299,16 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		return False
 
 
+	def show_editor_placeholder(self, message):
+		"""Shows a compact editor placeholder while controller data is unavailable."""
+		if self.builder is None:
+			return
+		placeholder = self.builder.get_object("lblEmpty")
+		self.builder.get_object("grEditor").hide()
+		self.builder.get_object("stckEditor").set_visible_child(placeholder)
+		placeholder.set_text(message)
+
+
 	def hide_test_markers(self, *a):
 		"""
 		Hides all input-test markers. Called when displayed controller
@@ -327,6 +339,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		def do_loading():
 			""" Called after transition is finished """
 			self.background.use_config(config, controller=controller)
+			self.builder.get_object("grEditor").show()
 			self.apply_gui_config_buttons(config)
 
 		if first:
@@ -1522,6 +1535,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 			ps.set_controller(None)
 			ps.on_daemon_dead()
 		self.hide_test_markers()
+		self.show_editor_placeholder(_("The SC Controller daemon is not running."))
 		self.set_daemon_status("dead", False)
 
 

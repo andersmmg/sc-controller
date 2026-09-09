@@ -597,6 +597,8 @@
         </child>
         <child>
           <object class="GtkStack" id="stckEditor">
+            <property name="width_request">820</property>
+            <property name="height_request">400</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="margin_start">12</property>
@@ -1071,6 +1073,10 @@
               <object class="GtkLabel" id="lblEmpty">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="margin_top">48</property>
+                <property name="margin_bottom">48</property>
+                <property name="label" translatable="yes">Waiting for the SC Controller daemon…</property>
+                <property name="justify">center</property>
               </object>
               <packing>
                 <property name="name">page1</property>
