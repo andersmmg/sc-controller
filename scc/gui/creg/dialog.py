@@ -13,6 +13,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, GdkPixbuf
 from scc.gui.svg_widget import SVGWidget
+from scc.gui.input_test import render_test_cursor, rotate_input_vector
 from scc.gui.creg.constants import SDL_TO_SCC_NAMES, STICK_PAD_AREAS
 from scc.gui.creg.constants import AXIS_ORDER, SDL_AXES, SDL_DPAD
 from scc.gui.creg.constants import BUTTON_ORDER, TRIGGER_AREAS
@@ -72,8 +73,8 @@ class ControllerRegistration(Editor):
 			if "trig" in axis.name:
 				continue
 			axis.cursor = cursors[axis.area] = ( cursors.get(axis.area) or
-				Gtk.Image.new_from_file(os.path.join(
-				self.app.imagepath, "test-cursor.svg")) )
+				Gtk.Image.new_from_pixbuf(render_test_cursor(os.path.join(
+				self.app.imagepath, "test-cursor.svg"), *self.app.get_svg_invert())) )
 			axis.cursor.position = [ 0, 0 ]
 		self.builder.get_object("cbInvert_1").set_active(True)
 		self.builder.get_object("cbInvert_3").set_active(True)
@@ -677,9 +678,11 @@ class ControllerRegistration(Editor):
 			cw = cursor.get_allocation().width
 			# Compute center
 			x, y = ax + aw * 0.5 - cw * 0.5, ay + ah * 0.5 - cw * 0.5
-			# Add pad position
+			# Add pad position, aligned to the physical pad artwork when needed.
+			px, py = rotate_input_vector(px, py,
+				self._controller_image.get_input_rotation(axis.area))
 			x += px * aw / STICK_PAD_MAX * 0.5
-			y -= py * ah / STICK_PAD_MAX * 0.5
+			y += py * ah / STICK_PAD_MAX * 0.5
 			# Move circle
 			parent.move(cursor, x, y)
 			cursor.set_visible(True)

@@ -6,9 +6,10 @@ from __future__ import unicode_literals
 from scc.tools import _, set_logging_level
 
 from gi.repository import Gtk, GLib
-from scc.constants import SCButtons, STICK, LEFT, RIGHT, STICK_PAD_MAX
+from scc.constants import SCButtons, STICK, LEFT, RIGHT, STICK_PAD_MAX, TRIGGER_MAX
 from scc.gui.daemon_manager import DaemonManager
 from scc.gui.svg_widget import SVGWidget
+from scc.gui.input_test import INPUT_TEST_COLOR, analog_hilight_color, set_observed_hilight
 from scc.osd import OSDWindow
 
 import os, sys, logging, signal, argparse
@@ -18,13 +19,14 @@ log = logging.getLogger("osd.InputDisplay")
 class InputDisplay(OSDWindow):
 	IMAGE = "inputdisplay.svg"
 	HILIGHT_COLOR = "#FF00FF00"		# ARGB
-	OBSERVE_COLOR = "#00007FFF"		# ARGB
+	OBSERVE_COLOR = INPUT_TEST_COLOR		# ARGB
 
 	def __init__(self, imagepath="/usr/share/scc/images"):
 		OSDWindow.__init__(self, "osd-menu")
 		self.daemon = None
 		self.config = None
 		self.hilights = { self.HILIGHT_COLOR : set(), self.OBSERVE_COLOR : set() }
+		self._observed_hilights = {}
 		self.imagepath = imagepath
 
 		self._eh_ids = []
@@ -100,6 +102,13 @@ class InputDisplay(OSDWindow):
 		self.quit(3)
 
 
+	def set_analog_test_hilight(self, what, value):
+		"""Shows trigger travel by scaling the input-test highlight opacity."""
+		color = analog_hilight_color(self.OBSERVE_COLOR, value, TRIGGER_MAX)
+		if set_observed_hilight(self.hilights, self._observed_hilights, what, color):
+			self._update_background()
+
+
 	def on_daemon_event_observer(self, daemon, what, data):
 		if what in (LEFT, RIGHT, STICK):
 			widget, area = {
@@ -123,16 +132,16 @@ class InputDisplay(OSDWindow):
 			y -= data[1] * aw / STICK_PAD_MAX * 0.5
 			# Move circle
 			self.main_area.move(widget, x, y)
-		elif what in ("LT", "RT", "STICKPRESS"):
-			what = {
+		elif what in ("LT", "RT"):
+			self.set_analog_test_hilight({
 				"LT" : "LEFT",
 				"RT" : "RIGHT",
-				"STICKPRESS" : "STICK"
-			}[what]
+			}[what], data[0])
+		elif what == "STICKPRESS":
 			if data[0]:
-				self.hilights[self.OBSERVE_COLOR].add(what)
+				self.hilights[self.OBSERVE_COLOR].add("STICK")
 			else:
-				self.hilights[self.OBSERVE_COLOR].remove(what)
+				self.hilights[self.OBSERVE_COLOR].discard("STICK")
 			self._update_background()
 		elif hasattr(SCButtons, what):
 			try:

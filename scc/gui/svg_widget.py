@@ -160,6 +160,12 @@ class SVGWidget(Gtk.EventBox):
 		raise ValueError("Area '%s' not found" % (area_id, ))
 
 
+	def get_input_rotation(self, area_id):
+		"""Returns the optional SVG-space rotation for an input-test region."""
+		area = self.get_area(area_id + "TEST")
+		return area.input_rotation if area is not None else 0.0
+
+
 	def get_axis_region(self, area_id):
 		"""
 		Returns (x, y, width, height) of the region an axis-test cursor may
@@ -241,7 +247,10 @@ class SVGWidget(Gtk.EventBox):
 			for button, color in (recolor or {}).items():
 				el = SVGEditor.find_by_id(tree, button)
 				if el is not None:
-					SVGEditor.recolor(el, color)
+					if isinstance(color, tuple):
+						SVGEditor.blend_recolor(el, *color)
+					else:
+						SVGEditor.recolor(el, color)
 			if inverted:
 				SVGEditor.invert_colors(tree, brightness)
 			if size:
@@ -360,25 +369,44 @@ class SVGWidget(Gtk.EventBox):
 		return cropped.scale_simple(width, height, GdkPixbuf.InterpType.BILINEAR)
 
 
+	def get_render_svg(self):
+		"""Returns the SVG source to use for the next render."""
+		return self.current_svg
+
+
+	def get_render_cache_id(self):
+		"""Returns additional state that affects rendering."""
+		return ""
+
+
+	def is_render_cacheable(self):
+		"""Whether the current render should be retained in the pixbuf cache."""
+		return True
+
+
 	def hilight(self, buttons):
 		""" Hilights specified button, if same ID is found in svg """
 		self._last_buttons = dict(buttons)
 		cache_id = ("inv:%s|" % (getattr(self, "brightness", 1.0),)
-					 if self.inverted else "") + "|".join(
+					 if self.inverted else "") + self.get_render_cache_id() + "|".join(
 			[ "%s:%s" % (x, buttons[x]) for x in buttons ])
-		if not cache_id in self.cache:
+		cacheable = self.is_render_cacheable()
+		if not cacheable or cache_id not in self.cache:
 			# Ok, this is close to madness, but probably better than drawing
 			# 200 images by hand;
-			pixbuf = self.render_svg(self.current_svg,
+			pixbuf = self.render_svg(self.get_render_svg(),
 					inverted=self.inverted,
 					brightness=getattr(self, "brightness", 1.0),
 					recolor=buttons,
 					size=self.size_override)
-			while len(self.cache) >= self.CACHE_SIZE:
-				self.cache.popitem(False)
-			self.cache[cache_id] = pixbuf
+			if cacheable:
+				while len(self.cache) >= self.CACHE_SIZE:
+					self.cache.popitem(False)
+				self.cache[cache_id] = pixbuf
+		else:
+			pixbuf = self.cache[cache_id]
 
-		self.image.set_from_pixbuf(self.cache[cache_id])
+		self.image.set_from_pixbuf(pixbuf)
 
 
 	def set_inverted(self, inverted, brightness=None):
@@ -424,6 +452,10 @@ class Area:
 		self.x, self.y = SVGEditor.get_translation(transform)
 		self.w = float(element.attrib.get('width', 0))
 		self.h = float(element.attrib.get('height', 0))
+		try:
+			self.input_rotation = float(element.attrib.get('scc-input-rotation', 0))
+		except ValueError:
+			self.input_rotation = 0.0
 
 
 	def contains(self, x, y):
@@ -640,6 +672,53 @@ class SVGEditor(object):
 
 
 	@staticmethod
+	def blend_recolor(element, color, amount):
+		"""Blends toward a normal highlight while preserving its fill/stroke rules."""
+		amount = max(0.0, min(1.0, float(amount)))
+		color = color.lstrip("#")
+		if amount >= 1.0:
+			return SVGEditor.recolor(element, "#FF" + color)
+		target = tuple(int(color[i:i + 2], 16) for i in (0, 2, 4))
+
+		def blend_color(value):
+			if not value.startswith("#") or len(value) != 7:
+				return value
+			base = tuple(int(value[i:i + 2], 16) for i in (1, 3, 5))
+			return "#%02x%02x%02x" % tuple(round(
+				base[i] + (target[i] - base[i]) * amount) for i in range(3))
+
+		def blend_opacity(value):
+			try:
+				value = float(value)
+			except (TypeError, ValueError):
+				value = 1.0
+			return str(value + (1.0 - value) * amount)
+
+		if element.tag.endswith(("path", "rect", "circle", "ellipse", "text")):
+			if "style" not in element.attrib:
+				return False
+			parts = [p.split(":", 1) for p in element.attrib["style"].split(";") if ":" in p]
+			style = dict(parts)
+			if style.get("fill") not in (None, "none"):
+				style["fill"] = blend_color(style["fill"])
+			elif style.get("stroke") not in (None, "none"):
+				style["stroke"] = blend_color(style["stroke"])
+				style["stroke-opacity"] = blend_opacity(style.get("stroke-opacity", 1.0))
+			else:
+				return False
+			style["fill-opacity"] = blend_opacity(style.get("fill-opacity", 1.0))
+			style["opacity"] = blend_opacity(style.get("opacity", 1.0))
+			element.attrib["style"] = ";".join("%s:%s" % (key, value)
+				for key, value in style.items())
+			return True
+		if element.tag.endswith("g"):
+			for child in element:
+				SVGEditor.blend_recolor(child, color, amount)
+			return True
+		return False
+
+
+	@staticmethod
 	def _recolor(tree, s_from, s_to):
 		""" Recursive part of recolor_strokes and recolor_background """
 		for child in tree:
@@ -703,7 +782,7 @@ class SVGEditor(object):
 				parts = [p.split(":", 1) for p in el.attrib['style'].split(";") if ":" in p]
 				style = dict(parts)
 				changed = False
-				for k in ("fill", "stroke"):
+				for k in ("fill", "stroke", "stop-color"):
 					v = style.get(k)
 					if v and v not in ("none", "transparent"):
 						style[k] = SVGEditor._invert_color(v, brightness)
@@ -711,7 +790,7 @@ class SVGEditor(object):
 				if changed:
 					el.attrib['style'] = ";".join("%s:%s" % (k, v) for k, v in style.items())
 			# Named-color shorthands like fill="red" as attributes
-			for k in ("fill", "stroke"):
+			for k in ("fill", "stroke", "stop-color"):
 				v = el.attrib.get(k)
 				if v and v not in ("none", "transparent"):
 					el.attrib[k] = SVGEditor._invert_color(v, brightness)

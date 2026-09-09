@@ -19,10 +19,11 @@ from scc.gui.binding_editor import BindingEditor
 from scc.gui.statusicon import get_status_icon
 from scc.gui.dwsnc import headerbar, IS_UNITY
 from scc.gui.ribar import RIBar
+from scc.gui.input_test import INPUT_TEST_COLOR, analog_hilight_color, render_test_cursor, rotate_input_vector, set_observed_hilight
 from scc.tools import check_access, find_gksudo, profile_is_override, nameof
 from scc.tools import get_profile_name, profile_is_default, find_profile
 from scc.constants import SCButtons, STICK, RSTICK, STICK_PAD_MAX
-from scc.constants import DAEMON_VERSION, LEFT, RIGHT
+from scc.constants import DAEMON_VERSION, LEFT, RIGHT, TRIGGER_MAX
 from scc.paths import get_config_path, get_profiles_path, get_cache_path
 from scc.custom import load_custom_module
 from scc.modifiers import NameModifier
@@ -41,7 +42,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 	"""
 
 	HILIGHT_COLOR = "#FF00FF00"		# ARGB
-	OBSERVE_COLOR = "#FF60A0FF"		# ARGB
+	OBSERVE_COLOR = INPUT_TEST_COLOR		# ARGB
 	# For high-res sticks like SC2, with hysteresis
 	TEST_DOT_SHOW_DEADZONE = STICK_PAD_MAX * 0.06
 	TEST_DOT_HIDE_DEADZONE = STICK_PAD_MAX * 0.05
@@ -95,6 +96,9 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		self.just_started = True
 		self.button_widgets = {}
 		self.hilights = { App.HILIGHT_COLOR : set(), App.OBSERVE_COLOR : set() }
+		self._observed_hilights = {}
+		self._pending_stick_positions = {}
+		self._test_preview_timer = None
 		self.undo = []
 		self.redo = []
 		self._dark_mode_settings = Gtk.Settings.get_default()
@@ -149,18 +153,15 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 			self.on_dark_mode_changed(self._dark_mode_settings, None)
 		self.main_area.put(vbc, 0, 0) # (self.IMAGE_SIZE[0] / 2) - 90, self.IMAGE_SIZE[1] - 100)
 
-		# Test markers (those blue circles over PADs and sticks)
-		self.lpad_test = Gtk.Image.new_from_file(os.path.join(self.imagepath, "test-cursor.svg"))
-		self.rpad_test = Gtk.Image.new_from_file(os.path.join(self.imagepath, "test-cursor.svg"))
-		self.stick_test = Gtk.Image.new_from_file(os.path.join(self.imagepath, "test-cursor.svg"))
-		self.rstick_test = Gtk.Image.new_from_file(os.path.join(self.imagepath, "test-cursor.svg"))
-		for marker in (self.lpad_test, self.rpad_test, self.stick_test, self.rstick_test):
+		# Test markers for touchpads. Stick movement is animated in the SVG itself.
+		cursor = self.get_test_cursor_pixbuf()
+		self.lpad_test = Gtk.Image.new_from_pixbuf(cursor)
+		self.rpad_test = Gtk.Image.new_from_pixbuf(cursor)
+		for marker in (self.lpad_test, self.rpad_test):
 			marker.set_opacity(0.0)
 			marker.show()
 		self.main_area.put(self.lpad_test, 40, 40)
 		self.main_area.put(self.rpad_test, 290, 90)
-		self.main_area.put(self.stick_test, 150, 40)
-		self.main_area.put(self.rstick_test, 150, 120)
 
 		# OSD mode (if used)
 		if self.osd_mode:
@@ -212,6 +213,20 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		return dark, brightness
 
 
+	def get_test_cursor_pixbuf(self):
+		"""Renders the shared input-test cursor in the active color scheme."""
+		return render_test_cursor(os.path.join(self.imagepath, "test-cursor.svg"),
+			*self.get_svg_invert())
+
+
+	def refresh_test_markers(self):
+		"""Re-renders touchpad test markers after a theme inversion change."""
+		if hasattr(self, "lpad_test"):
+			cursor = self.get_test_cursor_pixbuf()
+			self.lpad_test.set_from_pixbuf(cursor)
+			self.rpad_test.set_from_pixbuf(cursor)
+
+
 	def refresh_side_icons(self):
 		""" Re-renders the per-input button icons to match current inversion """
 		for w in getattr(self, "button_widgets", {}).values():
@@ -227,6 +242,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		background = getattr(self, "background", None)
 		if background is not None:
 			background.set_inverted(dark, brightness)
+		self.refresh_test_markers()
 		self.refresh_side_icons()
 		self.refresh_daemon_status_icon()
 		GLib.idle_add(self.refresh_tray_icon)
@@ -314,8 +330,11 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		Hides all input-test markers. Called when displayed controller
 		changes or is disconnected.
 		"""
-		for marker in (self.lpad_test, self.rpad_test, self.stick_test, self.rstick_test):
+		for marker in (self.lpad_test, self.rpad_test):
 			marker.set_opacity(0.0)
+		self._pending_stick_positions.clear()
+		if self.background is not None:
+			self.background.clear_axis_positions()
 
 
 	def load_gui_config_for_controller(self, controller, first):
@@ -1293,16 +1312,47 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		self.set_daemon_status("error", True)
 
 
+	def queue_test_preview_render(self):
+		"""Schedules one live-preview SVG render for the latest input state."""
+		if self._test_preview_timer is None:
+			self._test_preview_timer = GLib.timeout_add(16, self.flush_test_preview)
+
+
+	def queue_stick_test_position(self, what, x, y):
+		"""Coalesces high-rate stick input into the next preview frame."""
+		self._pending_stick_positions[what] = x, y
+		self.queue_test_preview_render()
+
+
+	def flush_test_preview(self):
+		"""Renders all pending analog feedback at most 60 times a second."""
+		self._test_preview_timer = None
+		if self.background is None:
+			return False
+		if self._pending_stick_positions:
+			positions, self._pending_stick_positions = self._pending_stick_positions, {}
+			self.background.set_axis_positions(positions, redraw=False)
+		self._update_background()
+		return False
+
+
+	def set_analog_test_hilight(self, what, value):
+		"""Shows trigger travel by blending toward the observe highlight color."""
+		color = analog_hilight_color(App.OBSERVE_COLOR, value, TRIGGER_MAX)
+		if set_observed_hilight(self.hilights, self._observed_hilights, what, color):
+			self.queue_test_preview_render()
+
+
 	def on_daemon_event_observer(self, daemon, c, what, data):
 		if self.osd_mode_mapper:
 			self.osd_mode_mapper.handle_event(daemon, what, data)
-		elif what in (LEFT, RIGHT, STICK, RSTICK):
+		elif what in (STICK, RSTICK):
+			self.queue_stick_test_position(what, data[0], data[1])
+		elif what in (LEFT, RIGHT):
 			# Note: base area names; get_axis_region() appends "TEST" itself
 			widget, area = {
-				LEFT   : (self.lpad_test,   "LPAD"),
-				RIGHT  : (self.rpad_test,   "RPAD"),
-				STICK  : (self.stick_test,  "STICK"),
-				RSTICK : (self.rstick_test, "RSTICK"),
+				LEFT   : (self.lpad_test, "LPAD"),
+				RIGHT  : (self.rpad_test, "RPAD"),
 			}[what]
 			# Check if stick or pad is released (within deadzone)
 			if data[0] * data[0] + data[1] * data[1] <= App.TEST_DOT_HIDE_DEADZONE * App.TEST_DOT_HIDE_DEADZONE:
@@ -1318,19 +1368,23 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 			cw = widget.get_preferred_width()[1]
 			# Compute center
 			x, y = ax + aw * 0.5 - cw * 0.5, ay + ah * 0.5 - cw * 0.5
-			# Add pad position
-			x += data[0] * aw / STICK_PAD_MAX * 0.5
-			y -= data[1] * ah / STICK_PAD_MAX * 0.5
+			# Add pad position, aligned to the physical pad artwork when needed.
+			px, py = rotate_input_vector(data[0], data[1],
+				self.background.get_input_rotation(area))
+			x += px * aw / STICK_PAD_MAX * 0.5
+			y += py * ah / STICK_PAD_MAX * 0.5
 			self.main_area.move(widget, x, y)
 			if widget.get_opacity() < 0.01:
 				# Hysteresis
 				if data[0] * data[0] + data[1] * data[1] > App.TEST_DOT_SHOW_DEADZONE * App.TEST_DOT_SHOW_DEADZONE:
 					widget.set_opacity(1.0)
-		elif what in ("LT", "RT", "STICKPRESS", "RSTICKPRESS"):
+		elif what in ("LT", "RT"):
+			self.set_analog_test_hilight(what, data[0])
+		elif what in ("STICKPRESS", "RSTICKPRESS"):
 			if data[0]:
 				self.hilights[App.OBSERVE_COLOR].add(what)
 			else:
-				self.hilights[App.OBSERVE_COLOR].remove(what)
+				self.hilights[App.OBSERVE_COLOR].discard(what)
 			self._update_background()
 		elif hasattr(SCButtons, what):
 			try:

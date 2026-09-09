@@ -7,9 +7,9 @@ Big, SVGWidget based widget with interchangeable controller and button images.
 from __future__ import unicode_literals
 from scc.tools import _
 
-from scc.gui.svg_widget import SVGWidget, SVGEditor
+from scc.gui.svg_widget import SVGWidget, SVGEditor, XML_PARSER
 from scc.paths import get_share_path
-from scc.constants import SCButtons
+from scc.constants import SCButtons, STICK_PAD_MAX
 from scc.tools import nameof
 
 import os, sys, copy, json, logging
@@ -45,6 +45,7 @@ class ControllerImage(SVGWidget):
 	def __init__(self, app, config=None):
 		self.app = app
 		self.backup = None
+		self.axis_positions = {}
 		self.current = self._ensure_config({}, None)
 		filename = self._make_controller_image_path(ControllerImage.DEFAULT)
 		SVGWidget.__init__(self, filename)
@@ -97,12 +98,82 @@ class ControllerImage(SVGWidget):
 		"""
 		self.backup = backup
 		self.current = self._ensure_config(config or {}, controller)
+		self.axis_positions = {}
 		self.set_image(os.path.join(self.app.imagepath,
 			"controller-images/%s.svg" % (self.current["gui"]["background"], )))
 		if not self.current["gui"]["no_buttons_in_gui"]:
 			self._fill_button_images(self.current["gui"]["buttons"])
 		self.hilight({})
 		return self.current
+
+
+	def set_axis_position(self, axis, x, y, redraw=True):
+		"""Moves one analog-stick graphic to its normalized live position."""
+		return self.set_axis_positions({ axis: (x, y) }, redraw)
+
+
+	def set_axis_positions(self, positions, redraw=True):
+		"""Updates multiple stick positions and optionally renders one frame."""
+		changed = False
+		for axis, (x, y) in positions.items():
+			position = (float(x), float(y))
+			if self.axis_positions.get(axis) != position:
+				self.axis_positions[axis] = position
+				changed = True
+		if changed and redraw:
+			self.hilight(self._last_buttons)
+		return changed
+
+
+	def clear_axis_positions(self):
+		"""Returns all animated sticks to their neutral artwork positions."""
+		if self.axis_positions:
+			self.axis_positions = {}
+			self.hilight(self._last_buttons)
+
+
+	def get_render_cache_id(self):
+		return "sticks:%r|" % (tuple(sorted(self.axis_positions.items())),)
+
+
+	def is_render_cacheable(self):
+		return not self.axis_positions
+
+
+	def get_render_svg(self):
+		"""Applies temporary live stick translations without changing the SVG."""
+		if not self.axis_positions:
+			return self.current_svg
+		tree = ET.fromstring(self.current_svg.encode("utf-8"), parser=XML_PARSER())
+		SVGEditor.update_parents(tree)
+		for axis, (x, y) in self.axis_positions.items():
+			element = SVGEditor.get_element(tree, axis)
+			if element is None:
+				continue
+			try:
+				trash, trash, width, height = self.get_axis_region(axis)
+			except ValueError:
+				continue
+			dx = x * width / STICK_PAD_MAX * 0.2
+			dy = -y * height / STICK_PAD_MAX * 0.2
+			parent_matrix = SVGEditor.IDENTITY
+			parents = []
+			parent = element.parent
+			while parent is not None:
+				parents.append(parent)
+				parent = parent.parent
+			for parent in reversed(parents):
+				parent_matrix = SVGEditor.matrixmul(
+					parent_matrix, SVGEditor.parse_transform(parent))
+			a, b = parent_matrix[0][0], parent_matrix[1][0]
+			c, d = parent_matrix[0][1], parent_matrix[1][1]
+			determinant = a * d - b * c
+			if determinant:
+				dx, dy = ((d * dx - c * dy) / determinant,
+					(-b * dx + a * dy) / determinant)
+			transform = element.attrib.get("transform", "")
+			element.attrib["transform"] = "translate(%s,%s) %s" % (dx, dy, transform)
+		return ET.tostring(tree).decode("utf-8")
 
 
 	def override_background(self, filename):
