@@ -2711,6 +2711,6 @@ grips, triggers, finger positions on both pads and stick angle.</property>
   <object class="GtkImage" id="imgstocksave">
     <property name="visible">False</property>
     <property name="can_focus">False</property>
-    <property name="icon-name">gtk-save</property>
+    <property name="icon-name">document-save-symbolic</property>
   </object>
 </interface>

@@ -349,11 +349,11 @@
   <object class="GtkImage" id="imgstockclear">
     <property name="visible">False</property>
     <property name="can_focus">False</property>
-    <property name="icon-name">gtk-clear</property>
+    <property name="icon-name">edit-clear-symbolic</property>
   </object>
   <object class="GtkImage" id="imgstockok">
     <property name="visible">False</property>
     <property name="can_focus">False</property>
-    <property name="icon-name">gtk-ok</property>
+    <property name="icon-name">emblem-ok-symbolic</property>
   </object>
 </interface>
