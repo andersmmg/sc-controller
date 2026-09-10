@@ -39,6 +39,7 @@ SHAPE_NAMES = {
     "sc2": _("Steam Controller 2026"),
     "deck": _("Steam Deck"),
     "ds4": _("DualShock 4"),
+    "x360": _("Xbox 360"),
     "hid": _("Generic Gamepad"),
     "fake": _("Generic Outline"),
     "rpad": _("Remote Pad"),

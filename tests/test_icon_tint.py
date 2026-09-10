@@ -118,4 +118,5 @@ def test_get_icon_shape():
 def test_shape_name():
 	assert shape_name("sc") == SHAPE_NAMES["sc"]
 	assert shape_name("ds4") == SHAPE_NAMES["ds4"]
+	assert shape_name("x360") == SHAPE_NAMES["x360"]
 	assert shape_name("somefuturepad") == "somefuturepad"
