@@ -1104,6 +1104,8 @@ class SCCDaemon(Daemon):
 		Used when parsing `Lock: ...` message
 		"""
 		s = s.strip(" \t\r\n")
+		if s == "LSTICK":
+			return STICK
 		if s in (STICK, RSTICK, LEFT, RIGHT, CPAD, DPAD):
 			return s
 		if s == "STICKPRESS":

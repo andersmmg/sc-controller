@@ -29,6 +29,7 @@ except ImportError:
 	ecodes = FakeECodes()
 
 from collections import namedtuple
+import errno
 import os, sys, time, binascii, json, logging
 log = logging.getLogger("evdev")
 
@@ -75,7 +76,12 @@ class EvdevController(Controller):
 		if daemon:
 			self.poller = daemon.get_poller()
 			self.poller.register(self.device.fd, self.poller.POLLIN, self.input)
-			self.device.grab()
+			try:
+				self.device.grab()
+			except Exception:
+				self.poller.unregister(self.device.fd)
+				self.poller = None
+				raise
 			self._id = self._generate_id()
 		self._state = EvdevControllerInput( *[0] * len(EvdevControllerInput._fields) )
 		self._padpressemu_task = None
@@ -401,6 +407,7 @@ class EvdevDriver(object):
 	def __init__(self):
 		self.daemon = None
 		self._devices = {}
+		self._busy_devices = set()
 		self._scan_thread = None
 		self._next_scan = None
 
@@ -458,12 +465,33 @@ class EvdevDriver(object):
 				return False
 			try:
 				controller = EvdevController(self.daemon, dev, config_file, config)
+			except OSError as e:
+				if e.errno == errno.EBUSY:
+					if eventnode not in self._busy_devices:
+						self._busy_devices.add(eventnode)
+						self.daemon.add_error(
+							"evdev:%s" % eventnode,
+							'Could not take exclusive control of evdev device "%s" '
+							'(%s): another application is using it.' %
+							(dev.name, eventnode),
+						)
+					log.warning("Evdev device is busy: %s (%s)", dev.name, eventnode)
+					dev.close()
+					return False
+				log.debug("Failed to add evdev device: %s", e)
+				log.exception(e)
+				dev.close()
+				return False
 			except Exception as e:
 				log.debug("Failed to add evdev device: %s", e)
 				log.exception(e)
+				dev.close()
 				return False
 			self._devices[eventnode] = controller
 			self.daemon.add_controller(controller)
+			if eventnode in self._busy_devices:
+				self._busy_devices.remove(eventnode)
+				self.daemon.remove_error("evdev:%s" % eventnode)
 			log.debug("Evdev device added: %s", dev.name)
 			return True
 
@@ -474,6 +502,9 @@ class EvdevDriver(object):
 
 
 	def device_removed(self, eventnode):
+		if eventnode in self._busy_devices:
+			self._busy_devices.remove(eventnode)
+			self.daemon.remove_error("evdev:%s" % eventnode)
 		if eventnode in self._devices:
 			controller = self._devices[eventnode]
 			del self._devices[eventnode]

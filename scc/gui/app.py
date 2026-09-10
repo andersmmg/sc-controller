@@ -1361,6 +1361,12 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		# Known errors are handled with aditional message
 		if "Device not found" in error:
 			msg += "\n" + _("Please, check if you have reciever dongle connected to USB port.")
+		elif "Could not take exclusive control of evdev device" in error:
+			msg += "\n" + _(
+				"Another application has grabbed this controller. "
+				"Close Steam, another controller mapper, or the evdev test tool, "
+				"then wait for SC Controller to retry."
+			)
 		elif "LIBUSB_ERROR_ACCESS" in error:
 			msg += "\n" + _("You don't have access to controller device.")
 			msg += "\n\n" + ( _("Consult your distribution manual, try installing Steam package or <a href='%s'>install required udev rules manually</a>.") %
