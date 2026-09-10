@@ -97,7 +97,7 @@
        ry="14.536838"
        transform="matrix(0.67719174,-0.7358066,0.7358066,0.67719174,0,0)" />
     <ellipse
-       style="color:#000000;display:inline;overflow:visible;visibility:visible;opacity:1;fill:#000000;fill-opacity:0;fill-rule:evenodd;stroke:#000000;stroke-width:1.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
+       style="color:#000000;display:inline;overflow:visible;visibility:visible;opacity:1;fill:#000000;fill-opacity:0;fill-rule:evenodd;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
        id="path4168-1-7"
        transform="matrix(-0.46838573,-0.88352409,0.88352409,-0.46838573,0,0)"
        ry="7.4402127"
@@ -105,13 +105,13 @@
        cy="-173.04514"
        cx="-877.05603" />
     <circle
-       style="opacity:0.95;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:3.06471872;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="opacity:0.95;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="path4158-6"
        cx="257.78473"
        cy="856.07831"
        r="3.1925781" />
     <circle
-       style="opacity:0.95;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:3.06471872;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="opacity:0.95;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:2;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="path4158-6-5"
        cx="259.16476"
        cy="855.21143"

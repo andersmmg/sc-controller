@@ -7,7 +7,7 @@
    viewBox="0 0 29 25"
    id="svg2"
    version="1.1"
-   inkscape:version="1.2 (dc2aedaf03, 2022-05-15)"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
    sodipodi:docname="MENU.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -25,16 +25,16 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="25.733613"
-     inkscape:cx="10.764132"
-     inkscape:cy="8.8794372"
+     inkscape:zoom="18.196412"
+     inkscape:cx="18.272833"
+     inkscape:cy="9.6447584"
      inkscape:document-units="px"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="g2024"
      showgrid="false"
      units="px"
-     inkscape:window-width="1855"
-     inkscape:window-height="1032"
-     inkscape:window-x="65"
+     inkscape:window-width="1910"
+     inkscape:window-height="1025"
+     inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
      fit-margin-top="0"
@@ -71,32 +71,32 @@
          height="15.657365"
          width="27.779196"
          id="rect4172-1"
-         style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:#000000;fill-opacity:0.13725491;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate" />
+         style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:#000000;fill-opacity:0.13725491;fill-rule:evenodd;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate" />
       <g
          id="g2024"
-         transform="translate(0,-0.09116776)">
+         transform="translate(-2.3841858e-7,-0.09116776)">
         <rect
-           style="fill:#b8b8b8;fill-opacity:1;stroke:#000000;stroke-width:0.5;stop-color:#000000"
+           style="fill:#b8b8b8;fill-opacity:1;stroke:#000000;stroke-width:2;stop-color:#000000;stroke-linejoin:round"
            id="rect1508"
            width="7.8994365"
            height="0.24410595"
-           x="10.478034"
+           x="10.550282"
            y="12.469114"
            ry="0" />
         <rect
-           style="fill:#b8b8b8;fill-opacity:1;stroke:#000000;stroke-width:0.5;stop-color:#000000"
+           style="fill:#b8b8b8;fill-opacity:1;stroke:#000000;stroke-width:2;stop-color:#000000;stroke-linejoin:round"
            id="rect2017"
            width="7.8994365"
            height="0.24410595"
-           x="10.467712"
+           x="10.550282"
            y="15.228214"
            ry="0" />
         <rect
-           style="fill:#b8b8b8;fill-opacity:1;stroke:#000000;stroke-width:0.5;stop-color:#000000"
+           style="fill:#b8b8b8;fill-opacity:1;stroke:#000000;stroke-width:2;stop-color:#000000;stroke-linejoin:round"
            id="rect2019"
            width="7.8994365"
            height="0.24410595"
-           x="10.632852"
+           x="10.550282"
            y="9.7100153"
            ry="0" />
       </g>

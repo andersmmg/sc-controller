@@ -2,20 +2,20 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="25"
    height="25"
    viewBox="0 0 25 25"
    id="svg2"
    version="1.1"
-   inkscape:version="0.92.1 r"
-   sodipodi:docname="1.svg">
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   sodipodi:docname="1.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <defs
      id="defs4" />
   <sodipodi:namedview
@@ -25,22 +25,25 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.55362319"
-     inkscape:cx="515.32831"
-     inkscape:cy="-787.61703"
+     inkscape:zoom="17.715942"
+     inkscape:cx="13.54712"
+     inkscape:cy="15.663858"
      inkscape:document-units="px"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="button"
      showgrid="false"
      units="px"
-     inkscape:window-width="1573"
-     inkscape:window-height="973"
-     inkscape:window-x="1058"
-     inkscape:window-y="69"
-     inkscape:window-maximized="0"
+     inkscape:window-width="1123"
+     inkscape:window-height="1025"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
      fit-margin-top="0"
      fit-margin-left="0"
      fit-margin-right="0"
-     fit-margin-bottom="0" />
+     fit-margin-bottom="0"
+     inkscape:showpageshadow="2"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -59,24 +62,20 @@
      id="layer1"
      style="opacity:1">
     <g
-       id="button">
+       id="button"
+       transform="matrix(0.94502757,0,0,0.94502757,0.68630333,0.68800748)"
+       style="stroke-width:1.05817">
       <circle
          r="12.152555"
          cx="12.4845"
          cy="12.5155"
          id="path4170-0-8"
-         style="color:#000000;display:inline;overflow:visible;visibility:visible;opacity:1;fill:#000000;fill-opacity:0.60335197;fill-rule:evenodd;stroke:#000000;stroke-width:0.66388923;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate" />
-      <g
-         transform="translate(0.10612467,0.65830492)"
-         id="text923"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40px;line-height:125%;font-family:'Ubuntu Mono';-inkscape-font-specification:'Ubuntu Mono';letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-         aria-label="1">
-        <path
-           inkscape:connector-curvature="0"
-           id="path988"
-           style="font-size:29.33333397px;fill:#ffffff"
-           d="m 7.0543754,6.5331787 q 1.496,-0.58666 2.904,-1.46666 1.4079996,-0.90934 2.6106596,-2.288 h 1.70134 V 18.882519 h 3.432 v 2.05333 H 7.9343754 v -2.05333 H 11.865035 V 6.1518487 q -0.32266,0.29333 -0.792,0.616 -0.44,0.29333 -0.99733,0.58667 -0.5279996,0.29333 -1.1146696,0.55733 -0.58666,0.264 -1.144,0.44 z" />
-      </g>
+         style="color:#000000;display:inline;overflow:visible;visibility:visible;opacity:1;fill:#000000;fill-opacity:0.603352;fill-rule:evenodd;stroke:#000000;stroke-width:2.11634;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate" />
+      <path
+         d="m 13.034635,19.157753 q -0.188541,0 -0.32052,-0.113125 -0.113124,-0.131978 -0.113124,-0.320519 V 8.1658131 L 9.4712102,10.579138 Q 9.3203774,10.692262 9.1506905,10.673408 8.9810036,10.654554 8.867879,10.503721 L 8.3776724,9.8815361 Q 8.2645478,9.7118493 8.2834019,9.5421624 8.3211101,9.3724755 8.4719429,9.2593509 L 12.582137,6.0918622 q 0.131978,-0.09427 0.245103,-0.1131246 0.113124,-0.018854 0.245103,-0.018854 h 0.961559 q 0.188541,0 0.301666,0.1319787 0.113124,0.1131246 0.113124,0.3016656 V 18.724109 q 0,0.188541 -0.113124,0.320519 -0.113125,0.113125 -0.301666,0.113125 z"
+         id="text1"
+         style="font-size:18.8541px;font-family:Rubik;-inkscape-font-specification:'Rubik, @wght=400';font-variation-settings:'wght' 400;fill:#ffffff;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;paint-order:markers fill stroke"
+         aria-label="1" />
     </g>
   </g>
 </svg>

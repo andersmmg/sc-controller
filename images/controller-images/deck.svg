@@ -7,7 +7,7 @@
    viewBox="0 0 445.99999 345"
    id="svg2"
    version="1.1"
-   inkscape:version="1.2 (dc2aedaf03, 2022-05-15)"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
    sodipodi:docname="deck.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -25,16 +25,16 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="14.833317"
-     inkscape:cx="213.33731"
-     inkscape:cy="265.7868"
+     inkscape:zoom="0.90509668"
+     inkscape:cx="262.95534"
+     inkscape:cy="217.10388"
      inkscape:document-units="px"
      inkscape:current-layer="controller"
      showgrid="false"
      units="px"
-     inkscape:window-width="1855"
-     inkscape:window-height="1032"
-     inkscape:window-x="65"
+     inkscape:window-width="1910"
+     inkscape:window-height="1025"
+     inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
      fit-margin-top="0"
@@ -248,16 +248,6 @@
            id="LEFT-2" />
       </g>
     </g>
-    <text
-       xml:space="preserve"
-       style="font-size:40px;line-height:125%;font-family:Go;-inkscape-font-specification:Go;letter-spacing:0px;word-spacing:0px;fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="384.29816"
-       y="743.89374"
-       id="text18000"><tspan
-         sodipodi:role="line"
-         id="tspan17998"
-         x="384.29816"
-         y="743.89374" /></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 513.91082,819.54018 h 38.64849"

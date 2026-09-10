@@ -60,13 +60,13 @@
      transform="translate(-225.71241,-824.40319)"
      style="opacity:0.95">
     <circle
-       style="color:#000000;display:inline;overflow:visible;visibility:visible;opacity:1;fill:#000000;fill-opacity:0.13725491;fill-rule:evenodd;stroke:#000000;stroke-width:2.01240349;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
+       style="color:#000000;display:inline;overflow:visible;visibility:visible;opacity:1;fill:#000000;fill-opacity:0.13725491;fill-rule:evenodd;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
        id="path4168"
        cx="257.7124"
        cy="856.4032"
        r="29.001123" />
     <path
-       style="color:#000000;display:inline;overflow:visible;visibility:visible;opacity:0.39899998;fill:#b8b8b8;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
+       style="color:#000000;display:inline;overflow:visible;visibility:visible;opacity:0.39899998;fill:#b8b8b8;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
        d="m 257.71241,832.65062 c -2.74747,0 -4.95939,2.21193 -4.95939,4.9594 l 0,13.83425 -13.83378,0 c -2.74747,0 -4.9594,2.21146 -4.9594,4.95892 0,2.74747 2.21193,4.9594 4.9594,4.9594 l 13.83378,0 0,13.83425 c 0,2.74747 2.21192,4.95892 4.95939,4.95892 2.74747,0 4.9594,-2.21145 4.9594,-4.95892 l 0,-13.83425 13.83378,0 c 2.74746,0 4.95939,-2.21193 4.95939,-4.9594 0,-2.74746 -2.21193,-4.95892 -4.95939,-4.95892 l -13.83378,0 0,-13.83425 c 0,-2.74747 -2.21193,-4.9594 -4.9594,-4.9594 z"
        id="rect4249"
        inkscape:connector-curvature="0" />

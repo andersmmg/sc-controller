@@ -2,20 +2,20 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="25"
    height="25"
    viewBox="0 0 25 25"
    id="svg2"
    version="1.1"
-   inkscape:version="0.92.1 r"
-   sodipodi:docname="3.svg">
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   sodipodi:docname="3.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <defs
      id="defs4" />
   <sodipodi:namedview
@@ -26,21 +26,24 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="12.527063"
-     inkscape:cx="-0.34924035"
-     inkscape:cy="-17.015263"
+     inkscape:cx="20.196274"
+     inkscape:cy="10.257791"
      inkscape:document-units="px"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="button"
      showgrid="false"
      units="px"
-     inkscape:window-width="1573"
-     inkscape:window-height="973"
-     inkscape:window-x="822"
-     inkscape:window-y="179"
-     inkscape:window-maximized="0"
+     inkscape:window-width="1123"
+     inkscape:window-height="1025"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
      fit-margin-top="0"
      fit-margin-left="0"
      fit-margin-right="0"
-     fit-margin-bottom="0" />
+     fit-margin-bottom="0"
+     inkscape:showpageshadow="2"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -59,24 +62,20 @@
      id="layer1"
      style="opacity:1">
     <g
-       id="button">
+       id="button"
+       transform="matrix(0.94502757,0,0,0.94502757,0.68630333,0.68800748)"
+       style="stroke-width:1.05817">
       <circle
          cx="12.4845"
          cy="12.5155"
          id="path4170-0-8-4"
-         style="color:#000000;display:inline;overflow:visible;visibility:visible;opacity:1;fill:#000000;fill-opacity:0.60335197;fill-rule:evenodd;stroke:#000000;stroke-width:0.66388923;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
+         style="color:#000000;display:inline;overflow:visible;visibility:visible;opacity:1;fill:#000000;fill-opacity:0.603352;fill-rule:evenodd;stroke:#000000;stroke-width:2.11634;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
          r="12.152555" />
-      <g
-         transform="translate(-50.607845,0.19457992)"
-         id="text923-1-2"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40px;line-height:125%;font-family:'Ubuntu Mono';-inkscape-font-specification:'Ubuntu Mono';letter-spacing:0px;word-spacing:0px;opacity:1;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-         aria-label="3">
-        <path
-           inkscape:connector-curvature="0"
-           id="path982"
-           style="font-size:29.33333397px;fill:#ffffff"
-           d="m 61.963006,19.65424 q 2.31734,0 3.28534,-0.90933 0.99733,-0.93867 0.99733,-2.49333 0,-0.99734 -0.41067,-1.672 -0.41066,-0.67467 -1.08533,-1.08534 -0.67467,-0.41066 -1.55467,-0.58666 -0.88,-0.176 -1.848,-0.176 h -0.616 v -1.96534 h 0.85067 q 0.64533,0 1.32,-0.11733 0.704,-0.14667 1.26133,-0.46933 0.58667,-0.3519998 0.93867,-0.9386698 0.352,-0.58667 0.352,-1.496 0,-1.496 -0.93867,-2.112 -0.90933,-0.64533 -2.14133,-0.64533 -1.26133,0 -2.14133,0.38133 -0.88,0.352 -1.46667,0.73333 l -0.93867,-1.848 q 0.616,-0.44 1.848,-0.9093295 1.26134,-0.49867 2.78667,-0.49867 1.43733,0 2.464,0.352 1.02667,0.352 1.672,0.9973395 0.67467,0.64533 0.99733,1.52533 0.32267,0.85067 0.32267,1.87733 0,1.43734 -0.76267,2.4346698 -0.73333,0.99733 -1.90666,1.52533 1.408,0.41067 2.43466,1.61334 1.02667,1.17333 1.02667,3.13866 0,1.17334 -0.41067,2.2 -0.38133,0.99734 -1.20266,1.73067 -0.792,0.73333 -2.08267,1.144 -1.26133,0.41067 -3.02133,0.41067 -0.67467,0 -1.408,-0.11734 -0.704,-0.088 -1.32,-0.264 -0.616,-0.14666 -1.11467,-0.29333 -0.46933,-0.176 -0.67467,-0.264 l 0.46934,-2.08267 q 0.46933,0.23467 1.496,0.55734 1.02666,0.32266 2.52266,0.32266 z" />
-      </g>
+      <path
+         d="m 12.500895,19.614662 q -1.187808,0 -2.073951,-0.282812 Q 9.5408018,19.030185 8.9374706,18.539978 8.3341395,18.049772 8.0136198,17.465294 7.7119542,16.880817 7.6931001,16.258632 q 0,-0.169687 0.1131246,-0.263957 0.1131246,-0.09427 0.2828115,-0.09427 H 9.012887 q 0.1696869,0 0.3016656,0.07542 0.1319787,0.07542 0.2262492,0.320519 0.188541,0.678748 0.6410392,1.05583 0.471353,0.377082 1.074684,0.527915 0.622185,0.131978 1.24437,0.131978 1.300933,0 2.11166,-0.622185 0.810726,-0.622185 0.810726,-1.828848 0,-1.225516 -0.73531,-1.753431 -0.73531,-0.527915 -2.036243,-0.527915 h -1.791139 q -0.188541,0 -0.32052,-0.113124 -0.113125,-0.113125 -0.113125,-0.32052 v -0.509061 q 0,-0.169686 0.05656,-0.282811 0.07542,-0.131979 0.150833,-0.226249 L 14.292035,7.8308497 H 8.7300755 q -0.188541,0 -0.3205196,-0.1131246 Q 8.2964313,7.6046005 8.2964313,7.3972054 V 6.6807496 q 0,-0.207395 0.1131246,-0.3205196 0.1319786,-0.1319787 0.3205196,-0.1319787 h 7.5227855 q 0.207395,0 0.32052,0.1319787 0.131979,0.1131246 0.131979,0.3205196 v 0.6787476 q 0,0.1319787 -0.07542,0.2451033 -0.05656,0.09427 -0.131979,0.188541 l -3.638841,4.0536315 0.301666,0.01885 q 1.24437,0.03771 2.168221,0.452498 0.942705,0.414791 1.451766,1.244371 0.527915,0.810726 0.527915,2.055097 0,1.263224 -0.622186,2.168221 -0.622185,0.886143 -1.715723,1.357495 -1.093537,0.471353 -2.469887,0.471353 z"
+         id="text1"
+         style="font-size:18.8541px;font-family:Rubik;-inkscape-font-specification:'Rubik, @wght=400';font-variation-settings:'wght' 400;fill:#ffffff;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;paint-order:markers fill stroke"
+         aria-label="3" />
     </g>
   </g>
 </svg>
