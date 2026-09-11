@@ -47,6 +47,22 @@ def test_svg_inversion_includes_cursor_gradient_stops():
 	assert "stop-color:%s" % SVGEditor._invert_color("#" + color) in tree[0].attrib["style"]
 
 
+def test_svg_inversion_treats_omitted_shape_fill_as_black():
+	tree = ET.fromstring("<svg><path d=\"M0 0\" /></svg>")
+
+	SVGEditor.invert_colors(tree)
+
+	assert "fill:%s" % SVGEditor._invert_color("#000000") in tree[0].attrib["style"]
+
+
+def test_svg_inversion_preserves_explicit_none_fill():
+	tree = ET.fromstring('<svg><path style="fill:none" d="M0 0" /></svg>')
+
+	SVGEditor.invert_colors(tree)
+
+	assert tree[0].attrib["style"] == "fill:none"
+
+
 def test_svg_blend_recolor_interpolates_from_base_to_highlight():
 	element = ET.fromstring("<path style=\"fill:#204060;stroke:#000000\" />")
 

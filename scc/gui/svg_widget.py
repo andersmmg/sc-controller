@@ -777,23 +777,23 @@ class SVGEditor(object):
 		"""
 		Invert fill/stroke luminance across the whole tree.
 		"""
+		graphic_tags = ("path", "rect", "circle", "ellipse", "polygon", "polyline", "line", "text")
+
 		def walk(el):
-			if 'style' in el.attrib:
-				parts = [p.split(":", 1) for p in el.attrib['style'].split(";") if ":" in p]
-				style = dict(parts)
-				changed = False
-				for k in ("fill", "stroke", "stop-color"):
-					v = style.get(k)
-					if v and v not in ("none", "transparent"):
-						style[k] = SVGEditor._invert_color(v, brightness)
-						changed = True
-				if changed:
-					el.attrib['style'] = ";".join("%s:%s" % (k, v) for k, v in style.items())
-			# Named-color shorthands like fill="red" as attributes
+			parts = [p.split(":", 1) for p in el.attrib.get('style', '').split(";") if ":" in p]
+			style = dict(parts)
+			if (el.tag.endswith(graphic_tags)
+					and "fill" not in style and "fill" not in el.attrib):
+				style["fill"] = "#000000"
 			for k in ("fill", "stroke", "stop-color"):
-				v = el.attrib.get(k)
+				v = style.get(k, el.attrib.get(k))
 				if v and v not in ("none", "transparent"):
-					el.attrib[k] = SVGEditor._invert_color(v, brightness)
+					if k in style:
+						style[k] = SVGEditor._invert_color(v, brightness)
+					else:
+						el.attrib[k] = SVGEditor._invert_color(v, brightness)
+			if style:
+				el.attrib['style'] = ";".join("%s:%s" % (k, v) for k, v in style.items())
 			for ch in el:
 				walk(ch)
 		walk(tree)
