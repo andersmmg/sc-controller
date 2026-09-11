@@ -1,0 +1,22 @@
+// Project tasks configuration. See https://zed.dev/docs/tasks for documentation.
+[
+  {
+    "label": "Debug GUI",
+    "command": "G_ENABLE_DIAGNOSTIC=1 scripts/scc gui -d",
+    "save": "all",
+  },
+  {
+    "label": "Debug Daemon",
+    "command": "scripts/scc daemon stop && scripts/scc daemon debug",
+    "save": "all",
+  },
+  {
+    "label": "Build AppImage",
+    "command": "$ZED_WORKTREE_ROOT/appimage-build.sh && appimagetool -n $ZED_WORKTREE_ROOT/appimage",
+    "save": "all",
+  },
+  {
+    "label": "Run Tests",
+    "command": "PYTHONPATH=. pytest -q",
+  }
+]

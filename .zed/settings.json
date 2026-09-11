@@ -1,0 +1,12 @@
+{
+	"hard_tabs": true,
+	"languages": {
+		"Python": {
+			"language_servers": [
+				"ty",
+				"!basedpyright",
+				"ruff",
+			],
+		},
+	},
+}

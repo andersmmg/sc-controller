@@ -2,6 +2,8 @@
 .*
 !/.github/
 !/.github/**
+!/.zed/
+!/.zed/**
 *.egg-info/
 *~
 *.so
@@ -10,6 +12,7 @@
 test.*
 test[0-9].*
 build/
+dist/
 .atomignore
 commit*
 profiles
