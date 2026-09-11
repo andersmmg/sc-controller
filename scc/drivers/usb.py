@@ -195,8 +195,7 @@ class USBDriver:
 		self.daemon = None
 		self._known_ids = {}
 		self._fail_cbs = {}
-		self._devices = {}
-		self._syspaths = {}
+		self._devices = {}  # syspath -> USBDevice
 		self._started = False
 		self._retry_devices = []
 		self._retry_devices_timer = 0
@@ -210,8 +209,8 @@ class USBDriver:
 		"""Closes all devices and unclaims all interfaces"""
 		if len(self._devices):
 			log.debug("Releasing devices...")
-			to_release, self._devices, self._syspaths = self._devices.values(), {}, {}
-			for d in to_release:
+			while self._devices:
+				_syspath, d = self._devices.popitem()
 				d.close()
 
 	def start(self):
@@ -270,8 +269,7 @@ class USBDriver:
 			return True
 		if handled_device:
 			handled_device.syspath = syspath
-			self._devices[device] = handled_device
-			self._syspaths[syspath] = device
+			self._devices[syspath] = handled_device
 			log.debug("USB device added: %.4x:%.4x", *tp)
 			self.daemon.remove_error("usb:%s:%s" % (tp[0], tp[1]))
 			return True
@@ -280,11 +278,9 @@ class USBDriver:
 		return False
 
 	def handle_removed_device(self, syspath, vendor, product):
-		if syspath in self._syspaths:
-			device = self._syspaths[syspath]
-			handled_device = self._devices[device]
-			del self._syspaths[syspath]
-			del self._devices[device]
+		handled_device = self._devices.pop(syspath, None)
+		if handled_device is not None:
+			device = handled_device.device
 			handled_device.close()
 			try:
 				device.close()
@@ -316,13 +312,19 @@ class USBDriver:
 			self._ctx.handleEventsTimeout()
 			self._changed = 0
 
-		for d in self._devices.values():  # TODO: don't use .values() here
+		# Devices that fail to flush are collected first and closed after
+		# the loop, so the dict is never mutated while being iterated.
+		dead = []
+		for syspath, d in self._devices.items():
 			try:
 				d.flush()
 			except usb1.USBErrorPipe:
 				log.error("USB device %s disconnected durring flush", d)
+				dead.append(syspath)
+		for syspath in dead:
+			d = self._devices.pop(syspath, None)
+			if d is not None:
 				d.close()
-				break
 		if len(self._retry_devices):
 			if time.time() > self._retry_devices_timer:
 				self._retry_devices_timer = time.time() + 5.0
