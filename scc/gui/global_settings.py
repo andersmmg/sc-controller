@@ -721,9 +721,9 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		This actually does kind of magic:
 		- 1st, default menu file is loaded
 		- 2nd, based on widget name, option from DEFAULT_MENU_OPTIONS is
-		  selected
+			selected
 		- 3rd, if this option is not present in loaded menu and checkbox is
-		  toggled on, option is added
+			toggled on, option is added
 		- (same for option that is present while checkbox was toggled off)
 		- 4rd, default menu is saved
 		"""

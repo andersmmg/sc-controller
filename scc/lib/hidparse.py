@@ -3,9 +3,9 @@ hidparse - just enough code to parse HID report from hidraw descriptor.
 
 Based on
   - Pythonic binding for linux's hidraw ioctls
-	  (https://github.com/vpelletier/python-hidraw)
+	(https://github.com/vpelletier/python-hidraw)
   - Winfred Lu's rd-parse.py
-	  (http://winfred-lu.blogspot.sk/2014/02/usb-hid-report-descriptor-parser-in.html)
+	(http://winfred-lu.blogspot.sk/2014/02/usb-hid-report-descriptor-parser-in.html)
 
 Licensed under GPL 2.0
 """

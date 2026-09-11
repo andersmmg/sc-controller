@@ -47,9 +47,9 @@ def cmd_test_evdev(argv0, argv):
 
 	Usage: scc test-evdev /dev/input/node
 	Return codes:
-	  0 - normal exit
-	  1 - invalid arguments or other error
-	  2 - failed to open device
+		0 - normal exit
+		1 - invalid arguments or other error
+		2 - failed to open device
 	"""
 	from scc.drivers.evdevdrv import evdevdrv_test
 
@@ -62,11 +62,11 @@ def cmd_test_hid(argv0, argv):
 
 	Usage: scc test-hid vendor_id device_id
 	Return codes:
-	  0 - normal exit
-	  1 - invalid arguments or other error
-	  2 - failed to open device
-	  3 - device is not HID-compatibile
-	  4 - failed to parse HID descriptor
+		0 - normal exit
+		1 - invalid arguments or other error
+		2 - failed to open device
+		3 - device is not HID-compatibile
+		4 - failed to parse HID descriptor
 	"""
 	from scc.drivers.hiddrv import HIDController, hiddrv_test
 
@@ -95,7 +95,7 @@ def cmd_list_profiles(argv0, argv):
 	Usage: scc list-profiles [-a]
 
 	Arguments:
-	  -a   Include names begining with dot
+		-a   Include names begining with dot
 	"""
 	from scc.paths import get_default_profiles_path, get_profiles_path
 

@@ -179,19 +179,19 @@ class SCByBt(SCController):
 		# ------
 		"""
 		packet format:
-		 - uint8_t type - SCPacketType.CONFIGURE
-		 - uint8_t size - SCPacketLength.CONFIGURE_BT or SCPacketLength.LED
-		 - uint8_t config_type - SCConfigType.CONFIGURE_BT or SCConfigType.LED
-		 - (variable) data
+		- uint8_t type - SCPacketType.CONFIGURE
+		- uint8_t size - SCPacketLength.CONFIGURE_BT or SCPacketLength.LED
+		- uint8_t config_type - SCConfigType.CONFIGURE_BT or SCConfigType.LED
+		- (variable) data
 
 		Format for data when configuring controller:
-		 - 12B		unknown1 - (hex 0000310200080700070700300)
-		 - uint8	enable gyro sensor - 0x14 enables, 0x00 disables
-		 - 2b		unknown2 - (0x00, 0x2e)
+		- 12B		unknown1 - (hex 0000310200080700070700300)
+		- uint8	enable gyro sensor - 0x14 enables, 0x00 disables
+		- 2b		unknown2 - (0x00, 0x2e)
 
 		Format for data when configuring led:
-		 - uint8	led
-		 - 60b		unused
+		- uint8		led
+		- 60b		unused
 		"""
 
 		# idle_timeout is ignored

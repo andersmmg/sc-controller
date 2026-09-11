@@ -1370,12 +1370,12 @@ class TiltAction(MultichildAction):
 	def __init__(self, *actions):
 		"""
 		Order of actions:
-		 - Front faces down
-		 - Front faces up
-		 - Tilted left
-		 - Tilted right
-		 - Rotated left
-		 - Rotated right
+			- Front faces down
+			- Front faces up
+			- Tilted left
+			- Tilted right
+			- Rotated left
+			- Rotated right
 		"""
 		MultichildAction.__init__(self, *strip_none(*actions))
 		self.actions = ensure_size(6, actions, NoAction())

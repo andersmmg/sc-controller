@@ -315,9 +315,9 @@ class StickController(GObject.GObject, TimerManager):
 	'direction' signal that can be used as input for menu navigation.
 
 	Signals:
-	  direction(horisontal, vertical)
+		direction(horisontal, vertical)
 
-	  Both values are one of -1, 0, 1 for left/none/right.
+		Both values are one of -1, 0, 1 for left/none/right.
 	"""
 
 	__gsignals__ = {

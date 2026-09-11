@@ -256,9 +256,9 @@ class ActionParser:
 	def _parse_action(self, frm=Action.ALL):
 		"""
 		Parses one action, that is one of:
-		 - something(params)
-		 - something()
-		 - something
+			- something(params)
+			- something()
+			- something
 		"""
 		# Check if next token is TokenType.NAME and grab action name from it
 		t = self._next_token()

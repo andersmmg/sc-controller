@@ -148,7 +148,7 @@ class _EnumDict(dict):
 		Single underscore (sunder) names are reserved.
 
 		Note:   in 3.x __order__ is simply discarded as a not necessary piece
-		        leftover from 2.x
+			leftover from 2.x
 
 		"""
 		if pyver >= 3.0 and key == "__order__":
@@ -447,7 +447,7 @@ class EnumMeta(type):
 		`names` can be:
 
 		* A string containing member names, separated either with spaces or
-		  commas.  Values are auto-numbered from 1.
+			commas.  Values are auto-numbered from 1.
 		* An iterable of member names.  Values are auto-numbered from 1.
 		* An iterable of (member name, value) pairs.
 		* A mapping of member name -> value.

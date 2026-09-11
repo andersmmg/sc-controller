@@ -53,7 +53,7 @@ class HIDRaw:
 	def __init__(self, device):
 		"""
 		device (file, fileno)
-		    A file object or a fileno of an open hidraw device node.
+			A file object or a fileno of an open hidraw device node.
 		"""
 		self._device = device
 

@@ -381,19 +381,19 @@ class USBTransfer:
 		Setup transfer for control use.
 
 		request_type, request, value, index
-		    See USBDeviceHandle.controlWrite.
-		    request_type defines transfer direction (see
-		    ENDPOINT_OUT and ENDPOINT_IN)).
+			See USBDeviceHandle.controlWrite.
+			request_type defines transfer direction (see
+			ENDPOINT_OUT and ENDPOINT_IN)).
 		buffer_or_len
-		    Either a string (when sending data), or expected data length (when
-		    receiving data).
+			Either a string (when sending data), or expected data length (when
+			receiving data).
 		callback
-		    Callback function to be invoked on transfer completion.
-		    Called with transfer as parameter, return value ignored.
+			Callback function to be invoked on transfer completion.
+			Called with transfer as parameter, return value ignored.
 		user_data
-		    User data to pass to callback function.
+			User data to pass to callback function.
 		timeout
-		    Transfer timeout in milliseconds. 0 to disable.
+			Transfer timeout in milliseconds. 0 to disable.
 		"""
 		if self.__submitted:
 			raise ValueError("Cannot alter a submitted transfer")
@@ -422,18 +422,18 @@ class USBTransfer:
 		Setup transfer for bulk use.
 
 		endpoint
-		    Endpoint to submit transfer to. Defines transfer direction (see
-		    ENDPOINT_OUT and ENDPOINT_IN)).
+			Endpoint to submit transfer to. Defines transfer direction (see
+			ENDPOINT_OUT and ENDPOINT_IN)).
 		buffer_or_len
-		    Either a string (when sending data), or expected data length (when
-		    receiving data)
+			Either a string (when sending data), or expected data length (when
+			receiving data)
 		callback
-		    Callback function to be invoked on transfer completion.
-		    Called with transfer as parameter, return value ignored.
+			Callback function to be invoked on transfer completion.
+			Called with transfer as parameter, return value ignored.
 		user_data
-		    User data to pass to callback function.
+			User data to pass to callback function.
 		timeout
-		    Transfer timeout in milliseconds. 0 to disable.
+			Transfer timeout in milliseconds. 0 to disable.
 		"""
 		if self.__submitted:
 			raise ValueError("Cannot alter a submitted transfer")
@@ -461,18 +461,18 @@ class USBTransfer:
 		Setup transfer for interrupt use.
 
 		endpoint
-		    Endpoint to submit transfer to. Defines transfer direction (see
-		    ENDPOINT_OUT and ENDPOINT_IN)).
+			Endpoint to submit transfer to. Defines transfer direction (see
+			ENDPOINT_OUT and ENDPOINT_IN)).
 		buffer_or_len
-		    Either a string (when sending data), or expected data length (when
-		    receiving data)
+			Either a string (when sending data), or expected data length (when
+			receiving data)
 		callback
-		    Callback function to be invoked on transfer completion.
-		    Called with transfer as parameter, return value ignored.
+			Callback function to be invoked on transfer completion.
+			Called with transfer as parameter, return value ignored.
 		user_data
-		    User data to pass to callback function.
+			User data to pass to callback function.
 		timeout
-		    Transfer timeout in milliseconds. 0 to disable.
+			Transfer timeout in milliseconds. 0 to disable.
 		"""
 		if self.__submitted:
 			raise ValueError("Cannot alter a submitted transfer")
@@ -502,22 +502,22 @@ class USBTransfer:
 		Setup transfer for isochronous use.
 
 		endpoint
-		    Endpoint to submit transfer to. Defines transfer direction (see
-		    ENDPOINT_OUT and ENDPOINT_IN)).
+			Endpoint to submit transfer to. Defines transfer direction (see
+			ENDPOINT_OUT and ENDPOINT_IN)).
 		buffer_or_len
-		    Either a string (when sending data), or expected data length (when
-		    receiving data)
+			Either a string (when sending data), or expected data length (when
+			receiving data)
 		callback
-		    Callback function to be invoked on transfer completion.
-		    Called with transfer as parameter, return value ignored.
+			Callback function to be invoked on transfer completion.
+			Called with transfer as parameter, return value ignored.
 		user_data
-		    User data to pass to callback function.
+			User data to pass to callback function.
 		timeout
-		    Transfer timeout in milliseconds. 0 to disable.
+			Transfer timeout in milliseconds. 0 to disable.
 		iso_transfer_length_list
-		    List of individual transfer sizes. If not provided, buffer_or_len
-		    will be divided evenly among available transfers if possible, and
-		    raise ValueError otherwise.
+			List of individual transfer sizes. If not provided, buffer_or_len
+			will be divided evenly among available transfers if possible, and
+			raise ValueError otherwise.
 		"""
 		if self.__submitted:
 			raise ValueError("Cannot alter a submitted transfer")
@@ -590,10 +590,10 @@ class USBTransfer:
 		Get transfer type.
 
 		Returns one of:
-		    TRANSFER_TYPE_CONTROL
-		    TRANSFER_TYPE_ISOCHRONOUS
-		    TRANSFER_TYPE_BULK
-		    TRANSFER_TYPE_INTERRUPT
+			TRANSFER_TYPE_CONTROL
+			TRANSFER_TYPE_ISOCHRONOUS
+			TRANSFER_TYPE_BULK
+			TRANSFER_TYPE_INTERRUPT
 		"""
 		return self.__transfer.contents.type
 
@@ -781,10 +781,10 @@ class USBTransferHelper:
 	Simplifies subscribing to the same transfer over and over, and callback
 	handling:
 	- no need to read event status to execute apropriate code, just setup
-	  different functions for each status code
+		different functions for each status code
 	- just return True instead of calling submit
 	- no need to check if transfer is doomed before submitting it again,
-	  DoomedTransferError is caught.
+		DoomedTransferError is caught.
 
 	Callbacks used in this class must follow the callback API described in
 	USBTransfer, and are expected to return a boolean:
@@ -803,8 +803,8 @@ class USBTransferHelper:
 
 		transfer parameter is deprecated. If provided, it will be equivalent
 		to:
-		    helper = USBTransferHelper()
-		    transfer.setCallback(helper)
+			helper = USBTransferHelper()
+			transfer.setCallback(helper)
 		and also allows using deprecated methods on this class (otherwise,
 		they raise AttributeError).
 		"""
@@ -835,13 +835,13 @@ class USBTransferHelper:
 		"""
 		Set a function to call for a given event.
 		event must be one of:
-		    TRANSFER_COMPLETED
-		    TRANSFER_ERROR
-		    TRANSFER_TIMED_OUT
-		    TRANSFER_CANCELLED
-		    TRANSFER_STALL
-		    TRANSFER_NO_DEVICE
-		    TRANSFER_OVERFLOW
+			TRANSFER_COMPLETED
+			TRANSFER_ERROR
+			TRANSFER_TIMED_OUT
+			TRANSFER_CANCELLED
+			TRANSFER_STALL
+			TRANSFER_NO_DEVICE
+			TRANSFER_OVERFLOW
 		"""
 		if event not in EVENT_CALLBACK_SET:
 			raise ValueError("Unknown event %r." % (event,))
@@ -900,12 +900,12 @@ class USBPollerThread(threading.Thread):
 		present for that context, and will replace it.
 
 		poller
-		    (same as USBPoller.__init__ "poller" parameter)
+			(same as USBPoller.__init__ "poller" parameter)
 
 		exc_callback (callable)
-		  Called with a libusb_error value as single parameter when event
-		  handling fails.
-		  If not given, an USBError will be raised, interrupting the thread.
+			Called with a libusb_error value as single parameter when event
+			handling fails.
+			If not given, an USBError will be raised, interrupting the thread.
 		"""
 		super().__init__()
 		self.daemon = True
@@ -989,12 +989,12 @@ class USBPoller:
 
 		poller is a polling instance implementing the following methods:
 		- register(fd, event_flags)
-		  event_flags have the same meaning as in poll API (POLLIN & POLLOUT)
+			event_flags have the same meaning as in poll API (POLLIN & POLLOUT)
 		- unregister(fd)
 		- poll(timeout)
-		  timeout being a float in seconds, or negative/None if there is no
-		  timeout.
-		  It must return a list of (descriptor, event) pairs.
+			timeout being a float in seconds, or negative/None if there is no
+			timeout.
+			It must return a list of (descriptor, event) pairs.
 		Note: USBPoller is itself a valid poller.
 		Note2: select.poll uses a timeout in milliseconds, for some reason
 		(all other select.* classes use seconds for timeout), so you should
@@ -1203,9 +1203,9 @@ class USBDeviceHandle:
 		receive/send data.
 
 		Can be used as a context manager:
-		    with handle.claimInterface(0):
-		        # do stuff
-		    # handle.releaseInterface(0) gets automatically called
+			with handle.claimInterface(0):
+				# do stuff
+			# handle.releaseInterface(0) gets automatically called
 		"""
 		mayRaiseUSBError(
 			libusb1.libusb_claim_interface(self.__handle, interface),
@@ -1280,7 +1280,7 @@ class USBDeviceHandle:
 		"""
 		Control automatic kernel driver detach.
 		enable (bool)
-		    True to enable auto-detach, False to disable it.
+			True to enable auto-detach, False to disable it.
 		"""
 		mayRaiseUSBError(
 			libusb1.libusb_set_auto_detach_kernel_driver(
@@ -1405,11 +1405,11 @@ class USBDeviceHandle:
 		"""
 		Synchronous control write.
 		request_type: request type bitmask (bmRequestType), see
-		  constants TYPE_* and RECIPIENT_*.
+			constants TYPE_* and RECIPIENT_*.
 		request: request id (some values are standard).
 		value, index, data: meaning is request-dependent.
 		timeout: in milliseconds, how long to wait for device acknowledgement.
-		  Set to 0 to disable.
+			Set to 0 to disable.
 
 		Returns the number of bytes actually sent.
 		"""
@@ -1423,7 +1423,7 @@ class USBDeviceHandle:
 		"""
 		Synchronous control read.
 		timeout: in milliseconds, how long to wait for data. Set to 0 to
-		  disable.
+			disable.
 		See controlWrite for other parameters description.
 
 		Returns received data.
@@ -1463,7 +1463,7 @@ class USBDeviceHandle:
 		endpoint: endpoint to send data to.
 		data: data to send.
 		timeout: in milliseconds, how long to wait for device acknowledgement.
-		  Set to 0 to disable.
+			Set to 0 to disable.
 
 		Returns the number of bytes actually sent.
 		"""
@@ -1477,7 +1477,7 @@ class USBDeviceHandle:
 		"""
 		Synchronous bulk read.
 		timeout: in milliseconds, how long to wait for data. Set to 0 to
-		  disable.
+			disable.
 		See bulkWrite for other parameters description.
 
 		Returns received data.
@@ -1511,7 +1511,7 @@ class USBDeviceHandle:
 		endpoint: endpoint to send data to.
 		data: data to send.
 		timeout: in milliseconds, how long to wait for device acknowledgement.
-		  Set to 0 to disable.
+			Set to 0 to disable.
 
 		Returns the number of bytes actually sent.
 		"""
@@ -1525,7 +1525,7 @@ class USBDeviceHandle:
 		"""
 		Synchronous interrupt write.
 		timeout: in milliseconds, how long to wait for data. Set to 0 to
-		  disable.
+			disable.
 		See interruptRead for other parameters description.
 
 		Returns received data.
@@ -1543,7 +1543,7 @@ class USBDeviceHandle:
 		"""
 		Get an USBTransfer instance for asynchronous use.
 		iso_packets: the number of isochronous transfer descriptors to
-		  allocate.
+			allocate.
 		"""
 		result = USBTransfer(
 			self.__handle,
@@ -2026,11 +2026,11 @@ class USBDevice:
 		Get device's speed.
 
 		Returns one of:
-		    SPEED_UNKNOWN
-		    SPEED_LOW
-		    SPEED_FULL
-		    SPEED_HIGH
-		    SPEED_SUPER
+			SPEED_UNKNOWN
+			SPEED_LOW
+			SPEED_FULL
+			SPEED_HIGH
+			SPEED_SUPER
 		"""
 		return libusb1.libusb_get_device_speed(self.device_p)
 
@@ -2146,7 +2146,7 @@ class USBContext:
 		This happens automatically on the first method call needing access to
 		the uninitialised properties, but with a warning.
 		Call this method ONLY if your usage pattern prevents you from using the
-		    with USBContext() as contewt:
+			with USBContext() as contewt:
 		form: this means there are ways to avoid calling close(), which can
 		cause issues particularly hard to debug (ex: interpreter hangs on
 		exit).
@@ -2202,7 +2202,7 @@ class USBContext:
 		instances.
 
 		skip_on_error (bool)
-		    If True, ignore devices which raise USBError.
+			If True, ignore devices which raise USBError.
 		"""
 		device_p_p = libusb1.libusb_device_p_p()
 		libusb_device_p = libusb1.libusb_device_p
@@ -2232,10 +2232,10 @@ class USBContext:
 		instances.
 
 		skip_on_error (bool)
-		    If True, ignore devices which raise USBError.
+			If True, ignore devices which raise USBError.
 
 		skip_on_access_error (bool)
-		    DEPRECATED. Alias for skip_on_error.
+			DEPRECATED. Alias for skip_on_error.
 		"""
 		return list(
 			self.getDeviceIterator(
@@ -2248,9 +2248,9 @@ class USBContext:
 		Get the first USB device matching given vendor and product ids.
 		Returns an USBDevice instance, or None if no present device match.
 		skip_on_error (bool)
-		    (see getDeviceList)
+			(see getDeviceList)
 		skip_on_access_error (bool)
-		    (see getDeviceList)
+			(see getDeviceList)
 		"""
 		for device in self.getDeviceIterator(
 			skip_on_error=skip_on_access_error or skip_on_error,
@@ -2265,9 +2265,9 @@ class USBContext:
 		Returns an USBDeviceHandle instance, or None if no present device
 		match.
 		skip_on_error (bool)
-		    (see getDeviceList)
+			(see getDeviceList)
 		skip_on_access_error (bool)
-		    (see getDeviceList)
+			(see getDeviceList)
 		"""
 		result = self.getByVendorIDAndProductID(
 			vendor_id, product_id, skip_on_access_error=skip_on_access_error, skip_on_error=skip_on_error
@@ -2489,11 +2489,11 @@ class USBContext:
 		Callback must accept the following positional arguments:
 		- this USBContext instance
 		- an USBDevice instance
-		  If device has left, configuration descriptors may not be
-		  available. Its device descriptor will be available.
+			If device has left, configuration descriptors may not be
+			available. Its device descriptor will be available.
 		- event type, one of:
-		    HOTPLUG_EVENT_DEVICE_ARRIVED
-		    HOTPLUG_EVENT_DEVICE_LEFT
+			HOTPLUG_EVENT_DEVICE_ARRIVED
+			HOTPLUG_EVENT_DEVICE_LEFT
 		Callback must return whether it must be unregistered (any true value
 		to be unregistered, any false value to be kept registered).
 		"""
@@ -2548,7 +2548,7 @@ class USBContext:
 		"""
 		Deregisters an hotplug callback.
 		handle (opaque)
-		    Return value of a former hotplugRegisterCallback call.
+			Return value of a former hotplugRegisterCallback call.
 		"""
 		del self.__hotplug_callback_dict[handle]
 		libusb1.libusb_hotplug_deregister_callback(self.__context_p, handle)
@@ -2585,10 +2585,10 @@ def hasCapability(capability):
 	Tests feature presence.
 
 	capability should be one of:
-	    CAP_HAS_CAPABILITY
-	    CAP_HAS_HOTPLUG
-	    CAP_HAS_HID_ACCESS
-	    CAP_SUPPORTS_DETACH_KERNEL_DRIVER
+		CAP_HAS_CAPABILITY
+		CAP_HAS_HOTPLUG
+		CAP_HAS_HID_ACCESS
+		CAP_SUPPORTS_DETACH_KERNEL_DRIVER
 	"""
 	return libusb1.libusb_has_capability(capability)
 

@@ -31,8 +31,8 @@ class GestureDisplay(OSDWindow):
 	OSD Window that displays gesture as it is being generated.
 
 	Signals:
-	  gesture-updated(gesture)		Emited repeadedly while gesture is being drawn.
-	                                                                May be emited multiple times with same gesture.
+		gesture-updated(gesture)	Emited repeadedly while gesture is being drawn.
+									May be emited multiple times with same gesture.
 	"""
 
 	EPILOG = """Exit codes:

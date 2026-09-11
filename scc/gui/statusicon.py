@@ -85,9 +85,9 @@ class StatusIcon(GObject.GObject):
 		If either of these are `None` their previous value will be used.
 
 		@param {String} icon
-		       The name of the icon to show (i.e. `si-syncthing-idle`)
+			The name of the icon to show (i.e. `si-syncthing-idle`)
 		@param {String} text
-		       Some text that indicates what the application is currently doing (generally this be used for the tooltip)
+			Some text that indicates what the application is currently doing (generally this be used for the tooltip)
 		"""
 		if (icon, text) == self.__last_set:
 			return False
