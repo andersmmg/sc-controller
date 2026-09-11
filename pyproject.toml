@@ -36,6 +36,88 @@ scc-osd-message = "scc._launcher:osd_message"
 scc-osd-radial-menu = "scc._launcher:osd_radial_menu"
 scc-osd-show-bindings = "scc._launcher:osd_show_bindings"
 
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+extend-exclude = ["build", "dist", "appimage", "sccontroller.egg-info"]
+
+[tool.ruff.format]
+indent-style = "tab"
+quote-style = "double"
+
+[tool.ruff.lint]
+select = [
+	"F",	# Pyflakes
+	"E",	# pycodestyle errors
+	"W",	# pycodestyle warnings
+	"I",	# isort
+	"UP",	# pyupgrade
+	"B",	# flake8-bugbear
+	"C4",	# flake8-comprehensions
+	"RUF",	# ruff-specific
+	"SIM",	# flake8-simplify
+	"RET",	# flake8-return
+	"PERF",	# perflint
+	"T20",	# flake8-print
+]
+ignore = [
+	"W191",
+	"E501", # long lines
+	"E741", # l as variable name
+	"E721", "E731", # TODO: fix these
+	"F403", "F405", # star imports, TODO: replace these
+	# "W291", "W293", # trailing whitespace on tab-indented lines, handled by editor
+	"T201", "T203", # TODO: replace print() with logging
+	"SIM102", # collapsible if, often clearer so leaving for now
+	"SIM105", # TODO: fix
+	"SIM115", # TODO: fix
+	"SIM108", # if/else rewrites, i like how they are for now
+	"SIM110", # TODO: replace these
+	"SIM113", # TODO: use enumerate()
+	"SIM401", "SIM103", # TODO: fix
+	"B905", # may change behaviour leaving for now
+	"B007", # unused loop variables are used as unpacking targets, may fix later
+	"E402", # imports after setup code, used for gtk stuff often
+	"E711", # == None comparisons, may fix sometime? TODO?
+	"PERF401", # TODO: fix
+	"UP036", # TODO: fix
+	"RUF012", "RUF059", # TODO: fix
+	"PERF203", # TODO: fix
+	"UP031", # TODO: fix
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401"] # re-exports
+"scc/lib/libusb1.py" = ["F821", "B904"]
+"scc/lib/usb1.py" = ["F821"] # star imports
+"scc/lib/enum.py" = ["B904"] # TODO: fix
+
+# re enable all as errors
+# only enable as files are fully annotated
+[tool.ty.rules]
+all = "ignore"
+
+[[tool.ty.overrides]]
+include = [
+	"scc/constants.py",
+	"scc/paths.py",
+	"scc/scheduler.py",
+	"scc/poller.py",
+	"scc/cheader.py",
+	"scc/tools.py",
+	"scc/uinput.py",
+	"scc/aliases.py",
+	"scc/controller.py",
+	"scc/lib/xwrappers.py",
+	"scc/lib/jsonencoder.py",
+]
+
+[tool.ty.overrides.rules]
+all = "error"
+
+[tool.ty.analysis]
+replace-imports-with-any = ["gi.**", "evdev.**", "posix1e"]
+
 [tool.setuptools]
 packages = [
 	"scc", "scc.drivers", "scc.lib",
