@@ -13,7 +13,7 @@ from scc.gui.svg_widget import SVGWidget
 IMAGES = os.path.join(os.path.dirname(__file__), "..", "images")
 
 
-class FakeApp(object):
+class FakeApp:
 	def __init__(self, mode, tmpdir):
 		from scc.gui.app import App
 
@@ -51,12 +51,7 @@ def test_invert_svg_file_to_string():
 
 
 def test_invert_svg_file_missing():
-	assert (
-		SVGWidget.invert_svg_file_to_string(
-			os.path.join(IMAGES, "scc-doesnotexist.svg")
-		)
-		is None
-	)
+	assert SVGWidget.invert_svg_file_to_string(os.path.join(IMAGES, "scc-doesnotexist.svg")) is None
 
 
 def _paint_values(data):
@@ -77,16 +72,12 @@ def _paint_values(data):
 
 
 def test_invert_statusicon_current_color():
-	data = SVGWidget.invert_svg_file_to_string(
-		os.path.join(IMAGES, "scc-statusicon-alive.svg")
-	)
+	data = SVGWidget.invert_svg_file_to_string(os.path.join(IMAGES, "scc-statusicon-alive.svg"))
 	assert data is not None
 	vals = _paint_values(data)
 	assert "none" in vals
 	assert "currentColor" not in vals
-	assert any(v.startswith("#") and int(v[1:3], 16) > 128 for v in vals), (
-		"stroke was not inverted: %s" % vals
-	)
+	assert any(v.startswith("#") and int(v[1:3], 16) > 128 for v in vals), "stroke was not inverted: %s" % vals
 
 
 def test_tray_icon_light_mode_uses_original(tmp_path):
@@ -125,7 +116,7 @@ def test_tray_icon_cache_filename_tracks_artwork(tmp_path):
 	path1 = app.get_tray_icon_file()
 
 	svg_path = os.path.join(IMAGES, "scc-statusicon-alive.svg")
-	with open(svg_path, "r") as fh:
+	with open(svg_path) as fh:
 		orig = fh.read()
 	with open(svg_path, "w") as fh:
 		fh.write(orig.replace("</svg>", "<rect width='1' height='1'/></svg>"))
@@ -163,10 +154,9 @@ def test_is_dark_theme_without_settings_or_window():
 
 def test_is_dark_theme_prefers_dark_flag(monkeypatch):
 	"""gtk-application-prefer-dark-theme=True forces dark"""
-	import gi
 	from gi.repository import Gtk
 
-	class FakeSettings(object):
+	class FakeSettings:
 		@classmethod
 		def get_default(cls):
 			return cls()
@@ -175,7 +165,7 @@ def test_is_dark_theme_prefers_dark_flag(monkeypatch):
 			assert name == "gtk-application-prefer-dark-theme"
 			return True
 
-	class FakeGtk(object):
+	class FakeGtk:
 		Settings = FakeSettings
 		StateFlags = Gtk.StateFlags
 

@@ -13,9 +13,9 @@ Supported backends, in order:
 Every provider returns (title, (wm_class, res_name)) or None if the active
 window cannot be determined. Errors are swallowed and logged.
 """
-from __future__ import unicode_literals
 
-import os, logging
+import logging
+import os
 
 log = logging.getLogger("ActiveWindow")
 
@@ -39,11 +39,12 @@ def _is_own_window(name):
 	return name.endswith(".py") and name[:-3] in _OWN_WINDOWS
 
 
-class _WaylandProvider(object):
+class _WaylandProvider:
 	def __init__(self):
 		self.tracker = None
 		try:
 			from scc.lib.wlforeign import WlForeignToplevels
+
 			self.tracker = WlForeignToplevels()
 		except Exception as e:
 			log.debug("Wayland provider unavailable: %s", e)
@@ -68,17 +69,22 @@ class _WaylandProvider(object):
 		return (_norm(w.get("title")), (app_id, None))
 
 
-class _GNOMEProvider(object):
+class _GNOMEProvider:
 	def __init__(self):
 		self.proxy = None
 		try:
 			from gi.repository import Gio
+
 			# DO_NOT_AUTO_START makes it fail when shell is not running
 			self.proxy = Gio.DBusProxy.new_for_bus_sync(
 				Gio.BusType.SESSION,
 				Gio.DBusProxyFlags.DO_NOT_AUTO_START,
-				None, "org.gnome.Shell", "/org/gnome/Shell/Introspect",
-				"org.gnome.Shell.Introspect", None)
+				None,
+				"org.gnome.Shell",
+				"/org/gnome/Shell/Introspect",
+				"org.gnome.Shell.Introspect",
+				None,
+			)
 		except Exception as e:
 			log.debug("GNOME Introspect unavailable: %s", e)
 			self.proxy = None
@@ -92,8 +98,8 @@ class _GNOMEProvider(object):
 			return None
 		try:
 			from gi.repository import Gio
-			rv = self.proxy.call_sync("GetWindows", None,
-				Gio.DBusCallFlags.NONE, 2000, None)
+
+			rv = self.proxy.call_sync("GetWindows", None, Gio.DBusCallFlags.NONE, 2000, None)
 			windows = rv.unpack()[0]
 			for props in windows.values():
 				if props.get("has-focus"):
@@ -109,19 +115,21 @@ class _GNOMEProvider(object):
 					"GNOME Shell denied Introspect access. Autoswitch needs"
 					" to be allowlisted:\n"
 					"  gsettings set org.gnome.shell introspect-allowlist"
-					" \"['*']\"")
+					" \"['*']\""
+				)
 			else:
 				log.debug("GNOME Introspect failed: %s", e)
 			return None
 
 
-class _X11Provider(object):
+class _X11Provider:
 	def __init__(self):
 		self.dpy = None
 		display = os.environ.get("DISPLAY")
 		if display:
 			try:
 				from scc.lib import xwrappers as X
+
 				self.X = X
 				self.dpy = X.open_display(display.encode("utf-8"))
 			except Exception as e:
@@ -158,8 +166,7 @@ _provider = None
 def _find_provider():
 	for c in (_WaylandProvider(), _GNOMEProvider(), _X11Provider()):
 		if c._available():
-			log.debug("Using %s as active-window provider",
-					c.__class__.__name__)
+			log.debug("Using %s as active-window provider", c.__class__.__name__)
 			return c
 	log.warning("No way to determine active window found")
 	return None

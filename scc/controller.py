@@ -1,165 +1,167 @@
 #!/usr/bin/env python3
-from scc.constants import HapticPos
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING, Any
+
+from scc.constants import HapticPos
+
+if TYPE_CHECKING:
+	from scc.mapper import Mapper
 
 log = logging.getLogger("SCController")
 
-next_id = 1		# Used with fallback controller id generator
+next_id = 1  # Used with fallback controller id generator
 
-class Controller(object):
+
+class Controller:
 	"""
 	Base class for all controller drivers. Implementations are in
 	scc.drivers package.
-	
+
 	Derived class should implement every method from here.
 	"""
+
 	flags = 0
-	
-	def __init__(self):
+
+	def __init__(self) -> None:
 		global next_id
-		self.mapper = None
+		self.mapper: Mapper | None = None
 		self._id = next_id
 		next_id += 1
-	
-	
-	def get_type(self):
+
+	def get_type(self) -> str:
 		"""
 		This method has to return type identifier - short string without spaces
 		that describes type of controller which should be unique for each
 		driver.
 		String is used by UI to assign icons and, along with ID,
 		to store controller settings.
-		
+
 		This method has to be overriden.
 		"""
 		raise RuntimeError("Controller.get_type not overriden")
-	
-	
-	def get_id(self):
+
+	def get_id(self) -> int:
 		"""
 		Returns identifier that has to be unique at least until daemon
 		is restarted, ideally derived from HW device serial number.
 		"""
 		return self._id
-	
-	
-	def get_gui_config_file(self):
+
+	def get_gui_config_file(self) -> str | None:
 		"""
 		Returns file name of json file that GUI can use to load more data about
 		controller (background image, button images, available buttons and
 		axes, etc...) File name may be absolute path or just name of file in
 		/usr/share/scc
-		
+
 		Returns None if there is no configuration file (GUI will use
 		defaults in such case)
 		"""
 		return None
-	
-	
-	def set_mapper(self, mapper):
-		""" Sets mapper for controller """
+
+	def set_mapper(self, mapper: Mapper) -> None:
+		"""Sets mapper for controller"""
 		self.mapper = mapper
-	
-	
-	def get_mapper(self):
-		""" Returns mapper set for controller """
+
+	def get_mapper(self) -> Mapper | None:
+		"""Returns mapper set for controller"""
 		return self.mapper
-	
-	
-	def apply_config(self, config):
+
+	def apply_config(self, config: Any) -> None:
 		"""
 		Called from daemon to apply controller configuration stored
 		in config file.
-		
+
 		Does nothing by default.
 		"""
 		pass
-	
-	
-	def set_led_level(self, level):
+
+	def set_led_level(self, level: float) -> None:
 		"""
 		Configures LED intensity, if supported.
 		'level' goes from 0.0 to 100.0
 		"""
 		pass
-	
-	
-	def set_gyro_enabled(self, enabled):
-		""" Enables or disables gyroscope, if supported """
+
+	def set_gyro_enabled(self, enabled: bool) -> None:
+		"""Enables or disables gyroscope, if supported"""
 		pass
-	
-	
-	def get_gyro_enabled(self):
-		""" Returns True if gyroscope is enabled """
+
+	def get_gyro_enabled(self) -> bool:
+		"""Returns True if gyroscope is enabled"""
 		return False
-	
-	
-	def feedback(self, data):
+
+	def feedback(self, data: HapticData) -> None:
 		"""
 		Generates feedback effect, if supported.
 		'data' is HapticData instance.
 		"""
 		pass
-	
-	
-	def turnoff(self):
-		""" Turns off controller, if supported """
-		pass
-	
-	
-	def disconnected(self):
-		""" Called from daemon after controller is disconnected """
-		pass
-	
 
-class HapticData(object):
-	""" Simple container to hold haptic feedback settings """
-	
-	def __init__(self, position, amplitude=512, frequency=4, period=1024, count=1):
+	def turnoff(self) -> None:
+		"""Turns off controller, if supported"""
+		pass
+
+	def disconnected(self) -> None:
+		"""Called from daemon after controller is disconnected"""
+		pass
+
+
+class HapticData:
+	"""Simple container to hold haptic feedback settings"""
+
+	def __init__(
+		self,
+		position: HapticPos,
+		amplitude: int = 512,
+		frequency: float = 4,
+		period: int = 1024,
+		count: int = 1,
+	) -> None:
 		"""
 		'frequency' is used only when emulating touchpad and describes how many
 		pixels should mouse travell between two feedback ticks.
 		"""
-		data = tuple([ int(x) for x in (position, amplitude, period, count) ])
+		data: tuple[int, ...] = tuple([int(x) for x in (position, amplitude, period, count)])
 		if data[0] not in (HapticPos.LEFT, HapticPos.RIGHT, HapticPos.BOTH):
 			raise ValueError("Invalid position")
-		for i in (1,2,3):
+		for i in (1, 2, 3):
 			if data[i] > 0x8000 or data[i] < 0:
 				raise ValueError("Value out of range: %s", data[i])
 		# frequency is multiplied by 1000 just so I don't have big numbers everywhere;
 		# it's float until here, so user still can make pad squeak if he wish
 		frequency = int(max(1.0, frequency * 1000.0))
-		
-		self.data = data				# send to controller
-		self.frequency = frequency		# used internally
-	
-	
-	def with_position(self, position):
-		""" Creates copy of HapticData with position value changed """
+
+		self.data: tuple[int, ...] = data  # send to controller
+		self.frequency = frequency  # used internally
+
+	def with_position(self, position: HapticPos) -> HapticData:
+		"""Creates copy of HapticData with position value changed"""
 		trash, amplitude, period, count = self.data
 		return HapticData(position, amplitude, self.frequency, period, count)
-	
-	
-	def get_position(self):
+
+	def get_position(self) -> HapticPos:
 		return HapticPos(self.data[0])
-	
-	def get_amplitude(self):
+
+	def get_amplitude(self) -> int:
 		return self.data[1]
-	
-	def get_frequency(self):
+
+	def get_frequency(self) -> float:
 		return float(self.frequency) / 1000.0
-	
-	def get_period(self):
+
+	def get_period(self) -> int:
 		return self.data[2]
-	
-	def get_count(self):
+
+	def get_count(self) -> int:
 		return self.data[3]
-	
-	def __mul__(self, by):
+
+	def __mul__(self, by: int) -> HapticData:
 		"""
 		Allows multiplying HapticData by scalar to get same values
 		with increased amplitude.
 		"""
 		position, amplitude, period, count = self.data
 		amplitude = min(amplitude * by, 0x8000)
-		return HapticData(position, amplitude, self.frequency, period, count)
+		return HapticData(HapticPos(position), amplitude, self.frequency, period, count)

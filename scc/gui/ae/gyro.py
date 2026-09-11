@@ -2,22 +2,20 @@
 """
 SC-Controller - Action Editor - Gyro -> Per Axis component
 """
-from __future__ import unicode_literals
-from scc.tools import _
-
-from scc.actions import Action, NoAction, AxisAction, MultiAction
-from scc.actions import GyroAction, GyroAbsAction, RangeOP
-from scc.modifiers import ModeModifier
-from scc.constants import SCButtons, STICK
-from scc.tools import ensure_size, nameof
-from scc.gui.ae.gyro_action import TRIGGERS, is_gyro_enable, fill_buttons
-from scc.gui.ae import AEComponent, describe_action
-from scc.gui.simple_chooser import SimpleChooser
 
 import logging
+
+from scc.actions import Action, AxisAction, GyroAbsAction, GyroAction, MultiAction, NoAction, RangeOP
+from scc.constants import STICK, SCButtons
+from scc.gui.ae import AEComponent, describe_action
+from scc.gui.ae.gyro_action import TRIGGERS, fill_buttons, is_gyro_enable
+from scc.gui.simple_chooser import SimpleChooser
+from scc.modifiers import ModeModifier
+from scc.tools import _, ensure_size, nameof
+
 log = logging.getLogger("AE.Gyro")
 
-__all__ = [ 'GyroComponent' ]
+__all__ = ["GyroComponent"]
 
 
 class GyroComponent(AEComponent):
@@ -25,26 +23,25 @@ class GyroComponent(AEComponent):
 	NAME = "gyro"
 	CTXS = Action.AC_GYRO
 	PRIORITY = 2
-	
+
 	def __init__(self, app, editor):
 		AEComponent.__init__(self, app, editor)
 		self._recursing = False
-		self.axes = [ None, None, None ]
-	
-	
+		self.axes = [None, None, None]
+
 	def load(self):
-		if self.loaded : return
+		if self.loaded:
+			return
 		AEComponent.load(self)
 		cbGyroButton = self.builder.get_object("cbGyroButton")
 		self._recursing = True
 		cbGyroButton = self.builder.get_object("cbGyroButton")
 		fill_buttons(cbGyroButton)
 		self._recursing = False
-		self.buttons = [ self.builder.get_object(x) for x in ("btPitch", "btYaw", "btRoll") ]
-		self.cbs = [ self.builder.get_object(x) for x in ("cbPitchAbs", "cbYawAbs", "cbRollAbs") ]
-		self.labels = [ self.builder.get_object(x) for x in ("lblPitch", "lblYaw", "lblRoll") ]
-	
-	
+		self.buttons = [self.builder.get_object(x) for x in ("btPitch", "btYaw", "btRoll")]
+		self.cbs = [self.builder.get_object(x) for x in ("cbPitchAbs", "cbYawAbs", "cbRollAbs")]
+		self.labels = [self.builder.get_object(x) for x in ("lblPitch", "lblYaw", "lblRoll")]
+
 	def set_action(self, mode, action):
 		if self.handles(mode, action):
 			if isinstance(action, ModeModifier):
@@ -56,11 +53,11 @@ class GyroComponent(AEComponent):
 				self.select_gyro_button(b)
 			else:
 				self.select_gyro_button(None)
-			
-			actions = [ action ]
+
+			actions = [action]
 			if isinstance(action, MultiAction):
 				actions = action.actions
-			
+
 			self._recursing = True
 			for a in actions:
 				if isinstance(a, GyroAction):
@@ -71,16 +68,14 @@ class GyroComponent(AEComponent):
 							self.cbs[i].set_active(isinstance(a, GyroAbsAction))
 			self.update()
 			self._recursing = False
-	
-	
+
 	def get_button_title(self):
 		return _("Per Axis")
-	
-	
+
 	def handles(self, mode, action):
 		if is_gyro_enable(action):
 			action = next(iter(action.mods.values()))
-		if isinstance(action, GyroAction):	# Takes GyroAbsAction as well
+		if isinstance(action, GyroAction):  # Takes GyroAbsAction as well
 			return True
 		if isinstance(action, MultiAction):
 			for a in action.actions:
@@ -88,28 +83,28 @@ class GyroComponent(AEComponent):
 					return False
 			return True
 		return False
-	
-	
+
 	def on_select_axis(self, source, *a):
 		i = self.buttons.index(source)
+
 		def cb(action):
 			self.axes[i] = action.parameters[0]
 			self.update()
 			self.send()
+
 		b = SimpleChooser(self.app, "axis", cb)
 		b.set_title(_("Select Axis"))
 		b.hide_mouse()
 		b.display_action(Action.AC_STICK, AxisAction(self.axes[i]))
 		b.show(self.editor.window)
-	
-	
+
 	def on_abs_changed(self, source, *a):
-		if self._recursing : return
+		if self._recursing:
+			return
 		self.send()
-	
-	
+
 	def select_gyro_button(self, item):
-		""" Just sets combobox value """
+		"""Just sets combobox value"""
 		cb = self.builder.get_object("cbGyroButton")
 		rvSoftLevel = self.builder.get_object("rvSoftLevel")
 		sclSoftLevel = self.builder.get_object("sclSoftLevel")
@@ -133,8 +128,7 @@ class GyroComponent(AEComponent):
 				self._recursing = False
 				return
 		self._recursing = False
-	
-	
+
 	def on_cbInvertGyro_toggled(self, cb, *a):
 		lblGyroEnable = self.builder.get_object("lblGyroEnable")
 		if cb.get_active():
@@ -143,30 +137,28 @@ class GyroComponent(AEComponent):
 			lblGyroEnable.set_label(_("Gyro Enable Button"))
 		if not self._recursing:
 			self.send()
-	
-	
+
 	def on_sclSoftLevel_format_value(self, scale, value):
-		return  "%s%%" % (int(value * 100.0),)
-	
-	
+		return "%s%%" % (int(value * 100.0),)
+
 	def update(self, *a):
 		for i in range(0, 3):
 			self.labels[i].set_label(describe_action(Action.AC_STICK, AxisAction, self.axes[i]))
-	
-	
+
 	def send(self, *a):
-		if self._recursing : return
-		
+		if self._recursing:
+			return
+
 		rvSoftLevel = self.builder.get_object("rvSoftLevel")
 		sclSoftLevel = self.builder.get_object("sclSoftLevel")
 		cbGyroButton = self.builder.get_object("cbGyroButton")
 		cbInvertGyro = self.builder.get_object("cbInvertGyro")
 		item = cbGyroButton.get_model().get_value(cbGyroButton.get_active_iter(), 0)
 		rvSoftLevel.set_reveal_child(item in TRIGGERS)
-		
-		normal, n_set    = [ None, None, None ], False
-		absolute, a_set  = [ None, None, None ], False
-		
+
+		normal, n_set = [None, None, None], False
+		absolute, a_set = [None, None, None], False
+
 		for i in range(0, 3):
 			if self.axes[i]:
 				if self.cbs[i].get_active():
@@ -175,7 +167,7 @@ class GyroComponent(AEComponent):
 				else:
 					normal[i] = self.axes[i]
 					n_set = True
-		
+
 		if n_set and a_set:
 			action = MultiAction(GyroAction(*normal), GyroAbsAction(*absolute))
 		elif n_set:
@@ -184,7 +176,7 @@ class GyroComponent(AEComponent):
 			action = GyroAbsAction(*absolute)
 		else:
 			action = NoAction()
-		
+
 		if item and action:
 			what = getattr(SCButtons, item)
 			if item in TRIGGERS:
@@ -193,5 +185,5 @@ class GyroComponent(AEComponent):
 				action = ModeModifier(what, NoAction(), action)
 			else:
 				action = ModeModifier(what, action)
-		
+
 		self.editor.set_action(action)

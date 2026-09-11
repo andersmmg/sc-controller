@@ -1,35 +1,48 @@
-from scc.constants import STICK_PAD_MIN, STICK_PAD_MAX
+import time
+from collections import namedtuple
+from math import sqrt
+
+from scc.actions import Action, NoAction
+from scc.constants import (
+	CUT,
+	LINEAR,
+	MINIMUM,
+	ROUND,
+	RSTICK,
+	STICK,
+	STICK_PAD_MAX,
+	STICK_PAD_MIN,
+	TRIGGER_MAX,
+	ControllerFlags,
+	SCButtons,
+)
+from scc.drivers.evdevdrv import EvdevController, EvdevControllerInput
 from scc.drivers.fake import FakeController
-from scc.uinput import Dummy, Keys, Axes
-from scc.constants import SCButtons, ControllerFlags, STICK, RSTICK
-from scc.constants import TRIGGER_MAX, CUT, ROUND, LINEAR, MINIMUM
+from scc.mapper import Mapper
+from scc.modifiers import DeadzoneModifier, TouchedModifier
 from scc.parser import ActionParser
 from scc.profile import Profile
 from scc.scheduler import Scheduler
-from scc.mapper import Mapper
-from scc.modifiers import TouchedModifier, DeadzoneModifier
-from scc.actions import Action, NoAction
-from scc.drivers.evdevdrv import EvdevController, EvdevControllerInput
-from collections import namedtuple
-from math import sqrt
-import time
+from scc.uinput import Axes, Dummy, Keys
 
 """
 Tests various inputs for crashes and incorrect behaviour,
 mostly using dummy outputs and FakeController
 """
 
-FakeControllerInput = namedtuple('FakeControllerInput',
-	'buttons ltrig rtrig stick_x stick_y lpad_x lpad_y rpad_x rpad_y '
-	'rstick_x rstick_y dpad_x dpad_y '
-	'gpitch groll gyaw q1 q2 q3 q4 '
+FakeControllerInput = namedtuple(
+	"FakeControllerInput",
+	"buttons ltrig rtrig stick_x stick_y lpad_x lpad_y rpad_x rpad_y "
+	"rstick_x rstick_y dpad_x dpad_y "
+	"gpitch groll gyaw q1 q2 q3 q4 ",
 )
-ZERO_STATE = FakeControllerInput( *[0] * len(FakeControllerInput._fields) )
+ZERO_STATE = FakeControllerInput(*[0] * len(FakeControllerInput._fields))
 parser = ActionParser()
 
 
 class _CountingAction(Action):
-	""" Action that counts how many times whole() was called. """
+	"""Action that counts how many times whole() was called."""
+
 	def __init__(self):
 		Action.__init__(self)
 		self.hits = 0
@@ -37,15 +50,19 @@ class _CountingAction(Action):
 	def whole(self, mapper, x, y, what):
 		self.hits += 1
 
+
 def input_test(fn):
-	""" Decorator that creates usable mapper """
+	"""Decorator that creates usable mapper"""
+
 	def wrapper(*a):
 		_time = time.time
 
 		def fake_time():
 			return fake_time.t
+
 		def add(n):
 			fake_time.t += n
+
 		fake_time.t = _time()
 		fake_time.add = add
 		time.time = fake_time
@@ -62,34 +79,35 @@ def input_test(fn):
 		mapper._tick_rate = 0.01
 
 		_mapper_input = mapper.input
+
 		def mapper_input(*a):
 			add(mapper._tick_rate)
 			_mapper_input(*a)
 			scheduler.run()
+
 		mapper.input = mapper_input
 
-		a = list(a) + [ mapper ]
+		a = [*list(a), mapper]
 		try:
 			return fn(*a)
 		finally:
 			time.time = _time
+
 	return wrapper
 
 
 class RememberingDummy(Dummy):
 	def __init__(self, *a, **b):
 		Dummy.__init__(self, *a, **b)
-		self.pressed = set([])
+		self.pressed = set()
 		self.mouse_x = 0
 		self.mouse_y = 0
 		self.scroll_x = 0
 		self.scroll_y = 0
 		self.axes = {}
 
-
 	def axisEvent(self, axis, val):
 		self.axes[axis] = val
-
 
 	def keyEvent(self, key, val):
 		if val:
@@ -97,55 +115,48 @@ class RememberingDummy(Dummy):
 		else:
 			self.pressed.discard(key)
 
-
 	def moveEvent(self, dx=0, dy=0):
 		self.mouse_x += dx
 		self.mouse_y += dy
 
-
 	def scrollEvent(self, dx=0, dy=0):
 		self.scroll_x += dx
 		self.scroll_y += dx
-
 
 	def pressEvent(self, keys):
 		for k in keys:
 			assert k not in self.pressed
 			self.pressed.add(k)
 
-
-	def releaseEvent(self, keys=[]):
+	def releaseEvent(self, keys=None):
+		if not keys:
+			keys = []
 		for k in keys:
 			if k in self.pressed:
 				self.pressed.remove(k)
 
 
-class TestInputs(object):
+class TestInputs:
 	@input_test
 	def test_button(self, mapper):
 		"""
 		Just test for test, this should work every time.
 		"""
-		mapper.profile.buttons[SCButtons.A] = (parser
-			.restart("button(Keys.KEY_ENTER)")).parse()
+		mapper.profile.buttons[SCButtons.A] = (parser.restart("button(Keys.KEY_ENTER)")).parse()
 		state = ZERO_STATE._replace(buttons=SCButtons.A)
 		mapper.input(mapper.controller, ZERO_STATE, state)
 		assert Keys.KEY_ENTER in mapper.keyboard.pressed
 		mapper.input(mapper.controller, state, state._replace(buttons=0))
 		assert Keys.KEY_ENTER not in mapper.keyboard.pressed
 
-
 	@input_test
 	def test_trackball(self, mapper):
 		"""
 		Tests trackball emulation
 		"""
-		mapper.profile.pads[Profile.LEFT] = (parser.restart(
-			"ball(XY("
-			"	mouse(Rels.REL_HWHEEL, 1.0), "
-			"	mouse(Rels.REL_WHEEL, 1.0)"
-			"))"
-		)).parse()
+		mapper.profile.pads[Profile.LEFT] = (
+			parser.restart("ball(XY(	mouse(Rels.REL_HWHEEL, 1.0), 	mouse(Rels.REL_WHEEL, 1.0)))")
+		).parse()
 
 		# Create movement over left pad
 		state = ZERO_STATE
@@ -161,17 +172,16 @@ class TestInputs(object):
 			mapper.input(mapper.controller, ZERO_STATE, ZERO_STATE)
 		assert int(mapper.mouse.scroll_x) == -24479
 
-
 	@input_test
 	def test_dpad(self, mapper):
 		"""
 		Tests WSAD
 		"""
-		mapper.profile.pads[Profile.LEFT] = (parser.restart(
-			"dpad("
-			"	button(Keys.KEY_W), button(Keys.KEY_S),"
-			"	button(Keys.KEY_A), button(Keys.KEY_D))"
-		)).parse()
+		mapper.profile.pads[Profile.LEFT] = (
+			parser.restart(
+				"dpad(	button(Keys.KEY_W), button(Keys.KEY_S),	button(Keys.KEY_A), button(Keys.KEY_D))"
+			)
+		).parse()
 
 		# Create movements over left pad
 		# - A
@@ -190,18 +200,14 @@ class TestInputs(object):
 		assert Keys.KEY_D in mapper.keyboard.pressed
 		mapper.input(mapper.controller, state, ZERO_STATE)
 
-
 	@input_test
 	def test_joystick_camera(self, mapper):
 		"""
 		Tests joystick camera, mapping trackball to right joystick
 		"""
-		mapper.profile.pads[Profile.RIGHT] = (parser.restart(
-			"ball(XY("
-			"	axis(Axes.ABS_RX),"
-			"	axis(Axes.ABS_RY)"
-			"))"
-		)).parse()
+		mapper.profile.pads[Profile.RIGHT] = (
+			parser.restart("ball(XY(	axis(Axes.ABS_RX),	axis(Axes.ABS_RY)))")
+		).parse()
 
 		# Create movement over right pad
 		state = ZERO_STATE
@@ -226,7 +232,6 @@ class TestInputs(object):
 			mapper.input(mapper.controller, ZERO_STATE, ZERO_STATE)
 		assert mapper.gamepad.axes[Axes.ABS_RX] == 0
 
-
 	@input_test
 	def test_sens_stick_whole(self, mapper):
 		"""
@@ -234,11 +239,8 @@ class TestInputs(object):
 		SensitivityModifier used to swallow whole(), so stick to gamepad
 		bindings wrapped in sens() produced no output at all!
 		"""
-		mapper.controller.flags = (ControllerFlags.SEPARATE_STICK
-			| ControllerFlags.HAS_RSTICK | ControllerFlags.HAS_DPAD)
-		mapper.profile.stick = (parser.restart(
-			"sens(1.2, 1.2, XY(axis(Axes.ABS_X), raxis(Axes.ABS_Y)))"
-		)).parse()
+		mapper.controller.flags = ControllerFlags.SEPARATE_STICK | ControllerFlags.HAS_RSTICK | ControllerFlags.HAS_DPAD
+		mapper.profile.stick = (parser.restart("sens(1.2, 1.2, XY(axis(Axes.ABS_X), raxis(Axes.ABS_Y)))")).parse()
 		state = ZERO_STATE._replace(stick_x=10000, stick_y=0)
 		mapper.input(mapper.controller, ZERO_STATE, state)
 		assert abs(mapper.gamepad.axes[Axes.ABS_X]) > 10000
@@ -248,7 +250,6 @@ class TestInputs(object):
 		assert abs(mapper.gamepad.axes[Axes.ABS_X]) <= 1
 		assert abs(mapper.gamepad.axes[Axes.ABS_Y]) <= 1
 
-
 	@input_test
 	def test_joystick_round_response(self, mapper):
 		"""
@@ -256,26 +257,21 @@ class TestInputs(object):
 		output inside the circle, even with sensitivity applied.
 		"""
 		import math
-		mapper.controller.flags = (ControllerFlags.SEPARATE_STICK
-			| ControllerFlags.HAS_RSTICK | ControllerFlags.HAS_DPAD)
 
-		mapper.profile.stick = (parser.restart(
-			"sens(1.2, 1.2, XY(axis(Axes.ABS_X), raxis(Axes.ABS_Y), True))"
-		)).parse()
+		mapper.controller.flags = ControllerFlags.SEPARATE_STICK | ControllerFlags.HAS_RSTICK | ControllerFlags.HAS_DPAD
+
+		mapper.profile.stick = (parser.restart("sens(1.2, 1.2, XY(axis(Axes.ABS_X), raxis(Axes.ABS_Y), True))")).parse()
 		state = ZERO_STATE._replace(stick_x=23170, stick_y=23170)
 		mapper.input(mapper.controller, ZERO_STATE, state)
 		x, y = mapper.gamepad.axes[Axes.ABS_X], mapper.gamepad.axes[Axes.ABS_Y]
 		assert math.sqrt(x * x + y * y) <= STICK_PAD_MAX + 1
 
-		mapper.profile.stick = (parser.restart(
-			"sens(1.2, 1.2, XY(axis(Axes.ABS_X), raxis(Axes.ABS_Y)))"
-		)).parse()
+		mapper.profile.stick = (parser.restart("sens(1.2, 1.2, XY(axis(Axes.ABS_X), raxis(Axes.ABS_Y)))")).parse()
 		state2 = ZERO_STATE._replace(stick_x=32767, stick_y=32767)
 		mapper.input(mapper.controller, state, state2)
 		x, y = mapper.gamepad.axes[Axes.ABS_X], mapper.gamepad.axes[Axes.ABS_Y]
 		assert math.sqrt(x * x + y * y) > STICK_PAD_MAX
 		mapper.input(mapper.controller, state2, ZERO_STATE)
-
 
 	@input_test
 	def test_dpad_button_goes_to_gamepad(self, mapper):
@@ -285,10 +281,8 @@ class TestInputs(object):
 		"""
 		if not hasattr(Keys, "BTN_DPAD_DOWN"):
 			return
-		mapper.controller.flags = (ControllerFlags.SEPARATE_STICK
-			| ControllerFlags.HAS_RSTICK | ControllerFlags.HAS_DPAD)
-		mapper.profile.buttons[SCButtons.A] = (parser.restart(
-			"button(Keys.BTN_DPAD_DOWN)")).parse()
+		mapper.controller.flags = ControllerFlags.SEPARATE_STICK | ControllerFlags.HAS_RSTICK | ControllerFlags.HAS_DPAD
+		mapper.profile.buttons[SCButtons.A] = (parser.restart("button(Keys.BTN_DPAD_DOWN)")).parse()
 		state = ZERO_STATE._replace(buttons=SCButtons.A)
 		mapper.input(mapper.controller, ZERO_STATE, state)
 		assert Keys.BTN_DPAD_DOWN in mapper.gamepad.pressed
@@ -296,15 +290,14 @@ class TestInputs(object):
 		mapper.input(mapper.controller, state, ZERO_STATE)
 		assert Keys.BTN_DPAD_DOWN not in mapper.gamepad.pressed
 
-
 	@input_test
 	def test_modeshift(self, mapper):
 		"""
 		Tests WSAD
 		"""
-		mapper.profile.buttons[SCButtons.A] = (parser.restart(
-			"mode(B, button(Keys.KEY_V), button(Keys.KEY_Y))"
-		)).parse()
+		mapper.profile.buttons[SCButtons.A] = (
+			parser.restart("mode(B, button(Keys.KEY_V), button(Keys.KEY_Y))")
+		).parse()
 
 		# Press single button
 		state = ZERO_STATE._replace(buttons=SCButtons.A)
@@ -341,15 +334,18 @@ class TestInputs(object):
 		mapper.input(mapper.controller, _state, state)
 		assert Keys.KEY_Y in mapper.keyboard.pressed
 
-
 	@input_test
 	def test_sc2_is_touched(self, mapper):
 		"""
 		Tests that mapper.is_touched()/was_touched() reflect SC2 stick touch bits.
 		"""
-		mapper.controller.flags = (ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
-			| ControllerFlags.HAS_DPAD | ControllerFlags.HAS_RSTICK
-			| ControllerFlags.HAS_TOUCHPADS)
+		mapper.controller.flags = (
+			ControllerFlags.IS_SC2
+			| ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_DPAD
+			| ControllerFlags.HAS_RSTICK
+			| ControllerFlags.HAS_TOUCHPADS
+		)
 		assert not mapper.is_touched(STICK)
 		assert not mapper.is_touched(RSTICK)
 
@@ -366,16 +362,19 @@ class TestInputs(object):
 		assert mapper.was_touched(STICK)
 		assert mapper.was_touched(RSTICK)
 
-
 	@input_test
 	def test_sc2_stick_touch_whole(self, mapper):
 		"""
 		Tests that stick touch edge triggers profile.stick/rstick.whole even
 		with no coordinate change, so touched()/untouched() can fire on sticks.
 		"""
-		mapper.controller.flags = (ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
-			| ControllerFlags.HAS_DPAD | ControllerFlags.HAS_RSTICK
-			| ControllerFlags.HAS_TOUCHPADS)
+		mapper.controller.flags = (
+			ControllerFlags.IS_SC2
+			| ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_DPAD
+			| ControllerFlags.HAS_RSTICK
+			| ControllerFlags.HAS_TOUCHPADS
+		)
 		stick = _CountingAction()
 		rstick = _CountingAction()
 		mapper.profile.stick = stick
@@ -392,19 +391,20 @@ class TestInputs(object):
 		assert stick.hits == 2
 		assert rstick.hits == 2
 
-
 	@input_test
 	def test_sc2_touched_modifier_on_stick(self, mapper):
 		"""
 		Tests that touched(STICK)/touched(RSTICK) fires on stick touch edge.
 		"""
-		mapper.controller.flags = (ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
-			| ControllerFlags.HAS_DPAD | ControllerFlags.HAS_RSTICK
-			| ControllerFlags.HAS_TOUCHPADS)
-		mapper.profile.stick = TouchedModifier(
-			(parser.restart("button(Keys.KEY_P)")).parse())
-		mapper.profile.rstick = TouchedModifier(
-			(parser.restart("button(Keys.KEY_Q)")).parse())
+		mapper.controller.flags = (
+			ControllerFlags.IS_SC2
+			| ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_DPAD
+			| ControllerFlags.HAS_RSTICK
+			| ControllerFlags.HAS_TOUCHPADS
+		)
+		mapper.profile.stick = TouchedModifier((parser.restart("button(Keys.KEY_P)")).parse())
+		mapper.profile.rstick = TouchedModifier((parser.restart("button(Keys.KEY_Q)")).parse())
 
 		state = ZERO_STATE._replace(buttons=SCButtons.LSTICKTOUCH | SCButtons.RSTICKTOUCH)
 		mapper.input(mapper.controller, ZERO_STATE, state)
@@ -415,16 +415,19 @@ class TestInputs(object):
 		assert Keys.KEY_P not in mapper.keyboard.pressed
 		assert Keys.KEY_Q not in mapper.keyboard.pressed
 
-
 	@input_test
 	def test_sc2_set_button_rstick(self, mapper):
 		"""
 		Tests that set_button(RSTICK, ...) does not crash (bug where
 		'a &= ~string' raised TypeError).
 		"""
-		mapper.controller.flags = (ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
-			| ControllerFlags.HAS_DPAD | ControllerFlags.HAS_RSTICK
-			| ControllerFlags.HAS_TOUCHPADS)
+		mapper.controller.flags = (
+			ControllerFlags.IS_SC2
+			| ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_DPAD
+			| ControllerFlags.HAS_RSTICK
+			| ControllerFlags.HAS_TOUCHPADS
+		)
 		mapper.set_button(RSTICK, True)
 		assert mapper.is_pressed(SCButtons.RSTICKTOUCH)
 		mapper.set_button(RSTICK, False)
@@ -434,7 +437,6 @@ class TestInputs(object):
 		mapper.set_was_pressed(RSTICK, False)
 		assert not mapper.was_pressed(SCButtons.RSTICKTOUCH)
 
-
 	@input_test
 	def test_sc2_grip_sense_buttons(self, mapper):
 		"""
@@ -442,9 +444,13 @@ class TestInputs(object):
 		regular buttons: set_button / is_pressed and button edges fire
 		profile.button actions.
 		"""
-		mapper.controller.flags = (ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
-			| ControllerFlags.HAS_DPAD | ControllerFlags.HAS_RSTICK
-			| ControllerFlags.HAS_TOUCHPADS)
+		mapper.controller.flags = (
+			ControllerFlags.IS_SC2
+			| ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_DPAD
+			| ControllerFlags.HAS_RSTICK
+			| ControllerFlags.HAS_TOUCHPADS
+		)
 		assert int(SCButtons.RSENSE) != int(SCButtons.RPADTOUCH)
 		assert int(SCButtons.LSENSE) != int(SCButtons.LPADTOUCH)
 		assert int(SCButtons.RSENSE) != int(SCButtons.LSENSE)
@@ -457,19 +463,20 @@ class TestInputs(object):
 		mapper.set_was_pressed(SCButtons.RSENSE, True)
 		assert mapper.was_pressed(SCButtons.RSENSE)
 
-
 	@input_test
 	def test_sc2_grip_sense_edge(self, mapper):
 		"""
 		Tests that grip touch button edges trigger the mapped button action.
 		"""
-		mapper.controller.flags = (ControllerFlags.IS_SC2 | ControllerFlags.SEPARATE_STICK
-			| ControllerFlags.HAS_DPAD | ControllerFlags.HAS_RSTICK
-			| ControllerFlags.HAS_TOUCHPADS)
-		mapper.profile.buttons[SCButtons.LSENSE] = (parser
-			.restart("button(Keys.KEY_R)")).parse()
-		mapper.profile.buttons[SCButtons.RSENSE] = (parser
-			.restart("button(Keys.KEY_T)")).parse()
+		mapper.controller.flags = (
+			ControllerFlags.IS_SC2
+			| ControllerFlags.SEPARATE_STICK
+			| ControllerFlags.HAS_DPAD
+			| ControllerFlags.HAS_RSTICK
+			| ControllerFlags.HAS_TOUCHPADS
+		)
+		mapper.profile.buttons[SCButtons.LSENSE] = (parser.restart("button(Keys.KEY_R)")).parse()
+		mapper.profile.buttons[SCButtons.RSENSE] = (parser.restart("button(Keys.KEY_T)")).parse()
 
 		state = ZERO_STATE._replace(buttons=SCButtons.LSENSE | SCButtons.RSENSE)
 		mapper.input(mapper.controller, ZERO_STATE, state)
@@ -480,15 +487,13 @@ class TestInputs(object):
 		assert Keys.KEY_R not in mapper.keyboard.pressed
 		assert Keys.KEY_T not in mapper.keyboard.pressed
 
-
 	@input_test
 	def test_normalize_corner_clamped_to_circle(self, mapper):
 		"""
 		With normalize=True, corner input is scaled down to
 		the unit circle instead of passed through as a square corner.
 		"""
-		mapper.profile.stick = parser.restart(
-			"XY(axis(Axes.ABS_X), axis(Axes.ABS_Y), True)").parse()
+		mapper.profile.stick = parser.restart("XY(axis(Axes.ABS_X), axis(Axes.ABS_Y), True)").parse()
 
 		state = ZERO_STATE._replace(lpad_x=STICK_PAD_MAX, lpad_y=STICK_PAD_MAX)
 		mapper.input(mapper.controller, ZERO_STATE, state)
@@ -498,21 +503,18 @@ class TestInputs(object):
 		r = sqrt(float(x) * x + float(y) * y)
 		assert abs(r - STICK_PAD_MAX) < 2, "radius %s not on circle" % (r,)
 
-
 	@input_test
 	def test_normalize_passthrough_inside_circle(self, mapper):
 		"""
 		With normalize=True, input already inside the circle passes through
 		unchanged.
 		"""
-		mapper.profile.stick = parser.restart(
-			"XY(axis(Axes.ABS_X), axis(Axes.ABS_Y), True)").parse()
+		mapper.profile.stick = parser.restart("XY(axis(Axes.ABS_X), axis(Axes.ABS_Y), True)").parse()
 
 		state = ZERO_STATE._replace(lpad_x=16384)
 		mapper.input(mapper.controller, ZERO_STATE, state)
 		assert mapper.gamepad.axes[Axes.ABS_X] == 16384
 		assert mapper.gamepad.axes[Axes.ABS_Y] == 0
-
 
 	@input_test
 	def test_no_normalize_default_square(self, mapper):
@@ -520,8 +522,7 @@ class TestInputs(object):
 		Default (normalize unset) keeps square output: full corner deflection
 		reaches (max, max).
 		"""
-		mapper.profile.stick = parser.restart(
-			"XY(axis(Axes.ABS_X), axis(Axes.ABS_Y))").parse()
+		mapper.profile.stick = parser.restart("XY(axis(Axes.ABS_X), axis(Axes.ABS_Y))").parse()
 
 		state = ZERO_STATE._replace(lpad_x=STICK_PAD_MAX, lpad_y=STICK_PAD_MAX)
 		mapper.input(mapper.controller, ZERO_STATE, state)
@@ -529,7 +530,7 @@ class TestInputs(object):
 		assert mapper.gamepad.axes[Axes.ABS_Y] == STICK_PAD_MAX
 
 
-class TestDeadzoneUpperBound(object):
+class TestDeadzoneUpperBound:
 	"""
 	Behavioral tests for DeadzoneModifier's optional upper bound
 
@@ -541,8 +542,7 @@ class TestDeadzoneUpperBound(object):
 		assert d.upper is None
 		assert d._convert(20000, 0, TRIGGER_MAX) == (20000, 0)
 		assert d._convert(STICK_PAD_MAX, 0, STICK_PAD_MAX) == (STICK_PAD_MAX, 0)
-		assert d._convert(STICK_PAD_MAX, STICK_PAD_MAX, STICK_PAD_MAX) \
-			== (STICK_PAD_MAX, STICK_PAD_MAX)
+		assert d._convert(STICK_PAD_MAX, STICK_PAD_MAX, STICK_PAD_MAX) == (STICK_PAD_MAX, STICK_PAD_MAX)
 
 	def test_cut_with_upper_cuts_input_above_bound(self):
 		d = DeadzoneModifier(CUT, 2000, 20000, NoAction())
@@ -593,32 +593,29 @@ class TestDeadzoneUpperBound(object):
 		"""
 		Regression: profile json without 'upper' key
 		"""
-		a = DeadzoneModifier.decode(
-			{"deadzone": {"mode": "CUT", "lower": 100}}, NoAction())
+		a = DeadzoneModifier.decode({"deadzone": {"mode": "CUT", "lower": 100}}, NoAction())
 		assert a.upper is None
 		assert a.lower == 100
 
 	def test_decode_with_upper_key(self):
-		a = DeadzoneModifier.decode(
-			{"deadzone": {"mode": "CUT", "lower": 100, "upper": 20000}},
-			NoAction())
+		a = DeadzoneModifier.decode({"deadzone": {"mode": "CUT", "lower": 100, "upper": 20000}}, NoAction())
 		assert a.upper == 20000
 
 	def test_decode_from_profile_json(self):
-		""" Full parser path for a profile saved with upper-bound toggle off """
+		"""Full parser path for a profile saved with upper-bound toggle off"""
 		p = ActionParser()
-		a = p.from_json_data({"deadzone": {
-			"mode": "LINEAR", "lower": 100,
-			"action": {"__class": "mouse", "id": "REL_WHEEL"}}})
+		a = p.from_json_data(
+			{"deadzone": {"mode": "LINEAR", "lower": 100, "action": {"__class": "mouse", "id": "REL_WHEEL"}}}
+		)
 		assert a.upper is None
 
 
-class TestStickRepeat(object):
+class TestStickRepeat:
 	"""
 	Tests for evdev driver's stick repeat
 	"""
 
-	class RecordingMapper(object):
+	class RecordingMapper:
 		def __init__(self):
 			self.inputs = []
 			self.scheduled = []
@@ -632,8 +629,7 @@ class TestStickRepeat(object):
 
 	def _mk_controller(self):
 		c = object.__new__(EvdevController)
-		c._state = EvdevControllerInput(
-			*[0] * len(EvdevControllerInput._fields))
+		c._state = EvdevControllerInput(*[0] * len(EvdevControllerInput._fields))
 		c._stickrepeat_task = None
 		c._padpressemu_task = None
 		c._last_event_ts = 0
@@ -645,15 +641,14 @@ class TestStickRepeat(object):
 		assert not c._is_stick_deflected(c._state)
 		c._state = c._state._replace(stick_x=100)
 		assert c._is_stick_deflected(c._state)
-		c._state = EvdevControllerInput(
-			*[0] * len(EvdevControllerInput._fields))._replace(rstick_y=-100)
+		c._state = EvdevControllerInput(*[0] * len(EvdevControllerInput._fields))._replace(rstick_y=-100)
 		assert c._is_stick_deflected(c._state)
 
 	def test_repeat_resends_while_deflected(self):
 		c = self._mk_controller()
 		c.mapper = self.RecordingMapper()
 		c._state = c._state._replace(stick_x=100)
-		c._last_event_ts = time.time() - 10 # long since last real event
+		c._last_event_ts = time.time() - 10  # long since last real event
 
 		c.repeat_stick(c.mapper)
 
@@ -664,7 +659,7 @@ class TestStickRepeat(object):
 		assert len(c.mapper.scheduled) == 1
 
 	def test_repeat_skips_when_event_recent(self):
-		""" No repeat input when a real event arrived just now """
+		"""No repeat input when a real event arrived just now"""
 		c = self._mk_controller()
 		c.mapper = self.RecordingMapper()
 		c._state = c._state._replace(stick_x=100)
@@ -677,7 +672,7 @@ class TestStickRepeat(object):
 		assert c._stickrepeat_task is not None
 
 	def test_repeat_stops_when_centered(self):
-		""" No repeat input and no reschedule once stick is back at center """
+		"""No repeat input and no reschedule once stick is back at center"""
 		c = self._mk_controller()
 		c.mapper = self.RecordingMapper()
 

@@ -10,21 +10,23 @@ python can't handle.
 All this is needed since I want to have entire thing installable, runnable
 from source tarball *and* debugable in working folder.
 """
-import os, sys, __main__
+
+import os
+import sys
 
 
-def get_config_path():
+def get_config_path() -> str:
 	"""
 	Returns configuration directory.
 	~/.config/scc under normal conditions.
 	"""
 	confdir = os.path.expanduser("~/.config")
 	if "XDG_CONFIG_HOME" in os.environ:
-		confdir = os.environ['XDG_CONFIG_HOME']
+		confdir = os.environ["XDG_CONFIG_HOME"]
 	return os.path.join(confdir, "scc")
 
 
-def get_profiles_path():
+def get_profiles_path() -> str:
 	"""
 	Returns directory where profiles are stored.
 	~/.config/scc/profiles under normal conditions.
@@ -32,7 +34,7 @@ def get_profiles_path():
 	return os.path.join(get_config_path(), "profiles")
 
 
-def get_default_profiles_path():
+def get_default_profiles_path() -> str:
 	"""
 	Returns directory where default profiles are stored.
 	Probably something like /usr/share/scc/default_profiles,
@@ -42,7 +44,7 @@ def get_default_profiles_path():
 	return os.path.join(get_share_path(), "default_profiles")
 
 
-def get_cache_path():
+def get_cache_path() -> str:
 	"""
 	Returns directory where cache files are stored.
 	~/.cache/scc under normal conditions.
@@ -51,11 +53,11 @@ def get_cache_path():
 	"""
 	cachedir = os.path.expanduser("~/.cache")
 	if "XDG_CACHE_HOME" in os.environ:
-		cachedir = os.environ['XDG_CACHE_HOME']
+		cachedir = os.environ["XDG_CACHE_HOME"]
 	return os.path.join(cachedir, "scc")
 
 
-def get_menuicons_path():
+def get_menuicons_path() -> str:
 	"""
 	Returns directory where menu icons are stored.
 	~/.config/scc/menu-icons under normal conditions.
@@ -63,7 +65,7 @@ def get_menuicons_path():
 	return os.path.join(get_config_path(), "menu-icons")
 
 
-def get_default_menuicons_path():
+def get_default_menuicons_path() -> str:
 	"""
 	Returns directory where default menu icons are stored.
 	Probably something like /usr/share/scc/images/menu-icons,
@@ -73,7 +75,7 @@ def get_default_menuicons_path():
 	return os.path.join(get_share_path(), "images/menu-icons")
 
 
-def get_button_images_path():
+def get_button_images_path() -> str:
 	"""
 	Returns directory where button images are stored.
 	/usr/share/scc/images/button-images by default.
@@ -81,7 +83,7 @@ def get_button_images_path():
 	return os.path.join(get_share_path(), "images/button-images")
 
 
-def get_menus_path():
+def get_menus_path() -> str:
 	"""
 	Returns directory where profiles are stored.
 	~/.config/scc/profiles under normal conditions.
@@ -89,7 +91,7 @@ def get_menus_path():
 	return os.path.join(get_config_path(), "menus")
 
 
-def get_default_menus_path():
+def get_default_menus_path() -> str:
 	"""
 	Returns directory where default profiles are stored.
 	Probably something like /usr/share/scc/default_profiles,
@@ -99,7 +101,7 @@ def get_default_menus_path():
 	return os.path.join(get_share_path(), "default_menus")
 
 
-def get_controller_icons_path():
+def get_controller_icons_path() -> str:
 	"""
 	Returns directory where controller icons are stored.
 	~/.config/scc/controller-icons under normal conditions.
@@ -109,7 +111,7 @@ def get_controller_icons_path():
 	return os.path.join(get_config_path(), "controller-icons")
 
 
-def get_default_controller_icons_path():
+def get_default_controller_icons_path() -> str:
 	"""
 	Returns directory where controller icons are stored.
 	Probably something like /usr/share/scc/images/controller-icons,
@@ -121,7 +123,7 @@ def get_default_controller_icons_path():
 	return os.path.join(get_share_path(), "images", "controller-icons")
 
 
-def get_share_path():
+def get_share_path() -> str:
 	"""
 	Returns directory where shared files are kept.
 	Usually "/usr/share/scc" or $SCC_SHARED if program is being started from
@@ -129,11 +131,7 @@ def get_share_path():
 	"""
 	if "SCC_SHARED" in os.environ:
 		return os.environ["SCC_SHARED"]
-	paths = (
-		"/usr/local/share/scc/",
-		os.path.expanduser("~/.local/share/scc"),
-		os.path.join(sys.prefix, "share/scc")
-	)
+	paths = ("/usr/local/share/scc/", os.path.expanduser("~/.local/share/scc"), os.path.join(sys.prefix, "share/scc"))
 	for path in paths:
 		if os.path.exists(path):
 			return path
@@ -141,7 +139,7 @@ def get_share_path():
 	return "/usr/share/scc"
 
 
-def get_pid_file():
+def get_pid_file() -> str:
 	"""
 	Returns path to PID file.
 	~/.config/scc/daemon.pid under normal conditions.
@@ -149,7 +147,7 @@ def get_pid_file():
 	return os.path.join(get_config_path(), "daemon.pid")
 
 
-def get_daemon_socket():
+def get_daemon_socket() -> str:
 	"""
 	Returns path to socket that can be used to controll sccdaemon.
 

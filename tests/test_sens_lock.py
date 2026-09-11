@@ -1,12 +1,12 @@
 from scc.actions import Action, MouseAction
+from scc.gui.action_editor import ActionEditor
 from scc.modifiers import SensitivityModifier
 from scc.uinput import Rels
-from scc.gui.action_editor import ActionEditor
 
 REL_XY = MouseAction(Rels.REL_X, Rels.REL_Y)
 
 
-class FakeWidget(object):
+class FakeWidget:
 	def __init__(self, value=0.0, active=False):
 		self.value = value
 		self.active = active
@@ -35,7 +35,7 @@ class FakeWidget(object):
 		self.visible = bool(v)
 
 
-class FakeBuilder(object):
+class FakeBuilder:
 	def __init__(self):
 		self.objects = {}
 
@@ -45,7 +45,7 @@ class FakeBuilder(object):
 		return self.objects[name]
 
 
-class FakeComponent(object):
+class FakeComponent:
 	def modifier_updated(self):
 		pass
 
@@ -55,25 +55,13 @@ class FakeEditor(ActionEditor):
 		self.id = "lstick"
 		self.sens = [1.0, 1.0, 1.0]
 		self.sens_defaults = [1.0, 1.0, 1.0]
-		self.sens_widgets = [
-			(FakeWidget(1.0), FakeWidget(), FakeWidget(), FakeWidget())
-			for _ in range(3)
-		]
+		self.sens_widgets = [(FakeWidget(1.0), FakeWidget(), FakeWidget(), FakeWidget()) for _ in range(3)]
 		self.feedback = [0.0, 0.0, 0.0]
-		self.feedback_widgets = [
-			(FakeWidget(0.0), FakeWidget(), FakeWidget(), 0.0)
-			for _ in range(3)
-		]
+		self.feedback_widgets = [(FakeWidget(0.0), FakeWidget(), FakeWidget(), 0.0) for _ in range(3)]
 		self.smoothing = None
-		self.smoothing_widgets = [
-			(FakeWidget(), FakeWidget(2.0), FakeWidget(), 0.0)
-			for _ in range(3)
-		]
+		self.smoothing_widgets = [(FakeWidget(), FakeWidget(2.0), FakeWidget(), 0.0) for _ in range(3)]
 		self.deadzone = [0, 0]
-		self.deadzone_widgets = [
-			(FakeWidget(), FakeWidget(0.0), FakeWidget(), 0)
-			for _ in range(2)
-		]
+		self.deadzone_widgets = [(FakeWidget(), FakeWidget(0.0), FakeWidget(), 0) for _ in range(2)]
 		self.deadzone_mode = None
 		self.deadzone_upper_enabled = False
 		self.feedback_position = None
@@ -139,15 +127,14 @@ def test_lock_disables_y_widgets():
 
 	lock.set_active(False)
 	ed.update_modifiers()
-	assert all(w.get_sensitive() for w in ed.sens_widgets[1]), \
-		"Y widgets must be enabled when unlocked"
+	assert all(w.get_sensitive() for w in ed.sens_widgets[1]), "Y widgets must be enabled when unlocked"
 
 	lock.set_active(True)
 	ed.update_modifiers()
-	assert all(not w.get_sensitive() for w in ed.sens_widgets[1]), \
+	assert all(not w.get_sensitive() for w in ed.sens_widgets[1]), (
 		"Y widgets must be disabled (display-only) while locked"
-	assert all(w.get_sensitive() for w in ed.sens_widgets[0]), \
-		"X widgets must stay enabled while locked"
+	)
+	assert all(w.get_sensitive() for w in ed.sens_widgets[0]), "X widgets must stay enabled while locked"
 
 
 def test_lock_not_available_for_trigger():
@@ -160,8 +147,7 @@ def test_lock_not_available_for_trigger():
 
 	assert ed._sens_xy_locked is False
 	assert ed.sens[1] == 0.5, "lock must be ignored for non-2-axis inputs"
-	assert all(w.get_sensitive() for w in ed.sens_widgets[1]), \
-		"Y widgets must stay enabled for non-2-axis inputs"
+	assert all(w.get_sensitive() for w in ed.sens_widgets[1]), "Y widgets must stay enabled for non-2-axis inputs"
 
 
 def test_clear_x_clears_y_when_locked():
@@ -173,8 +159,7 @@ def test_clear_x_clears_y_when_locked():
 	ed.on_btClearSens_clicked(ed.sens_widgets[0][2])
 
 	assert ed.sens_widgets[0][0].get_value() == 1.0
-	assert ed.sens_widgets[1][0].get_value() == 1.0, \
-		"Y must be cleared along with X"
+	assert ed.sens_widgets[1][0].get_value() == 1.0, "Y must be cleared along with X"
 
 
 def test_clear_y_does_not_clear_x():
@@ -184,8 +169,7 @@ def test_clear_y_does_not_clear_x():
 
 	ed.on_btClearSens_clicked(ed.sens_widgets[1][2])
 
-	assert ed.sens_widgets[0][0].get_value() == 4.0, \
-		"clearing Y must not touch X"
+	assert ed.sens_widgets[0][0].get_value() == 4.0, "clearing Y must not touch X"
 
 
 def test_generate_modifiers_produces_locked_sens():

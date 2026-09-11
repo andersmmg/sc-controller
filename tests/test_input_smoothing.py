@@ -1,15 +1,14 @@
 from collections import namedtuple
 
+import scc.drivers.hiddrv as hiddrv
 from scc.constants import SCButtons
 from scc.drivers.hiddrv import HIDControllerInput, HIDDecoder, HIDDrv, HIDRawController
 from scc.drivers.input_smoothing import InputSmoother
-import scc.drivers.hiddrv as hiddrv
-
 
 State = namedtuple("State", "buttons stick_x stick_y lpad_x lpad_y")
 
 
-class FakeMonitor(object):
+class FakeMonitor:
 	def __init__(self):
 		self.dev_added_cbs = {}
 
@@ -17,7 +16,7 @@ class FakeMonitor(object):
 		self.dev_added_cbs[subsystem, vendor, product] = added_cb
 
 
-class FakeDaemon(object):
+class FakeDaemon:
 	def __init__(self):
 		self.monitor = FakeMonitor()
 
@@ -25,7 +24,7 @@ class FakeDaemon(object):
 		return self.monitor
 
 
-class FakeMapper(object):
+class FakeMapper:
 	def __init__(self):
 		self.inputs = []
 
@@ -36,10 +35,8 @@ class FakeMapper(object):
 def test_shared_smoother_supports_namedtuples_and_touch_edges():
 	smoother = InputSmoother(fields=("stick_x", "stick_y", "lpad_x", "lpad_y"))
 	smoother.process(State(0, 0, 0, 0, 0))
-	trash, contact = smoother.process(State(
-		SCButtons.LPADTOUCH, 300, -300, 900, -400))
-	trash, held = smoother.process(State(
-		SCButtons.LPADTOUCH, 600, -600, 900, -400))
+	trash, contact = smoother.process(State(SCButtons.LPADTOUCH, 300, -300, 900, -400))
+	trash, held = smoother.process(State(SCButtons.LPADTOUCH, 600, -600, 900, -400))
 
 	assert contact.stick_x == 150
 	assert held.stick_x == 300
@@ -53,11 +50,11 @@ def test_generic_hid_driver_registers_bluetooth_hidraw_callback():
 	driver.bt_registered = set()
 	driver.bt_callbacks = {}
 
-	driver._register_bluetooth(0x1234, 0xabcd)
+	driver._register_bluetooth(0x1234, 0xABCD)
 
-	key = ("bluetooth", 0x1234, 0xabcd)
+	key = ("bluetooth", 0x1234, 0xABCD)
 	assert key in driver.daemon.monitor.dev_added_cbs
-	assert (0x1234, 0xabcd) in driver.bt_registered
+	assert (0x1234, 0xABCD) in driver.bt_registered
 
 
 def test_generic_bluetooth_hidraw_input_is_smoothed(monkeypatch):

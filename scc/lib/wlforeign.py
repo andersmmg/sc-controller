@@ -14,9 +14,12 @@ Should work on most wayland compositors!
 - KWin (Plasma 6.1+)
 - other wlroots-based compositors
 """
-from __future__ import unicode_literals
 
-import os, socket, struct, threading, logging
+import logging
+import os
+import socket
+import struct
+import threading
 
 log = logging.getLogger("WlForeign")
 
@@ -53,9 +56,10 @@ STATE_FULLSCREEN = 3
 SERVER_ID_BASE = 0xFF000000
 
 
-class _Toplevel(object):
-	""" State of single tracked toplevel (window) """
-	__slots__ = ("id", "title", "app_id", "states")
+class _Toplevel:
+	"""State of single tracked toplevel (window)"""
+
+	__slots__ = ("app_id", "id", "states", "title")
 
 	def __init__(self, obj_id):
 		self.id = obj_id
@@ -64,7 +68,7 @@ class _Toplevel(object):
 		self.states = frozenset()
 
 
-class WlForeignToplevels(object):
+class WlForeignToplevels:
 	"""
 	Connects to compositor on its wayland socket and keeps dict of opened
 	toplevel windows, updated from compositor events in background thread.
@@ -92,8 +96,7 @@ class WlForeignToplevels(object):
 		if not self._connected_evt.wait(self.CONNECT_TIMEOUT):
 			self._set_failed("compositor did not respond in time")
 		elif not self._supported:
-			self._set_failed(
-				"compositor does not support %s" % IFACE_MANAGER.decode())
+			self._set_failed("compositor does not support %s" % IFACE_MANAGER.decode())
 
 	@staticmethod
 	def _socket_path():
@@ -155,8 +158,7 @@ class WlForeignToplevels(object):
 			obj_id = reader.u()
 			code = reader.u()
 			message = reader.s()
-			self._set_failed("wayland protocol error %s on object %s: %s" % (
-				code, obj_id, message))
+			self._set_failed("wayland protocol error %s on object %s: %s" % (code, obj_id, message))
 		elif opcode == WL_DISPLAY_DELETE_ID:
 			obj_id = reader.u()
 			with self._lock:
@@ -171,14 +173,13 @@ class WlForeignToplevels(object):
 			if interface == IFACE_MANAGER_NAME:
 				obj_id = self._alloc_id()
 				# bind(name u, interface s, version u, new_id n)
-				if self._send(toplevel, WL_REGISTRY_BIND, "usun",
-						name, IFACE_MANAGER, min(version, MANAGER_VERSION), obj_id):
+				if self._send(
+					toplevel, WL_REGISTRY_BIND, "usun", name, IFACE_MANAGER, min(version, MANAGER_VERSION), obj_id
+				):
 					with self._lock:
-						self._objects[obj_id] = (
-							IFACE_MANAGER, self._on_manager_event)
+						self._objects[obj_id] = (IFACE_MANAGER, self._on_manager_event)
 					self._supported = True
-					log.debug("Bound foreign toplevel manager v%s (id %s)",
-						min(version, MANAGER_VERSION), obj_id)
+					log.debug("Bound foreign toplevel manager v%s (id %s)", min(version, MANAGER_VERSION), obj_id)
 		elif opcode == WL_REGISTRY_GLOBAL_REMOVE:
 			pass
 
@@ -228,8 +229,8 @@ class WlForeignToplevels(object):
 			self._close("connection closed")
 
 	def _dispatch(self):
-		""" Parses as much complete messages from self._buf as possible.
-		Called with self._lock held. """
+		"""Parses as much complete messages from self._buf as possible.
+		Called with self._lock held."""
 		buf = self._buf
 		while len(buf) >= 8:
 			obj_id, size_opcode = struct.unpack_from("=II", buf)
@@ -251,7 +252,7 @@ class WlForeignToplevels(object):
 		self._buf = buf
 
 	def _set_failed(self, message):
-		""" Marks tracker as failed and closes connection """
+		"""Marks tracker as failed and closes connection"""
 		with self._lock:
 			if self._failed:
 				return
@@ -285,12 +286,13 @@ class WlForeignToplevels(object):
 		with self._lock:
 			for t in self._toplevels.values():
 				if STATE_ACTIVATED in t.states:
-					return { "title": t.title, "app_id": t.app_id }
+					return {"title": t.title, "app_id": t.app_id}
 		return None
 
 
-class _Reader(object):
-	""" Sequential reader for message arguments """
+class _Reader:
+	"""Sequential reader for message arguments"""
+
 	__slots__ = ("data", "pos")
 
 	def __init__(self, data):
@@ -299,8 +301,8 @@ class _Reader(object):
 
 	def _take(self, count):
 		if self.pos + count > len(self.data):
-			raise IOError("truncated wayland message")
-		rv = self.data[self.pos:self.pos + count]
+			raise OSError("truncated wayland message")
+		rv = self.data[self.pos : self.pos + count]
 		self.pos += count
 		return rv
 
@@ -324,6 +326,7 @@ if __name__ == "__main__":
 	w = WlForeignToplevels()
 	print("ok:", w.is_ok())
 	import time
+
 	while True:
 		print(w.poll())
 		time.sleep(1)

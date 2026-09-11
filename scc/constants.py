@@ -22,7 +22,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from scc.lib import IntEnum
+from enum import IntEnum
+from typing import cast
 
 """
 If SC-Controller is updated while daemon is running, DAEMON_VERSION send by
@@ -31,18 +32,20 @@ daemon will differ one one expected by UI and daemon will be forcefully restarte
 _VERSION_FALLBACK = "0.5.0"
 
 
-def _read_version():
+def _read_version() -> str:
 	try:
-		import os, re
-		pyproject = os.path.join(
-			os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-			"pyproject.toml")
+		import os
+		import re
+
+		pyproject = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "pyproject.toml")
 		if os.path.exists(pyproject):
-			with open(pyproject, "r") as f:
+			with open(pyproject) as f:
 				m = re.search(r'^\s*version\s*=\s*"([^"]+)"', f.read(), re.M)
 			if m:
-				return m.group(1)
+				# re.Match.group() infers as Any without stub resolution
+				return cast(str, m.group(1))
 		from importlib import metadata
+
 		return metadata.version("sccontroller")
 	except Exception:
 		return _VERSION_FALLBACK
@@ -50,93 +53,109 @@ def _read_version():
 
 DAEMON_VERSION = _read_version()
 
-HPERIOD  = 0.02
-LPERIOD  = 0.5
+HPERIOD = 0.02
+LPERIOD = 0.5
 DURATION = 1.0
 
 # Constants used when forcing gamepad to read some type of event is needed
-FE_STICK	= 1
-FE_TRIGGER	= 2
-FE_PAD		= 3
-FE_GYRO		= 4
+FE_STICK = 1
+FE_TRIGGER = 2
+FE_PAD = 3
+FE_GYRO = 4
 
 # Trigger names, pads, etc. These constants are used on multiple places
-LEFT	= "LEFT"
-RIGHT	= "RIGHT"
-CPAD	= "CPAD"
-RSTICK	= "RSTICK"
-DPAD	= "DPAD"
-WHOLE	= "WHOLE"
-STICK	= "STICK"
-GYRO	= "GYRO"
-PITCH	= "PITCH"
-YAW		= "YAW"
-ROLL	= "ROLL"
+LEFT = "LEFT"
+RIGHT = "RIGHT"
+CPAD = "CPAD"
+RSTICK = "RSTICK"
+DPAD = "DPAD"
+WHOLE = "WHOLE"
+STICK = "STICK"
+GYRO = "GYRO"
+PITCH = "PITCH"
+YAW = "YAW"
+ROLL = "ROLL"
 
 # Special constants currently used only by menus
-SAME = "SAME"		# Menu is canceled by releasing same button that intiated it
-DEFAULT = "DEFAULT"	# Default confirm/cancel button. A/B for menus initiated by
-					# button, pad clicking / releasing for menus on pads
+SAME = "SAME"  # Menu is canceled by releasing same button that intiated it
+DEFAULT = "DEFAULT"  # Default confirm/cancel button. A/B for menus initiated by
+# button, pad clicking / releasing for menus on pads
 
 # Deadzone modes
-CUT		= "CUT"
-ROUND	= "ROUND"
-LINEAR	= "LINEAR"
-MINIMUM	= "MINIMUM"
+CUT = "CUT"
+ROUND = "ROUND"
+LINEAR = "LINEAR"
+MINIMUM = "MINIMUM"
 
 # Hipfire modes
 HIPFIRE_NORMAL = "NORMAL"
 HIPFIRE_SENSIBLE = "SENSIBLE"
 HIPFIRE_EXCLUSIVE = "EXCLUSIVE"
 
-PARSER_CONSTANTS = ( LEFT, RIGHT, WHOLE, STICK, GYRO, PITCH,
-	YAW, ROLL, DEFAULT, SAME, CUT, ROUND, LINEAR, MINIMUM,
-	HIPFIRE_NORMAL, HIPFIRE_SENSIBLE, HIPFIRE_EXCLUSIVE )
-
+PARSER_CONSTANTS = (
+	LEFT,
+	RIGHT,
+	WHOLE,
+	STICK,
+	GYRO,
+	PITCH,
+	YAW,
+	ROLL,
+	DEFAULT,
+	SAME,
+	CUT,
+	ROUND,
+	LINEAR,
+	MINIMUM,
+	HIPFIRE_NORMAL,
+	HIPFIRE_SENSIBLE,
+	HIPFIRE_EXCLUSIVE,
+)
 
 
 class SCButtons(IntEnum):
-	RPADTOUCH	= 0b000010000000000000000000000000000
-	LPADTOUCH	= 0b000001000000000000000000000000000
-	RPAD		= 0b000000100000000000000000000000000
-	LPAD		= 0b000000010000000000000000000000000 # Same for stick but without LPadTouch
-	RGRIP		= 0b000000001000000000000000000000000
-	LGRIP		= 0b000000000100000000000000000000000
-	START		= 0b000000000010000000000000000000000
-	C			= 0b000000000001000000000000000000000
-	BACK		= 0b000000000000100000000000000000000
-	A			= 0b000000000000000001000000000000000
-	X			= 0b000000000000000000100000000000000
-	B			= 0b000000000000000000010000000000000
-	Y			= 0b000000000000000000001000000000000
-	LB			= 0b000000000000000000000100000000000
-	RB			= 0b000000000000000000000010000000000
-	LT			= 0b000000000000000000000001000000000
-	RT			= 0b000000000000000000000000100000000
-	CPADTOUCH	= 0b000000000000000000000000000000100 # Available on DS4 pad
-	CPADPRESS	= 0b000000000000000000000000000000010 # Available on DS4 pad
-	STICKPRESS	= 0b001000000000000000000000000000000
-	RSTICKPRESS	= 0b010000000000000000000000000000000
-	DOTS		= 0b000000000000000000000000000001000 # Deck only
-	RGRIP2		= 0b000000000000000000000000000100000 # Deck only
-	LGRIP2		= 0b000000000000000000000000000010000 # Deck only
-	RSTICKTOUCH	= 1 << 17	# Steam Controller 2 only
-	LSTICKTOUCH	= 1 << 16	# Steam Controller 2 only
-	RSENSE		= 1 << 19	# Steam Controller 2 only; right grip touch
-	LSENSE		= 1 << 29	# Steam Controller 2 only; left grip touch
+	RPADTOUCH = 0b000010000000000000000000000000000
+	LPADTOUCH = 0b000001000000000000000000000000000
+	RPAD = 0b000000100000000000000000000000000
+	LPAD = 0b000000010000000000000000000000000  # Same for stick but without LPadTouch
+	RGRIP = 0b000000001000000000000000000000000
+	LGRIP = 0b000000000100000000000000000000000
+	START = 0b000000000010000000000000000000000
+	C = 0b000000000001000000000000000000000
+	BACK = 0b000000000000100000000000000000000
+	A = 0b000000000000000001000000000000000
+	X = 0b000000000000000000100000000000000
+	B = 0b000000000000000000010000000000000
+	Y = 0b000000000000000000001000000000000
+	LB = 0b000000000000000000000100000000000
+	RB = 0b000000000000000000000010000000000
+	LT = 0b000000000000000000000001000000000
+	RT = 0b000000000000000000000000100000000
+	CPADTOUCH = 0b000000000000000000000000000000100  # Available on DS4 pad
+	CPADPRESS = 0b000000000000000000000000000000010  # Available on DS4 pad
+	STICKPRESS = 0b001000000000000000000000000000000
+	RSTICKPRESS = 0b010000000000000000000000000000000
+	DOTS = 0b000000000000000000000000000001000  # Deck only
+	RGRIP2 = 0b000000000000000000000000000100000  # Deck only
+	LGRIP2 = 0b000000000000000000000000000010000  # Deck only
+	RSTICKTOUCH = 1 << 17  # Steam Controller 2 only
+	LSTICKTOUCH = 1 << 16  # Steam Controller 2 only
+	RSENSE = 1 << 19  # Steam Controller 2 only; right grip touch
+	LSENSE = 1 << 29  # Steam Controller 2 only; left grip touch
 
 
 # If lpad and stick is used at once, this is sent as
 # button with every other packet to signalize that
 # value of lpad_x and lpad_y belongs to stick
-STICKTILT		= 0b10000000000000000000000000000000
+STICKTILT = 0b10000000000000000000000000000000
 
 
 class HapticPos(IntEnum):
 	"""Specify witch pad or trig is used"""
+
 	RIGHT = 0
 	LEFT = 1
-	BOTH = 2	# emulated
+	BOTH = 2  # emulated
 
 
 class ControllerFlags(IntEnum):
@@ -144,19 +163,20 @@ class ControllerFlags(IntEnum):
 	Used by mapper to workaround some physical differences between
 	Steam Controller and other pads.
 	"""
-	NONE =				0		# No flags, default SC.
-	HAS_RSTICK =		1 << 0	# Controller has real right stick
-	SEPARATE_STICK =	1 << 1	# Left stick and left pad are using separate axes
-	EUREL_GYROS =		1 << 2	# Gyro sensor values are provided as pitch, yaw
-								# and roll instead of quaterion. 'q4' is unused
-								# in such case.
-	HAS_CPAD =			1 << 3	# Controller has DS4-like touchpad in center
-	HAS_DPAD =			1 << 4	# Controller has physical d-pad
-	NO_GRIPS =			1 << 5	# Controller has no grips
-	IS_DECK =			1 << 6	# Very special case
-	IS_SC2 =			1 << 7	# Steam Controller 2
-	HAS_TOUCHPADS =		1 << 8	# Controller has physical SC-style touchpads;
-								# pads[LEFT]/pads[RIGHT] are real touch surfaces
+
+	NONE = 0  # No flags, default SC.
+	HAS_RSTICK = 1 << 0  # Controller has real right stick
+	SEPARATE_STICK = 1 << 1  # Left stick and left pad are using separate axes
+	EUREL_GYROS = 1 << 2  # Gyro sensor values are provided as pitch, yaw
+	# and roll instead of quaterion. 'q4' is unused
+	# in such case.
+	HAS_CPAD = 1 << 3  # Controller has DS4-like touchpad in center
+	HAS_DPAD = 1 << 4  # Controller has physical d-pad
+	NO_GRIPS = 1 << 5  # Controller has no grips
+	IS_DECK = 1 << 6  # Very special case
+	IS_SC2 = 1 << 7  # Steam Controller 2
+	HAS_TOUCHPADS = 1 << 8  # Controller has physical SC-style touchpads;
+	# pads[LEFT]/pads[RIGHT] are real touch surfaces
 
 
 STICK_PAD_MIN = -32768
@@ -170,5 +190,5 @@ CPAD_Y_MAX = 930
 
 TRIGGER_MIN = 0
 TRIGGER_HALF = 50
-TRIGGER_CLICK = 254 # Values under this are generated until trigger clicks
+TRIGGER_CLICK = 254  # Values under this are generated until trigger clicks
 TRIGGER_MAX = 255

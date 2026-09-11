@@ -4,33 +4,39 @@ SC-Controller - BindingEditor
 
 Base class for main application window and OSD Keyboard bindings editor.
 """
-from __future__ import unicode_literals
+
+from scc.actions import NoAction
+from scc.constants import LEFT, RIGHT, SCButtons
+from scc.gui.action_editor import ActionEditor
+from scc.gui.ae.buttons import is_button_repeat, is_button_togle
+from scc.gui.ae.gyro_action import is_gyro_enable
+from scc.gui.controller_widget import (
+	BUTTONS,
+	GYROS,
+	PADS,
+	PRESSABLE,
+	STICKS,
+	TRIGGERS,
+	ControllerButton,
+	ControllerGyro,
+	ControllerPad,
+	ControllerStick,
+	ControllerTrigger,
+)
+from scc.gui.macro_editor import MacroEditor
+from scc.gui.modeshift_editor import ModeshiftEditor
+from scc.gui.ring_editor import RingEditor
+from scc.macros import Macro, Type
+from scc.modifiers import DoubleclickModifier, FeedbackModifier, HoldModifier, ModeModifier, SensitivityModifier
+from scc.profile import Profile
 from scc.tools import _
 
-from scc.modifiers import ModeModifier, SensitivityModifier, FeedbackModifier
-from scc.modifiers import DoubleclickModifier, HoldModifier
-from scc.actions import NoAction, RingAction, MultiAction
-from scc.macros import Macro, Type, Repeat, Cycle
-from scc.constants import SCButtons, LEFT, RIGHT
-from scc.profile import Profile
-from scc.gui.controller_widget import TRIGGERS, PADS, STICKS, GYROS, BUTTONS, PRESSABLE
-from scc.gui.controller_widget import ControllerPad, ControllerStick, ControllerGyro
-from scc.gui.controller_widget import ControllerButton, ControllerTrigger
-from scc.gui.modeshift_editor import ModeshiftEditor
-from scc.gui.ae.buttons import is_button_togle, is_button_repeat
-from scc.gui.ae.gyro_action import is_gyro_enable
-from scc.gui.action_editor import ActionEditor
-from scc.gui.macro_editor import MacroEditor
-from scc.gui.ring_editor import RingEditor
 
-
-class BindingEditor(object):
-	
+class BindingEditor:
 	def __init__(self, app):
 		self.button_widgets = {}
 		self.app = app
-	
-	
+
 	def create_binding_buttons(self, use_icons=True, enable_press=True):
 		"""
 		Creates ControllerWidget instances for available Gtk.Buttons defined
@@ -60,16 +66,14 @@ class BindingEditor(object):
 			w = self.builder.get_object("bt" + b)
 			if w:
 				self.button_widgets[b] = ControllerGyro(self, b, use_icons, w)
-	
-	
+
 	def on_action_chosen(self, id, action, mark_changed=True):
 		"""
 		Callback called when action editting is finished in editor.
 		Should return None or action being replaced.
 		"""
 		raise TypeError("Non-overriden on_action_chosen")
-	
-	
+
 	def set_action(self, profile, id, action):
 		"""
 		Stores action in profile.
@@ -113,44 +117,38 @@ class BindingEditor(object):
 				raise ValueError("unknown id %s" % (id,))
 			self.button_widgets[id].update()
 		return before
-	
-	
+
 	def get_action(self, profile, id):
 		"""
 		Returns action for specified id.
 		Returns None if id is not known.
 		"""
-		before = NoAction()
-		if id in BUTTONS:
+		if id in BUTTONS or id in PRESSABLE:
 			return profile.buttons[id]
-		elif id in PRESSABLE:
-			return profile.buttons[id]
-		elif id in TRIGGERS:
+		if id in TRIGGERS:
 			# TODO: Use LT and RT in profile as well
 			side = LEFT if id == "LT" else RIGHT
 			return profile.triggers[side]
-		elif id in GYROS:
+		if id in GYROS:
 			return profile.gyro
-		elif id in STICKS + PADS:
+		if id in STICKS + PADS:
 			if id == Profile.STICK:
 				return profile.stick
-			elif id == Profile.RSTICK:
+			if id == Profile.RSTICK:
 				return profile.rstick
-			elif id in Profile.DPAD:
+			if id in Profile.DPAD:
 				return profile.pads[Profile.DPAD]
-			elif id == Profile.LPAD:
+			if id == Profile.LPAD:
 				return profile.pads[Profile.LEFT]
-			elif id == Profile.RPAD:
+			if id == Profile.RPAD:
 				return profile.pads[Profile.RIGHT]
-			elif id == Profile.CPAD:
+			if id == Profile.CPAD:
 				return profile.pads[Profile.CPAD]
-			else:
-				raise ValueError("unknown id %s" % (id,))
+			raise ValueError("unknown id %s" % (id,))
 		return None
-	
-	
+
 	def choose_editor(self, action, title, id=None):
-		""" Chooses apropripate Editor instance for edited action """
+		"""Chooses apropripate Editor instance for edited action"""
 		if isinstance(action, SensitivityModifier):
 			action = action.action
 		if isinstance(action, FeedbackModifier):
@@ -175,12 +173,10 @@ class BindingEditor(object):
 			e = ActionEditor(self.app, self.on_action_chosen)
 			e.set_title(title)
 		return e
-	
-	
+
 	def hilight(self, button):
-		""" Hilights button on image. Overriden by app. """
+		"""Hilights button on image. Overriden by app."""
 		pass
-	
-	
+
 	def show_editor(self, id):
 		raise TypeError("show_editor not overriden")

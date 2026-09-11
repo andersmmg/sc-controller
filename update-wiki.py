@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-import sys, os, subprocess
+import os
+import sys
+
 
 def try_run(cmd):
 	if os.system(cmd) != 0:
@@ -12,25 +14,25 @@ def merge(f1, f2, from_, to):
 	from f1 to f2
 	"""
 	lines1, inside = [], False
-	with open(f1, "r") as fh1:
+	with open(f1) as fh1:
 		for line in fh1.readlines():
-		if from_ in line.strip("\r\n\t "):
-			inside = True
-		elif to in line.strip("\r\n\t "):
-			inside = False
-		if inside:
-			lines1.append(line)
+			if from_ in line.strip("\r\n\t "):
+				inside = True
+			elif to in line.strip("\r\n\t "):
+				inside = False
+			if inside:
+				lines1.append(line)
 
 	lines2, inside = [], False
-	with open(f2, "r") as fh2:
+	with open(f2) as fh2:
 		for line in fh2.readlines():
-		if from_ in line.strip("\r\n\t "):
-			inside = True
-			lines2 += lines1
-		elif to in line.strip("\r\n\t "):
-			inside = False
-		elif not inside:
-			lines2.append(line)
+			if from_ in line.strip("\r\n\t "):
+				inside = True
+				lines2 += lines1
+			elif to in line.strip("\r\n\t "):
+				inside = False
+			elif not inside:
+				lines2.append(line)
 
 	with open(f2, "w") as fh2:
 		fh2.write("".join(lines2))
@@ -49,7 +51,7 @@ def main():
 		'../docs/actions.md',
 		'Custom-Action-Examples-and-Explanations.md',
 		'# <a name="actions">',
-		'# <a name="examples2">'
+		'# <a name="examples2">',
 	)
 
 	try_run("git commit -a -m \"Updated wiki from docs\"")

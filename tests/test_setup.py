@@ -1,9 +1,11 @@
-import scc
 import pkgutil
+
 import tomllib
 
+import scc
 
-class TestSetup(object):
+
+class TestSetup:
 	"""
 	Tests if SCC should be installable.
 	"""
@@ -18,9 +20,10 @@ class TestSetup(object):
 		"""
 		try:
 			import gi
-			gi.require_version('Gtk', '3.0')
-			gi.require_version('GdkX11', '3.0')
-			gi.require_version('Rsvg', '2.0')
+
+			gi.require_version("Gtk", "3.0")
+			gi.require_version("GdkX11", "3.0")
+			gi.require_version("Rsvg", "2.0")
 		except ImportError:
 			pass
 
@@ -32,4 +35,5 @@ class TestSetup(object):
 	def test_version_matches_pyproject(self):
 		config = self._pyproject()
 		from scc.constants import DAEMON_VERSION
-		assert DAEMON_VERSION == config["project"]["version"]
+
+		assert config["project"]["version"] == DAEMON_VERSION

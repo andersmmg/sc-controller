@@ -1,7 +1,9 @@
 import gi
+
 gi.require_version("Gtk", "3.0")
 
 import os
+
 from scc.gui.svg_widget import SVGWidget
 
 IMG = os.path.join("images", "scc-alive.svg")

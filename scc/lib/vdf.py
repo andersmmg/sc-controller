@@ -16,20 +16,21 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
+
 import shlex
 
 
 def parse_vdf(fileobj):
 	"""
 	Converts VDF file or file-like object into python dict
-	
+
 	Throws ValueError if profile cannot be parsed.
 	"""
 	rv = {}
-	stack = [ rv ]
+	stack = [rv]
 	lexer = shlex.shlex(fileobj)
 	key = None
-	
+
 	t = lexer.get_token()
 	while t:
 		if t == "{":
@@ -43,7 +44,7 @@ def parse_vdf(fileobj):
 				stack[-1][key] = lst
 			else:
 				stack[-1][key] = value
-			
+
 			stack.append(value)
 			key = None
 		elif t == "}":
@@ -61,12 +62,12 @@ def parse_vdf(fileobj):
 		else:
 			stack[-1][key] = t.strip('"')
 			key = None
-		
+
 		t = lexer.get_token()
-	
+
 	if len(stack) > 1:
 		raise ValueError("'{' without '}'")
-	
+
 	return rv
 
 
@@ -75,11 +76,9 @@ def ensure_list(value):
 	If value is list, returns same value.
 	Otherwise, returns [ value ]
 	"""
-	return value if type(value) == list else [ value ]
+	return value if type(value) == list else [value]
 
 
 if __name__ == "__main__":
-	with open('app_generic.vdf', "r") as fh:
+	with open("app_generic.vdf") as fh:
 		print(parse_vdf(fh))
-
-

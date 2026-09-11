@@ -5,7 +5,6 @@ from scc.actions import ButtonAction
 from scc.gui.area_to_action import AREA_TO_ACTION
 from scc.uinput import Keys
 
-
 ROOT = Path(__file__).resolve().parents[1]
 XBOX_PROFILES = (
 	"XBox Controller.sccprofile",

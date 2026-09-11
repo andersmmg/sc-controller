@@ -8,17 +8,23 @@ keyboard. This mapper emulates input events on it using GTK methods.
 
 Mouse movement (but not buttons) are passed to uinput as usuall.
 """
-from __future__ import unicode_literals
-from gi.repository import Gtk, Gdk, GLib, GdkX11
 
-from scc.gui.gdk_to_key import KEY_TO_GDK, KEY_TO_KEYCODE
-from scc.gui.daemon_manager import ControllerManager
-from scc.osd.slave_mapper import SlaveMapper
+import logging
+
+import gi
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+gi.require_version("GdkX11", "3.0")
+
+from gi.repository import Gdk, GdkX11, GLib, Gtk
+
 from scc.constants import SCButtons
-from scc.uinput import Keys, Scans
+from scc.gui.gdk_to_key import KEY_TO_GDK, KEY_TO_KEYCODE
 from scc.lib import xwrappers as X
+from scc.osd.slave_mapper import SlaveMapper
+from scc.uinput import Keys
 
-import os, logging
 log = logging.getLogger("OSDModMapper")
 
 
@@ -28,33 +34,30 @@ class OSDModeMapper(SlaveMapper):
 		self.app = app
 		self.set_special_actions_handler(self)
 		self.target_window = None
-	
+
 	def on_sa_restart(self, *a):
-		""" restart / exit handler """
+		"""restart / exit handler"""
 		self.app.quit()
-	
-	
+
 	def set_target_window(self, w):
 		self.target_window = w
-	
-	
+
 	def create_keyboard(self, name):
 		return OSDModeKeyboard(self)
-	
-	
+
 	def create_mouse(self, name):
 		return OSDModeMouse(self)
 
 
-class OSDModeKeyboard(object):
-	""" Emulates uinput keyboard emulator """
-	
+class OSDModeKeyboard:
+	"""Emulates uinput keyboard emulator"""
+
 	def __init__(self, mapper):
 		self.mapper = mapper
 		self.display = Gdk.Display.get_default()
 		self.seat = self.display.get_default_seat()
 		self.device = self.seat.get_keyboard()
-	
+
 	def pressEvent(self, keys):
 		for k in keys:
 			event = Gdk.Event.new(Gdk.EventType.KEY_PRESS)
@@ -64,9 +67,10 @@ class OSDModeKeyboard(object):
 			event.window = self.mapper.target_window
 			event.set_device(self.device)
 			Gtk.main_do_event(event)
-	
-	
-	def releaseEvent(self, keys=[]):
+
+	def releaseEvent(self, keys=None):
+		if not keys:
+			keys = []
 		for k in keys:
 			event = Gdk.Event.new(Gdk.EventType.KEY_RELEASE)
 			event.time = Gtk.get_current_event_time()
@@ -77,20 +81,18 @@ class OSDModeKeyboard(object):
 			Gtk.main_do_event(event)
 
 
-class OSDModeMouse(object):
-	""" Emulates uinput keyboard emulator too """
-	
+class OSDModeMouse:
+	"""Emulates uinput keyboard emulator too"""
+
 	def __init__(self, mapper):
 		self.mapper = mapper
 		self.display = Gdk.Display.get_default()
 		self.seat = self.display.get_default_seat()
 		self.device = self.seat.get_pointer()
-	
-	
+
 	def synEvent(self, *a):
 		pass
-	
-	
+
 	def keyEvent(self, key, val):
 		tp = Gdk.EventType.BUTTON_PRESS if val else Gdk.EventType.BUTTON_RELEASE
 		event = Gdk.Event.new(tp)
@@ -98,7 +100,7 @@ class OSDModeMouse(object):
 		window, event.x, event.y = self.device.get_window_at_position()
 		trash, x, y = self.device.get_position()
 		event.x_root, event.y_root = x, y
-		
+
 		gtk_window = None
 		for w in Gtk.Window.list_toplevels():
 			if w.get_window():
@@ -122,19 +124,18 @@ class OSDModeMouse(object):
 		Gtk.main_do_event(event)
 
 
-class OSDModeMappings(object):
-	
+class OSDModeMappings:
 	ICONS = {
-		'imgOsdmodeAct'    : SCButtons.A,
-		'imgOsdmodeClose'  : SCButtons.B,
-		'imgOsdmodeExit'   : SCButtons.C,
-		'imgOsdmodeSave'   : SCButtons.Y,
-		'imgOsdmodeOK'     : SCButtons.Y,
+		"imgOsdmodeAct": SCButtons.A,
+		"imgOsdmodeClose": SCButtons.B,
+		"imgOsdmodeExit": SCButtons.C,
+		"imgOsdmodeSave": SCButtons.Y,
+		"imgOsdmodeOK": SCButtons.Y,
 	}
-	
-	MAIN_WINDOW_BUTTONS = { "vbOsdmodeExit", "vbOsdmodeSave" }
-	OTHER_WINDOW_BUTTONS = { "vbOsdmodeExit", "vbOsdmodeAct", "vbOsdmodeClose", "vbOsdmodeOK" }
-	
+
+	MAIN_WINDOW_BUTTONS = {"vbOsdmodeExit", "vbOsdmodeSave"}
+	OTHER_WINDOW_BUTTONS = {"vbOsdmodeExit", "vbOsdmodeAct", "vbOsdmodeClose", "vbOsdmodeOK"}
+
 	def __init__(self, app, mapper, window):
 		self.app = app
 		self.mapper = mapper
@@ -145,59 +146,52 @@ class OSDModeMappings(object):
 		self.app.window.connect("focus-in-event", self.on_main_window_focus_in_event)
 		self.app.window.connect("focus-out-event", self.on_main_window_focus_out_event)
 		self.on_main_window_focus_in_event()
-	
-	
+
 	def set_controller(self, c):
 		config = c.load_gui_config(self.app.imagepath or {})
 		for name in OSDModeMappings.ICONS:
 			w = self.app.builder.get_object(name)
 			icon, trash = c.get_button_icon(config, OSDModeMappings.ICONS[name])
 			w.set_from_file(icon)
-	
-	
+
 	def on_main_window_focus_in_event(self, *a):
 		for x in self.OTHER_WINDOW_BUTTONS:
 			self.app.builder.get_object(x).set_visible(False)
 		for x in self.MAIN_WINDOW_BUTTONS:
 			self.app.builder.get_object(x).set_visible(True)
-	
-	
+
 	def on_main_window_focus_out_event(self, *a):
 		for x in self.MAIN_WINDOW_BUTTONS:
 			self.app.builder.get_object(x).set_visible(False)
 		for x in self.OTHER_WINDOW_BUTTONS:
 			self.app.builder.get_object(x).set_visible(True)
-	
-	
+
 	def get_target_position(self):
 		pos = self.first_window.get_position()
 		size = self.first_window.get_geometry()
 		my_size = self.window.get_window().get_geometry()
-		tx = (pos.x + 0.5 * (size.width - my_size.width))
+		tx = pos.x + 0.5 * (size.width - my_size.width)
 		ty = pos.y + size.height + 100
 		return tx, ty
-	
-	
+
 	def show(self):
 		self.window.show()
 		self.window.get_window().set_override_redirect(True)
-	
-	
+
 	def move_around(self, *a):
 		if self.first_window is None:
 			dpy = X.Display(hash(GdkX11.x11_get_default_xdisplay()))
 			active_xid = X.get_current_window(dpy)
 			if not active_xid or active_xid == X.get_default_root_window(dpy):
-				return
+				return None
 			try:
-				self.first_window = GdkX11.X11Window.foreign_new_for_display(
-					Gdk.Display.get_default(), active_xid)
+				self.first_window = GdkX11.X11Window.foreign_new_for_display(Gdk.Display.get_default(), active_xid)
 			except TypeError:
 				# Active window XID is stale or bogus
-				return
+				return None
 			if self.first_window is None:
-				return
-		
+				return None
+
 		tx, ty = self.get_target_position()
 		self.window.get_window().move(tx, ty)
 		return True
@@ -206,6 +200,6 @@ class OSDModeMappings(object):
 def direction(x):
 	if x >= 1:
 		return 1
-	elif x <= -1:
+	if x <= -1:
 		return -1
 	return 0

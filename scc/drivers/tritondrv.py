@@ -26,6 +26,7 @@ for discrete haptic events
 import errno
 import logging
 import math
+import os
 import struct
 import time
 import traceback
@@ -44,100 +45,101 @@ from scc.drivers.usb import USBDevice, register_hotplug_device
 from scc.lib import usb1
 from scc.lib.hidraw import HIDRaw
 
-import os
-
-VENDOR_ID			= 0x28de
-PRODUCT_SC2_WIRED	= 0x1302
-PRODUCT_SC2_BLE		= 0x1303 # BLE mode also USB
-PRODUCT_PROTEUS		= 0x1304
-PRODUCT_NEREID		= 0x1305
-DONGLE_PRODUCTS		= (PRODUCT_PROTEUS, PRODUCT_NEREID)
+VENDOR_ID = 0x28DE
+PRODUCT_SC2_WIRED = 0x1302
+PRODUCT_SC2_BLE = 0x1303  # BLE mode also USB
+PRODUCT_PROTEUS = 0x1304
+PRODUCT_NEREID = 0x1305
+DONGLE_PRODUCTS = (PRODUCT_PROTEUS, PRODUCT_NEREID)
 
 # Input report ids
-REPORT_STATE			= 0x42
-REPORT_BATTERY			= 0x43
-REPORT_STATE_BLE		= 0x45
-REPORT_WIRELESS_X		= 0x46
-REPORT_STATE_TIMESTAMP	= 0x47
-REPORT_LIZARD_MOUSE		= 0x40
-REPORT_LIZARD_KEYBOARD	= 0x41
-REPORT_LIZARD_STATUS	= 0x7b
-REPORT_WIRELESS			= 0x79
+REPORT_STATE = 0x42
+REPORT_BATTERY = 0x43
+REPORT_STATE_BLE = 0x45
+REPORT_WIRELESS_X = 0x46
+REPORT_STATE_TIMESTAMP = 0x47
+REPORT_LIZARD_MOUSE = 0x40
+REPORT_LIZARD_KEYBOARD = 0x41
+REPORT_LIZARD_STATUS = 0x7B
+REPORT_WIRELESS = 0x79
 
 # Wired connection state byte in 0x79 report
-WIRELESS_CONNECT		= 0x02
-WIRELESS_DISCONNECT		= 0x01
+WIRELESS_CONNECT = 0x02
+WIRELESS_DISCONNECT = 0x01
 
 # Feature report (control transfer, report id 1)
-FEATURE_REPORT_ID		= 1
-FEATURE_SET_SETTINGS	= 0x87
-FEATURE_TURN_OFF		= 0x9f
-CONTROL_VALUE_FEATURE	= 0x0301
+FEATURE_REPORT_ID = 1
+FEATURE_SET_SETTINGS = 0x87
+FEATURE_TURN_OFF = 0x9F
+CONTROL_VALUE_FEATURE = 0x0301
 
 # Settings
-SETTING_LIZARD_MODE			= 9
-SETTING_IMU_MODE			= 48
-SETTING_LED_USER_BRIGHTNESS	= 45
-IMU_MODE_ENABLED			= 0x18	# SEND_RAW_ACCEL | SEND_RAW_GYRO
+SETTING_LIZARD_MODE = 9
+SETTING_IMU_MODE = 48
+SETTING_LED_USER_BRIGHTNESS = 45
+IMU_MODE_ENABLED = 0x18  # SEND_RAW_ACCEL | SEND_RAW_GYRO
 
 # Scales raw gyro int16 into the range the gyro actions expect
 GYRO_SCALE = 0.5
 
 # How often lizard mode must be disabled (SDL3 uses 3 seconds)
-LIZARD_INTERVAL			= 3.0
+LIZARD_INTERVAL = 3.0
 # Haptic output report must be resent every 40ms (50ms safety timeout)
-RUMBLE_INTERVAL			= 0.040
+RUMBLE_INTERVAL = 0.040
 # Delay between SC2 BT reconnection attempts
-BT_RETRY_INTERVAL		= 1.0
-BT_PROBE_INTERVAL		= 0.25
-BT_PROBE_RETRIES			= 3
-BT_DIAGNOSTIC_INTERVAL		= 5.0
+BT_RETRY_INTERVAL = 1.0
+BT_PROBE_INTERVAL = 0.25
+BT_PROBE_RETRIES = 3
+BT_DIAGNOSTIC_INTERVAL = 5.0
 
 # Interface numbers of controller slots on the dongle
-DONGLE_SLOT_INTERFACES	= (2, 3, 4, 5)
+DONGLE_SLOT_INTERFACES = (2, 3, 4, 5)
 
-RUMBLE_OUTPUT_REPORTS	= 10	# report id + MsgHapticRumble
+RUMBLE_OUTPUT_REPORTS = 10  # report id + MsgHapticRumble
 
 log = logging.getLogger("Triton")
 
 _bt_drv = None
 
 
-SC2Input = namedtuple("SC2Input", '''buttons ltrig rtrig stick_x stick_y
+SC2Input = namedtuple(
+	"SC2Input",
+	"""buttons ltrig rtrig stick_x stick_y
 	rstick_x rstick_y lpad_x lpad_y rpad_x rpad_y
-	dpad_x dpad_y gpitch groll gyaw q1 q2 q3 q4''')
-SC2_NULL = SC2Input(*([ 0 ] * len(SC2Input._fields)))
+	dpad_x dpad_y gpitch groll gyaw q1 q2 q3 q4""",
+)
+SC2_NULL = SC2Input(*([0] * len(SC2Input._fields)))
 
 
 # Mapping of Triton button bits (see TritonButtons enum in SDL3) to
 # SCButtons used by mapper
 TRITON_TO_SC = {
-	0  : SCButtons.A,
-	1  : SCButtons.B,
-	2  : SCButtons.X,
-	3  : SCButtons.Y,
-	4  : SCButtons.DOTS,			# QAM (the ⋯ / … button, same as Steam Deck DOTS)
-	5  : SCButtons.RSTICKPRESS,	# R3
-	6  : SCButtons.START,		# View
-	7  : SCButtons.RGRIP2,		# R4
-	8  : SCButtons.RGRIP,		# R5
-	9  : SCButtons.RB,
-	14 : SCButtons.BACK,		# Menu
-	15 : SCButtons.STICKPRESS,	# L3
-	16 : SCButtons.C,		# Steam (same as SC's center/Steam button)
-	17 : SCButtons.LGRIP2,		# L4
-	18 : SCButtons.LGRIP,		# L5
-	19 : SCButtons.LB,
-	20 : SCButtons.RSTICKTOUCH,
-	21 : SCButtons.RPADTOUCH,
-	22 : SCButtons.RPAD,		# RPad click
-	23 : SCButtons.RT,			# R trigger click
-	24 : SCButtons.LSTICKTOUCH,
-	25 : SCButtons.LPADTOUCH,
-	26 : SCButtons.LPAD,		# LPad click
-	27 : SCButtons.LT,			# L trigger click
-	28 : SCButtons.RSENSE,		# Right grip touch
-	29 : SCButtons.LSENSE,		# Left grip touch
+	0: SCButtons.A,
+	1: SCButtons.B,
+	2: SCButtons.X,
+	3: SCButtons.Y,
+	4: SCButtons.DOTS,  # QAM (the ⋯ / … button, same as Steam Deck DOTS)
+	5: SCButtons.RSTICKPRESS,  # R3
+	6: SCButtons.START,  # View
+	7: SCButtons.RGRIP2,  # R4
+	8: SCButtons.RGRIP,  # R5
+	9: SCButtons.RB,
+	14: SCButtons.BACK,  # Menu
+	15: SCButtons.STICKPRESS,  # L3
+	16: SCButtons.C,  # Steam (same as SC's center/Steam button)
+	17: SCButtons.LGRIP2,  # L4
+	18: SCButtons.LGRIP,  # L5
+	19: SCButtons.LB,
+	20: SCButtons.RSTICKTOUCH,
+	21: SCButtons.RPADTOUCH,
+	22: SCButtons.RPAD,  # RPad click
+	23: SCButtons.RT,  # R trigger click
+	24: SCButtons.LSTICKTOUCH,
+	25: SCButtons.LPADTOUCH,
+	26: SCButtons.LPAD,  # LPad click
+	27: SCButtons.LT,  # L trigger click
+	28: SCButtons.RSENSE,  # Right grip touch
+	29: SCButtons.LSENSE,  # Left grip touch
 }
 _TRITON_TO_SC_BITS = tuple((1 << b, sc) for b, sc in TRITON_TO_SC.items())
 
@@ -151,18 +153,20 @@ def map_dpad(data, low, hi):
 
 
 def clamp(value, low, hi):
-	if value < low: return low
-	if value > hi: return hi
+	if value < low:
+		return low
+	if value > hi:
+		return hi
 	return value
 
 
 def init(daemon, config):
-	""" Registers hotplug callbacks for all SC2 devices """
+	"""Registers hotplug callbacks for all SC2 devices"""
+
 	def cb(device, handle):
 		return TritonDevice(device, handle, daemon)
 
-	for product_id in (PRODUCT_SC2_WIRED, PRODUCT_SC2_BLE,
-			PRODUCT_PROTEUS, PRODUCT_NEREID):
+	for product_id in (PRODUCT_SC2_WIRED, PRODUCT_SC2_BLE, PRODUCT_PROTEUS, PRODUCT_NEREID):
 		register_hotplug_device(cb, VENDOR_ID, product_id)
 	global _bt_drv
 	_bt_drv = SC2BTDriver(daemon, config)
@@ -175,13 +179,14 @@ class TritonDevice(USBDevice):
 	(one slot) or dongle with up to 4 wireless slots (one controller per
 	endpoint).
 	"""
+
 	def __init__(self, device, handle, daemon):
 		self.daemon = daemon
 		USBDevice.__init__(self, device, handle)
-		self._controllers = {}	# slot -> SC2Controller
-		self._slots = {}		# slot -> (interface, in_ep, out_ep)
+		self._controllers = {}  # slot -> SC2Controller
+		self._slots = {}  # slot -> (interface, in_ep, out_ep)
 		self._endpoint_to_slot = {}
-		self._omsg = []			# Haptics to write to interrupt out endpoint
+		self._omsg = []  # Haptics to write to interrupt out endpoint
 		self._dongle = device.getProductID() in DONGLE_PRODUCTS
 
 		self.claim_by(klass=3, subclass=0, protocol=0)
@@ -189,10 +194,8 @@ class TritonDevice(USBDevice):
 		for slot in self._slots:
 			self._read_slot(self._slots[slot][1])
 
-
 	def get_type(self):
 		return "sc2"
-
 
 	def _find_slots(self):
 		"""
@@ -211,7 +214,7 @@ class TritonDevice(USBDevice):
 				for ep in setting:
 					address = ep.getAddress()
 					if address & usb1.ENDPOINT_IN:
-						in_ep = address & 0x7f
+						in_ep = address & 0x7F
 					else:
 						out_ep = address
 				if in_ep is not None:
@@ -220,13 +223,12 @@ class TritonDevice(USBDevice):
 		for index, (number, in_ep, out_ep) in enumerate(ifaces):
 			if self._dongle:
 				if number not in DONGLE_SLOT_INTERFACES:
-					continue	# dongle status channel, ignored
+					continue  # dongle status channel, ignored
 				slot = DONGLE_SLOT_INTERFACES.index(number)
 			else:
 				slot = index
 			self._slots[slot] = (number, in_ep, out_ep)
 			self._endpoint_to_slot[in_ep] = slot
-
 
 	def _read_slot(self, endpoint):
 		"""
@@ -234,10 +236,11 @@ class TritonDevice(USBDevice):
 		of any length (reports are multiplexed on single stream and have
 		multiple sizes).
 		"""
+
 		def callback_wrapper(transfer):
 			if transfer.getStatus() != usb1.TRANSFER_COMPLETED:
 				return
-			data = transfer.getBuffer()[:transfer.getActualLength()]
+			data = transfer.getBuffer()[: transfer.getActualLength()]
 			try:
 				self._on_input(endpoint, data)
 			except Exception as e:
@@ -259,7 +262,6 @@ class TritonDevice(USBDevice):
 		)
 		transfer.submit()
 		self._transfer_list.append(transfer)
-
 
 	def _on_input(self, endpoint, data):
 		if not data:
@@ -288,7 +290,6 @@ class TritonDevice(USBDevice):
 		else:
 			log.debug("Ignoring SC2 report type 0x%02x", report)
 
-
 	def _get_controller(self, slot):
 		"""
 		Returns controller for slot, creating it when new controller
@@ -296,14 +297,12 @@ class TritonDevice(USBDevice):
 		"""
 		if slot not in self._controllers:
 			iface, in_ep, out_ep = self._slots[slot]
-			serial = "%s:%s" % (self.device.getBusNumber(),
-				self.device.getPortNumber())
+			serial = "%s:%s" % (self.device.getBusNumber(), self.device.getPortNumber())
 			c = SC2Controller(self, iface, out_ep, serial)
 			self._controllers[slot] = c
 			c.configure()
 			self.daemon.add_controller(c)
 		return self._controllers.get(slot)
-
 
 	def _remove_controller(self, slot):
 		c = self._controllers.get(slot)
@@ -312,27 +311,28 @@ class TritonDevice(USBDevice):
 			self.daemon.remove_controller(c)
 			c.disconnected()
 
-
 	def _feature(self, index, data):
 		"""
 		Schedules 64B feature report (report id 1) to be sent to device.
 		Reports are overwritten until sent so they don't pile up.
 		"""
-		data = (data + b'\x00' * 64)[:64]
+		data = (data + b"\x00" * 64)[:64]
 		key = (index, data[1], data[3:5])
 		for x in self._cmsg:
 			if (x[3], x[4][1], x[4][3:5]) == key:
 				self._cmsg.remove(x)
 				break
-		self._cmsg.insert(0, (
-			0x21,	# request_type
-			0x09,	# request
-			CONTROL_VALUE_FEATURE,
-			index,
-			data,
-			0		# Timeout
-		))
-
+		self._cmsg.insert(
+			0,
+			(
+				0x21,  # request_type
+				0x09,  # request
+				CONTROL_VALUE_FEATURE,
+				index,
+				data,
+				0,  # Timeout
+			),
+		)
 
 	def rumble(self, out_ep, data):
 		"""
@@ -345,13 +345,11 @@ class TritonDevice(USBDevice):
 				break
 		self._omsg.insert(0, (out_ep, data))
 
-
 	def flush(self):
 		while len(self._omsg):
 			endpoint, data = self._omsg.pop()
 			self.handle.interruptWrite(usb1.ENDPOINT_OUT | endpoint, data)
 		USBDevice.flush(self)
-
 
 	def close(self):
 		for c in list(self._controllers.values()):
@@ -365,7 +363,9 @@ class SC2Controller(Controller):
 	One Steam Controller 2, either wired, connected to one of dongle slots
 	or connected over Bluetooth (see SC2BTDevice).
 	"""
-	flags = ( 0
+
+	flags = (
+		0
 		| ControllerFlags.SEPARATE_STICK
 		| ControllerFlags.HAS_DPAD
 		| ControllerFlags.HAS_RSTICK
@@ -388,68 +388,55 @@ class SC2Controller(Controller):
 		self._battery_level = None
 		self._id = "sc2-%s" % (serial,)
 
-
 	def get_type(self):
 		return "sc2"
-
 
 	def get_gui_config_file(self):
 		return "sc2.config.json"
 
-
 	def _send_feature(self, data):
-		""" Sends 64B feature report (report id 1) to the controller """
+		"""Sends 64B feature report (report id 1) to the controller"""
 		self._driver._feature(self._iface, data)
 
-
 	def _send_output(self, data):
-		""" Sends haptic output report over interrupt endpoint """
+		"""Sends haptic output report over interrupt endpoint"""
 		self._driver.rumble(self._out_ep, data)
-
 
 	def __repr__(self):
 		return "<SC2 %s>" % (self.get_id(),)
 
-
 	def configure(self):
-		""" Keeps lizard mode off on freshly connected controller """
+		"""Keeps lizard mode off on freshly connected controller"""
 		self._last_lizard = 0
 		self._keep_lizard_off()
-
 
 	def _keep_lizard_off(self):
 		self._last_lizard = time.time()
 		self._send_feature(self._lizard_off_payload())
 
-
 	@staticmethod
 	def _lizard_off_payload():
-		""" USB-style payload that turns lizard mode off """
-		return struct.pack('<BBBBH',
-			FEATURE_REPORT_ID, FEATURE_SET_SETTINGS, 3,
-			SETTING_LIZARD_MODE, 0)
-
+		"""USB-style payload that turns lizard mode off"""
+		return struct.pack("<BBBBH", FEATURE_REPORT_ID, FEATURE_SET_SETTINGS, 3, SETTING_LIZARD_MODE, 0)
 
 	def _send_rumble(self):
 		left, right, count = self._rumble
-		data = struct.pack('<BBHHBHB',
-			0x80,			# ID_OUT_REPORT_HAPTIC_RUMBLE
-			0,				# unRumbleType
-			0,				# unIntensity
-			left,			# unLeftMotorSpeed
-			0,				# nLeftGain
-			right,			# unRightMotorSpeed
-			0,				# nRightGain
+		data = struct.pack(
+			"<BBHHBHB",
+			0x80,  # ID_OUT_REPORT_HAPTIC_RUMBLE
+			0,  # unRumbleType
+			0,  # unIntensity
+			left,  # unLeftMotorSpeed
+			0,  # nLeftGain
+			right,  # unRightMotorSpeed
+			0,  # nRightGain
 		)
 		self._last_rumble = time.time()
 		self._send_output(data)
 
-
 	def _stop_rumble(self):
-		""" Sends a report that stops both motors """
-		self._send_output(struct.pack('<BBHHBHB',
-			0x80, 0, 0, 0, 0, 0, 0))
-
+		"""Sends a report that stops both motors"""
+		self._send_output(struct.pack("<BBHHBHB", 0x80, 0, 0, 0, 0, 0, 0))
 
 	def input(self, data):
 		now = time.time()
@@ -468,18 +455,16 @@ class SC2Controller(Controller):
 			return
 
 		# Parse TritonMTUFull_t / TritonMTUNoQuat_t payload
-		buttons, trig_l, trig_r, stick_x, stick_y, rstick_x, rstick_y = \
-			struct.unpack_from('<IHhhhhh', data, 2)
-		lpad_x, lpad_y, lpad_p, rpad_x, rpad_y, rpad_p = \
-			struct.unpack_from('<hhHhhH', data, 18)
+		buttons, trig_l, trig_r, stick_x, stick_y, rstick_x, rstick_y = struct.unpack_from("<IHhhhhh", data, 2)
+		lpad_x, lpad_y, lpad_p, rpad_x, rpad_y, rpad_p = struct.unpack_from("<hhHhhH", data, 18)
 		gpitch = groll = gyaw = 0
 		q_w = q_x = q_y = q_z = 0
 		if len(data) >= 46:
 			# raw angular velocity, not quaternion
-			gyro_x, gyro_y, gyro_z = struct.unpack_from('<hhh', data, 40)
+			gyro_x, gyro_y, gyro_z = struct.unpack_from("<hhh", data, 40)
 			gpitch = int(-gyro_x * GYRO_SCALE)
-			groll  = int(gyro_y * GYRO_SCALE)
-			gyaw   = int(gyro_z * GYRO_SCALE)
+			groll = int(gyro_y * GYRO_SCALE)
+			gyaw = int(gyro_z * GYRO_SCALE)
 
 		# Button translation
 		sc_buttons = 0
@@ -494,66 +479,73 @@ class SC2Controller(Controller):
 
 		state = SC2Input(
 			sc_buttons,
-			ltrig, rtrig,
-			stick_x,	stick_y,
-			rstick_x,	rstick_y,
+			ltrig,
+			rtrig,
+			stick_x,
+			stick_y,
+			rstick_x,
+			rstick_y,
 			lpad_x if buttons & (1 << 25) else 0,
 			lpad_y if buttons & (1 << 25) else 0,
 			rpad_x if buttons & (1 << 21) else 0,
 			rpad_y if buttons & (1 << 21) else 0,
-			map_dpad(buttons, 1 << 12, 1 << 11),	# dpad_x
-			map_dpad(buttons, 1 << 10, 1 << 13),	# dpad_y
-			gpitch, groll, gyaw,
-			q_w, q_x, q_y, q_z,
+			map_dpad(buttons, 1 << 12, 1 << 11),  # dpad_x
+			map_dpad(buttons, 1 << 10, 1 << 13),  # dpad_y
+			gpitch,
+			groll,
+			gyaw,
+			q_w,
+			q_x,
+			q_y,
+			q_z,
 		)
 
 		state = self._prepare_input_state(state)
 		old_state, self._old_state = self._old_state, state
 		self.mapper.input(self, old_state, state)
 
-
 	def _prepare_input_state(self, state):
 		"""Hook for transports that need to normalize input reports."""
 		return state
 
-
 	def on_battery(self, data):
-		""" Called when 0x43 battery report is received """
+		"""Called when 0x43 battery report is received"""
 		if len(data) >= 3:
 			self._battery_level = data[2]
 
-
 	def get_battery_level(self):
 		return self._battery_level
-
 
 	def set_gyro_enabled(self, enabled):
 		log.info("Triton: set_gyro_enabled(%s)", enabled)
 		if self._enable_gyros == enabled:
 			return
 		self._enable_gyros = enabled
-		self._send_feature(struct.pack('<BBBBH',
-			FEATURE_REPORT_ID, FEATURE_SET_SETTINGS, 3,
-			SETTING_IMU_MODE, IMU_MODE_ENABLED if enabled else 0))
-
+		self._send_feature(
+			struct.pack(
+				"<BBBBH",
+				FEATURE_REPORT_ID,
+				FEATURE_SET_SETTINGS,
+				3,
+				SETTING_IMU_MODE,
+				IMU_MODE_ENABLED if enabled else 0,
+			)
+		)
 
 	def get_gyro_enabled(self):
 		return self._enable_gyros
 
-
 	def apply_config(self, config):
-		self.set_led_level(float(config['led_level']))
-
+		self.set_led_level(float(config["led_level"]))
 
 	def set_led_level(self, level):
 		level = min(100, max(0, int(level)))
 		if self._led_level == level:
 			return
 		self._led_level = level
-		self._send_feature(struct.pack('<BBBBH',
-			FEATURE_REPORT_ID, FEATURE_SET_SETTINGS, 3,
-			SETTING_LED_USER_BRIGHTNESS, level))
-
+		self._send_feature(
+			struct.pack("<BBBBH", FEATURE_REPORT_ID, FEATURE_SET_SETTINGS, 3, SETTING_LED_USER_BRIGHTNESS, level)
+		)
 
 	def feedback(self, data):
 		"""
@@ -561,7 +553,7 @@ class SC2Controller(Controller):
 		the haptic count (see WholeHapticAction / mapper._rumble_ready)
 		Discrete click or longer rumble
 		"""
-		amplitude = min(data.get_amplitude(), 0xffff)
+		amplitude = min(data.get_amplitude(), 0xFFFF)
 		position = data.get_position()
 		count = max(1, data.get_count())
 		if amplitude <= 0:
@@ -578,9 +570,8 @@ class SC2Controller(Controller):
 		if left == right == 0:
 			self._rumble = None
 			return
-		self._rumble = [ left, right, count ]
+		self._rumble = [left, right, count]
 		self._send_rumble()
-
 
 	def _click(self, data):
 		"""
@@ -594,20 +585,17 @@ class SC2Controller(Controller):
 		else:
 			side = 2
 		amplitude = data.get_amplitude()
-		command = 2 if amplitude >= 4096 else 1	# CLICK_STRONG / CLICK
+		command = 2 if amplitude >= 4096 else 1  # CLICK_STRONG / CLICK
 		gain = round(20.0 * math.log10(max(1, amplitude) / 512.0))
 		gain = max(-23, min(24, gain))
-		self._send_output(
-			struct.pack('<BBBb', 0x82, side, command, gain))
-
+		self._send_output(struct.pack("<BBBb", 0x82, side, command, gain))
 
 	def turnoff(self):
 		log.debug("Turning off SC2 controller %s", self.get_id())
-		self._send_feature(struct.pack('<BBB',
-			FEATURE_REPORT_ID, FEATURE_TURN_OFF, 0))
+		self._send_feature(struct.pack("<BBB", FEATURE_REPORT_ID, FEATURE_TURN_OFF, 0))
 
 
-class SC2BTDriver(object):
+class SC2BTDriver:
 	"""
 	SC2 driver part that handles controller connected over bluetooth (BLE).
 	Uses hidraw transport instead of USB
@@ -618,10 +606,9 @@ class SC2BTDriver(object):
 		self.config = config
 		self.reconnecting = set()
 		self._active = {}
-		daemon.get_device_monitor().add_callback("bluetooth",
-				VENDOR_ID, PRODUCT_SC2_BLE,
-				self.new_device_callback, None)
-
+		daemon.get_device_monitor().add_callback(
+			"bluetooth", VENDOR_ID, PRODUCT_SC2_BLE, self.new_device_callback, None
+		)
 
 	def new_device_callback(self, syspath, *whatever):
 		if syspath in self._active:
@@ -644,13 +631,12 @@ class SC2BTDriver(object):
 			# HIDRaw takes ownership of fh
 			dev = HIDRaw(fh)
 			c = SC2BTDevice(self, syspath, dev)
-		except (OSError, IOError) as e:
+		except OSError as e:
 			fh.close()
 			if syspath in self.reconnecting:
 				log.debug("SC2 reconnect attempt failed: %s", e)
 			else:
-				log.error("SC2 setup failed with IO error, "
-					"scheduling reconnect: %s", e)
+				log.error("SC2 setup failed with IO error, scheduling reconnect: %s", e)
 			self.retry(syspath)
 			return None
 		except Exception as e:
@@ -664,12 +650,10 @@ class SC2BTDriver(object):
 		self.reconnecting.discard(syspath)
 		return c
 
-
 	def _controller_closed(self, syspath, c):
-		""" Called from SC2BTDevice.close() """
+		"""Called from SC2BTDevice.close()"""
 		if self._active.get(syspath) is c:
 			del self._active[syspath]
-
 
 	def retry(self, syspath):
 		"""
@@ -682,24 +666,21 @@ class SC2BTDriver(object):
 		if syspath in self.reconnecting:
 			return
 		self.reconnecting.add(syspath)
-		self.daemon.get_device_monitor().add_remove_callback(
-			syspath, self._retry_cancel)
+		self.daemon.get_device_monitor().add_remove_callback(syspath, self._retry_cancel)
 		self._schedule_retry(syspath)
-
 
 	def _schedule_retry(self, syspath):
 		def reconnect(*a):
 			if syspath not in self.reconnecting:
 				return
 			monitor = self.daemon.get_device_monitor()
-			if getattr(monitor, "known_devs", None) is not None and \
-					syspath not in monitor.known_devs:
+			if getattr(monitor, "known_devs", None) is not None and syspath not in monitor.known_devs:
 				self.reconnecting.discard(syspath)
 				return
 			if self.new_device_callback(syspath) is None:
 				self._schedule_retry(syspath)
-		self.daemon.get_scheduler().schedule(BT_RETRY_INTERVAL, reconnect)
 
+		self.daemon.get_scheduler().schedule(BT_RETRY_INTERVAL, reconnect)
 
 	def _retry_cancel(self, syspath, *a):
 		self.reconnecting.discard(syspath)
@@ -726,9 +707,7 @@ class SC2BTDevice(SC2Controller):
 		self._last_diagnostic = 0.0
 		self._read_errors = 0
 		self._empty_reads = 0
-		self._id = "sc2bt:%s" % (
-			hidrawdev.getPhysicalAddress().decode("utf-8", "ignore")
-					.replace(":", ""), )
+		self._id = "sc2bt:%s" % (hidrawdev.getPhysicalAddress().decode("utf-8", "ignore").replace(":", ""),)
 		try:
 			self.configure()
 		except Exception:
@@ -737,19 +716,15 @@ class SC2BTDevice(SC2Controller):
 		self._ready = True
 		if self._poller:
 			self._poller.register(self._fileno, self._poller.POLLIN, self._input)
-		driver.daemon.get_device_monitor().add_remove_callback(
-			syspath, self.close)
+		driver.daemon.get_device_monitor().add_remove_callback(syspath, self.close)
 		log.debug("SC2 over bluetooth added: %s", self.get_id())
 		driver.daemon.add_controller(self)
-
 
 	def get_type(self):
 		return "sc2"
 
-
 	def __repr__(self):
-		return "<SC2BT %s>" % (self.get_id(), )
-
+		return "<SC2BT %s>" % (self.get_id(),)
 
 	def _io_error(self, op):
 		if self._closed or self._probing:
@@ -760,7 +735,6 @@ class SC2BTDevice(SC2Controller):
 		self._probe_count = 0
 		self._probing = True
 		self._schedule_probe()
-
 
 	def _schedule_probe(self):
 		def probe(*a):
@@ -773,37 +747,34 @@ class SC2BTDevice(SC2Controller):
 				return
 			try:
 				self._hidrawdev.sendFeatureReport(
-					(self._lizard_off_payload() + b'\x00' * 64)[:64][1:],
-					FEATURE_REPORT_ID)
-			except (OSError, IOError):
+					(self._lizard_off_payload() + b"\x00" * 64)[:64][1:], FEATURE_REPORT_ID
+				)
+			except OSError:
 				self._schedule_probe()
 			else:
 				log.debug("SC2 BT connection recovered after IO error")
 				self._probing = False
 				if self._poller:
-					self._poller.register(self._fileno,
-						self._poller.POLLIN, self._input)
-		self.daemon.get_scheduler().schedule(BT_PROBE_INTERVAL, probe)
+					self._poller.register(self._fileno, self._poller.POLLIN, self._input)
 
+		self.daemon.get_scheduler().schedule(BT_PROBE_INTERVAL, probe)
 
 	def _prepare_input_state(self, state):
 		"""Smooth BLE analog reports while keeping button edges immediate."""
 		trash, current = self._input_smoother.process(state)
 		return current
 
-
 	def _send_feature(self, data):
 		"""
 		Sends 64B feature report over hidraw, similar ot USB
 		"""
-		body = (data + b'\x00' * 64)[:64][1:]
+		body = (data + b"\x00" * 64)[:64][1:]
 		try:
 			self._hidrawdev.sendFeatureReport(body, FEATURE_REPORT_ID)
-		except (OSError, IOError):
+		except OSError:
 			if not self._ready:
 				raise
 			self._io_error("feature report")
-
 
 	def _send_output(self, data):
 		"""
@@ -811,16 +782,15 @@ class SC2BTDevice(SC2Controller):
 		"""
 		try:
 			os.write(self._fileno, bytes(data))
-		except (OSError, IOError):
+		except OSError:
 			if not self._ready:
 				raise
 			self._io_error("output report")
 
-
 	def _input(self, *a):
 		try:
 			data = os.read(self._fileno, 64)
-		except (OSError, IOError) as e:
+		except OSError as e:
 			# hidraw may be non-blocking.  EAGAIN means the poll event was
 			# already consumed, not that the Bluetooth link is gone.
 			if getattr(e, "errno", None) in (errno.EAGAIN, errno.EWOULDBLOCK):
@@ -844,15 +814,14 @@ class SC2BTDevice(SC2Controller):
 			log.error(e)
 			log.error(traceback.format_exc())
 
-
 	def _log_read_diagnostics(self):
 		now = time.monotonic()
 		if now - self._last_diagnostic < BT_DIAGNOSTIC_INTERVAL:
 			return
 		self._last_diagnostic = now
-		log.warning("SC2 Bluetooth input instability: %d read errors, %d "
-			"empty reads", self._read_errors, self._empty_reads)
-
+		log.warning(
+			"SC2 Bluetooth input instability: %d read errors, %d empty reads", self._read_errors, self._empty_reads
+		)
 
 	def _disconnect(self):
 		"""
@@ -863,7 +832,6 @@ class SC2BTDevice(SC2Controller):
 		log.debug("IO with SC2 controller failed, assuming disconnection")
 		self.close()
 		self._driver.retry(self.syspath)
-
 
 	def close(self, *a):
 		if self._closed:

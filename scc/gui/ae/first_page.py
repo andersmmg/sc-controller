@@ -1,29 +1,25 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 SC-Controller - Action Editor - First Page
 
 Provides links for quick settings.
 """
-from __future__ import unicode_literals
-from scc.tools import _
 
-from gi.repository import Gtk, Gdk, GLib
+import logging
+
 from scc.actions import Action
 from scc.gui.ae import AEComponent
-from scc.gui.input_names import get_input_name, get_app_config
+from scc.gui.input_names import get_app_config, get_input_name
 
-
-import os, logging
 log = logging.getLogger("AE.1st")
 
-__all__ = [ 'FirstPage' ]
+__all__ = ["FirstPage"]
 
 MARKUP_BUTTON = """
 <big>%(what)s: Quick settings</big>
 
   • Map to <a href='page://buttons'>Button</a>
-  
+
   • Use to <a href='quick://menu("Default.menu")'>display on-screen menu</a>
 """
 
@@ -31,9 +27,9 @@ MARKUP_TRIGGER = """
 <big>%(what)s: Quick settings</big>
 
   • Map to <a href='quick://axis(Axes.ABS_Z)'>Left</a> or <a href='quick://axis(Axes.ABS_RZ)'>Right</a> Trigger
-  
+
   • Map to <a href='quick://trigger(50, 255, button(Keys.BTN_LEFT))'>Left</a> or <a href='quick://trigger(50, 255, button(Keys.BTN_RIGHT))'>Right</a> mouse button
-  
+
   • Map to <a href='grab://trigger_button'>Button</a>
 """
 
@@ -67,9 +63,9 @@ MARKUP_GYRO = """
 <big>Gyro: Quick settings</big>
 
   • Setup for aiming when right <a href='quick://mode(RPADTOUCH, mouse(ROLL), None)'>pad is touched</a>
-  
+
   • Setup for aiming when right <a href='quick://mode(LT >= 0.7, mouse(ROLL), None)'>trigger is pushed</a>
-  
+
   • <a href='quick://sens(3.5, 3.5, 3.5, mouse(ROLL))'>Use as mouse</a>
 """
 
@@ -79,10 +75,10 @@ class FirstPage(AEComponent):
 	NAME = "first_page"
 	CTXS = 0
 	PRIORITY = 999
-	
+
 	def __init__(self, app, editor):
 		AEComponent.__init__(self, app, editor)
-	
+
 	def load(self):
 		if AEComponent.load(self):
 			markup = ""
@@ -96,12 +92,11 @@ class FirstPage(AEComponent):
 				markup = MARKUP_TRIGGER
 			else:
 				markup = MARKUP_BUTTON
-			
-			markup = markup % {
-				'what' : get_input_name(self.editor.get_id(), get_app_config(self.app))
-			}
+
+			markup = markup % {"what": get_input_name(self.editor.get_id(), get_app_config(self.app))}
 			self.builder.get_object("lblMarkup").set_markup(markup.strip(" \r\n\t"))
 			return True
-	
+		return None
+
 	def on_lblMarkup_activate_link(self, trash, link):
 		self.editor.on_link(link)

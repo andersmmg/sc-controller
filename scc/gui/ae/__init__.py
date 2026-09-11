@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
-""" ae - Action Editor components """
-from __future__ import unicode_literals
-from scc.tools import _
+"""ae - Action Editor components"""
 
-from gi.repository import Gtk, Gdk, GLib
+import logging
+import os
+
+import gi
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+
+from gi.repository import Gdk, GLib, Gtk
+
 from scc.actions import Action, NoAction, XYAction
 from scc.gui.editor import ComboSetter
-from scc.tools import ensure_size
+from scc.tools import _, ensure_size
 
-import os, logging
 unicode = str  # Python 2 compatibility alias
 log = logging.getLogger("AE")
+
 
 class AEComponent(ComboSetter):
 	GLADE = None
@@ -19,36 +26,31 @@ class AEComponent(ComboSetter):
 	# Bit mask of contexes (Action.AC_BUTTON | Action.AC_TRIGGER...) that this
 	# compoment can handle.
 	CTXS = 0
-	
+
 	def __init__(self, app, editor):
 		self.app = app
 		self.editor = editor
 		self.loaded = False
-	
-	
+
 	def get_button_title(self):
 		raise Exception("Implement me!")
-	
-	
+
 	# TODO: Rename this to on_shown
 	def shown(self):
-		""" Called after user switches TO page """
+		"""Called after user switches TO page"""
 		pass
-	
-	
+
 	# TODO: Rename this to on_shown
 	def hidden(self):
-		""" Called after user switches AWAY from page """
+		"""Called after user switches AWAY from page"""
 		pass
-	
-	
+
 	def on_ok(self, action):
 		"""
 		Called when user presses OK, after action is send to main window
 		"""
 		pass
-	
-	
+
 	def load(self):
 		"""
 		Performs whatever component needs to get loaded.
@@ -64,12 +66,10 @@ class AEComponent(ComboSetter):
 		self.builder.connect_signals(self)
 		self.loaded = True
 		return True
-	
-	
+
 	def is_loaded(self):
 		return self.loaded
-	
-	
+
 	def handles(self, mode, action):
 		"""
 		Returns True if component can display and edit specified action.
@@ -77,25 +77,21 @@ class AEComponent(ComboSetter):
 		higher PRIORITY is used
 		"""
 		return False
-	
-	
+
 	def set_action(self, mode, action):
 		"""
 		Setups component widgets to display currently set action.
 		"""
 		pass
-	
-	
+
 	def modifier_updated(self):
 		"""
 		Called when values of any modifier is changed.
 		"""
 		pass
-	
-	
+
 	def get_widget(self):
 		return self.widget
-
 
 
 def describe_action(mode, cls, v):
@@ -104,11 +100,10 @@ def describe_action(mode, cls, v):
 	Returns "not set" if v is None
 	"""
 	if v is None or type(v) in (int, float, str, unicode):
-		return _('(not set)')
-	elif isinstance(v, Action):
+		return _("(not set)")
+	if isinstance(v, Action):
 		dsc = v.describe(Action.AC_STICK if cls == XYAction else Action.AC_BUTTON)
 		if "\n" in dsc:
 			dsc = "<small>" + "\n".join(dsc.split("\n")[0:2]) + "</small>"
 		return dsc
-	else:
-		return (cls(v)).describe(mode)
+	return (cls(v)).describe(mode)

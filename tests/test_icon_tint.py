@@ -1,15 +1,24 @@
 """
 Tests for controller icon tinting (scc.gui.icon_tint).
 """
+
 from scc.gui.icon_tint import (
-	PRESET_COLORS, DEFAULT_COLOR, _parse_hex, tint_gray, tint_svg,
-	auto_assign_color, get_icon_color, get_icon_shape, shape_name,
+	DEFAULT_COLOR,
+	PRESET_COLORS,
 	SHAPE_NAMES,
+	_parse_hex,
+	auto_assign_color,
+	get_icon_color,
+	get_icon_shape,
+	shape_name,
+	tint_gray,
+	tint_svg,
 )
 
 
-class FakeConfig(object):
-	""" Minimal stand-in for scc.config.Config """
+class FakeConfig:
+	"""Minimal stand-in for scc.config.Config"""
+
 	def __init__(self, controllers=None):
 		self.values = {"controllers": controllers or {}}
 		self.saved = False
@@ -24,7 +33,7 @@ class FakeConfig(object):
 
 
 def _hex_to_rgb(h):
-	return tuple(int(h[i:i + 2], 16) for i in (1, 3, 5))
+	return tuple(int(h[i : i + 2], 16) for i in (1, 3, 5))
 
 
 def test_parse_hex():
@@ -36,8 +45,8 @@ def test_parse_hex():
 
 
 def test_tint_preserves_grays():
-	""" Black, white and pure grays tint to shades of the color;
-	tinting with a gray color is identity. """
+	"""Black, white and pure grays tint to shades of the color;
+	tinting with a gray color is identity."""
 	assert tint_gray("#000000", "#ff0000") == "#000000"
 	assert tint_gray("#ffffff", "#00ff00") == "#ffffff"
 	assert tint_gray("#808080", "#808080") == "#808080"
@@ -45,8 +54,8 @@ def test_tint_preserves_grays():
 
 
 def test_tint_leaves_saturated_accents_alone():
-	""" Non-gray colors in a base (eg. the blue bluetooth logos)
-	must pass through tinting unchanged. """
+	"""Non-gray colors in a base (eg. the blue bluetooth logos)
+	must pass through tinting unchanged."""
 	assert tint_gray("#0066ff", "#00ff00") == "#0066ff"
 	assert tint_gray("#003059", "#ff0000") == "#003059"
 	assert tint_gray("#ff00ff", "#ffff00") == "#ff00ff"
@@ -58,7 +67,7 @@ def test_tint_leaves_saturated_accents_alone():
 
 
 def test_tint_keeps_lightness_ramp():
-	""" Darker grays must stay darker after tinting. """
+	"""Darker grays must stay darker after tinting."""
 	color = "#ff0000"
 	last = -1
 	for gray in ("#202020", "#505050", "#808080", "#bbbbbb", "#f0f0f0"):

@@ -24,63 +24,63 @@
 
 
 import ast
+import operator as op
 import os
 import shlex
 from collections import OrderedDict
-import operator as op
+from collections.abc import Callable
+from typing import Any
 
-OPERATORS = {
-	ast.Add	: op.add,
-	ast.Sub	: op.sub,
-	ast.Mult   : op.mul,
-	ast.Div	: op.floordiv,
-	ast.Mod	: op.mod,
-	ast.LShift : op.lshift,
-	ast.RShift : op.rshift,
-	ast.BitOr  : op.or_,
-	ast.BitXor : op.xor,
-	ast.BitAnd : op.and_,
-	ast.Invert : op.invert,
-	ast.Not	: op.not_,
-	ast.UAdd   : op.pos,
-	ast.USub   : op.neg,
-	ast.And	: op.and_,
-	ast.Or	 : op.or_,
-	ast.Eq	 : op.eq,
-	ast.NotEq  : op.ne,
-	ast.Lt	 : op.lt,
-	ast.LtE	: op.le,
-	ast.Gt	 : op.gt,
-	ast.GtE	: op.ge,
+OPERATORS: dict[type, Callable[..., Any]] = {
+	ast.Add: op.add,
+	ast.Sub: op.sub,
+	ast.Mult: op.mul,
+	ast.Div: op.floordiv,
+	ast.Mod: op.mod,
+	ast.LShift: op.lshift,
+	ast.RShift: op.rshift,
+	ast.BitOr: op.or_,
+	ast.BitXor: op.xor,
+	ast.BitAnd: op.and_,
+	ast.Invert: op.invert,
+	ast.Not: op.not_,
+	ast.UAdd: op.pos,
+	ast.USub: op.neg,
+	ast.And: op.and_,
+	ast.Or: op.or_,
+	ast.Eq: op.eq,
+	ast.NotEq: op.ne,
+	ast.Lt: op.lt,
+	ast.LtE: op.le,
+	ast.Gt: op.gt,
+	ast.GtE: op.ge,
 }
 
-def eval_expr(expr):
 
-	""" Eval and expression inside a #define using a suppart of python grammar """
+def eval_expr(expr: str) -> Any:
+	"""Eval and expression inside a #define using a suppart of python grammar"""
 
-	def _eval(node):
+	def _eval(node: ast.AST) -> Any:
 		if isinstance(node, ast.Constant):
 			return node.value
-		elif isinstance(node, ast.BinOp):
+		if isinstance(node, ast.BinOp):
 			return OPERATORS[type(node.op)](_eval(node.left), _eval(node.right))
-		elif isinstance(node, ast.UnaryOp):
+		if isinstance(node, ast.UnaryOp):
 			return OPERATORS[type(node.op)](_eval(node.operand))
-		elif isinstance(node, ast.BoolOp):
+		if isinstance(node, ast.BoolOp):
 			total = _eval(node.values[0])
 			for x in node.values[1:]:
 				total = OPERATORS[type(node.op)](total, _eval(x))
 			return total
-		else:
-			raise TypeError(node)
+		raise TypeError(node)
 
-	return _eval(ast.parse(expr, mode='eval').body)
+	return _eval(ast.parse(expr, mode="eval").body)
 
 
-def defines(base, include):
+def defines(base: str, include: str) -> "OrderedDict[str, Any]":
+	"""Extract #define from base/include following #includes"""
 
-	""" Extract #define from base/include following #includes """
-
-	out = OrderedDict()
+	out: OrderedDict[str, Any] = OrderedDict()
 	parsed = set()
 	fname = os.path.normpath(os.path.abspath(os.path.join(base, include)))
 	parsed.add(fname)
@@ -88,61 +88,59 @@ def defines(base, include):
 	open_fhs = [fh]
 
 	lexer = shlex.shlex(fh, posix=True)
-	lexer.whitespace = ' \t\r'
-	lexer.commenters = ''
+	lexer.whitespace = " \t\r"
+	lexer.commenters = ""
 	lexer.quotes = '"'
 
-	def parse_c_comments(lexer, tok, ntok):
-		if tok != '/' or ntok != '*':
+	def parse_c_comments(lexer: shlex.shlex, tok: str, ntok: str) -> bool:
+		if tok != "/" or ntok != "*":
 			return False
 		quotes = lexer.quotes
-		lexer.quotes = ''
+		lexer.quotes = ""
 		while True:
-			tok = lexer.get_token()
-			ntok = lexer.get_token()
-			if tok == '*' and ntok == '/':
+			tok = lexer.get_token() or ""
+			ntok = lexer.get_token() or ""
+			if tok == "*" and ntok == "/":
 				lexer.quotes = quotes
 				break
-			else:
-				lexer.push_token(ntok)
+			lexer.push_token(ntok)
 		return True
 
-	def parse_cpp_comments(lexer, tok, ntok):
-		if tok != '/' or ntok != '/':
+	def parse_cpp_comments(lexer: shlex.shlex, tok: str, ntok: str) -> bool:
+		if tok != "/" or ntok != "/":
 			return False
 		quotes = lexer.quotes
-		lexer.quotes = ''
+		lexer.quotes = ""
 		while True:
-			tok = lexer.get_token()
-			if tok == '\n':
+			tok = lexer.get_token() or ""
+			if tok == "\n":
 				lexer.quotes = quotes
 				lexer.push_token(tok)
 				break
 		return True
 
 	while True:
-		tok = lexer.get_token()
-		if not tok or tok == '':
+		tok = lexer.get_token() or ""
+		if not tok or tok == "":
 			break
-		ntok = lexer.get_token()
+		ntok = lexer.get_token() or ""
 
 		if parse_c_comments(lexer, tok, ntok):
 			continue
 		if parse_cpp_comments(lexer, tok, ntok):
 			continue
 
-		if tok != '\n' or ntok != '#':
+		if tok != "\n" or ntok != "#":
 			lexer.push_token(ntok)
 			continue
 
-		tok = lexer.get_token()
-		if tok == 'define':
-			name = lexer.get_token()
-			expr = ''
+		tok = lexer.get_token() or ""
+		if tok == "define":
+			name = lexer.get_token() or ""
+			expr = ""
 			while True:
-
-				tok = lexer.get_token()
-				ntok = lexer.get_token()
+				tok = lexer.get_token() or ""
+				ntok = lexer.get_token() or ""
 
 				if parse_c_comments(lexer, tok, ntok):
 					continue
@@ -150,9 +148,9 @@ def defines(base, include):
 					continue
 				lexer.push_token(ntok)
 
-				if not tok or tok == '':
+				if not tok or tok == "":
 					break
-				if tok == '\n':
+				if tok == "\n":
 					lexer.push_token(tok)
 					break
 
@@ -165,20 +163,19 @@ def defines(base, include):
 				out[name] = val
 			except (SyntaxError, TypeError):
 				pass
-		elif tok == 'include':
-
-			tok = lexer.get_token()
-			if tok == '<':
-				name = ''
+		elif tok == "include":
+			tok = lexer.get_token() or ""
+			if tok == "<":
+				name = ""
 				while True:
-					tok = lexer.get_token()
-					if tok == '>':
+					tok = lexer.get_token() or ""
+					if tok == ">":
 						break
 					name = name + tok
 			else:
 				name = tok
 			fname = os.path.normpath(os.path.abspath(os.path.join(base, name)))
-			if os.path.isfile(fname) and not fname in parsed:
+			if os.path.isfile(fname) and fname not in parsed:
 				parsed.add(fname)
 				fh2 = open(fname)
 				open_fhs.append(fh2)
@@ -192,8 +189,9 @@ def defines(base, include):
 	return out
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 	import sys
+
 	definesDict = defines(sys.argv[1], sys.argv[2])
 	for k, v in definesDict.items():
-		print("{}:\t{}".format(k, v))
+		print(f"{k}:\t{v}")

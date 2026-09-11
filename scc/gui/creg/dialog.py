@@ -6,36 +6,48 @@ Dialog that asks a lot of question to create configuration node in config file.
 Most "interesting" thing here may be that this works 100% independently from
 daemon.
 """
-from __future__ import unicode_literals
-from scc.tools import _
 
 import gi
+
+from scc.tools import _
+
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib, GdkPixbuf
-from scc.gui.svg_widget import SVGWidget
-from scc.gui.input_test import render_test_cursor, rotate_input_vector
-from scc.gui.creg.constants import SDL_TO_SCC_NAMES, STICK_PAD_AREAS
-from scc.gui.creg.constants import AXIS_ORDER, SDL_AXES, SDL_DPAD
-from scc.gui.creg.constants import BUTTON_ORDER, TRIGGER_AREAS
-from scc.gui.creg.grabs import InputGrabber, TriggerGrabber, StickGrabber
-from scc.gui.creg.data import AxisData, DPadEmuData
-from scc.gui.creg.tester import Tester
-from scc.gui.controller_image import ControllerImage
-from scc.gui.editor import Editor
-from scc.gui.app import App
-from scc.constants import SCButtons, STICK_PAD_MAX, STICK_PAD_MIN
-from scc.paths import get_config_path, get_share_path
-from scc.tools import nameof, clamp
-from scc.config import Config
+import json
+import logging
+import os
+import re
 
 import evdev
-import os, logging, json, re
+from gi.repository import GLib, Gtk
+
+from scc.config import Config
+from scc.constants import STICK_PAD_MAX, STICK_PAD_MIN, SCButtons
+from scc.gui.app import App
+from scc.gui.controller_image import ControllerImage
+from scc.gui.creg.constants import (
+	AXIS_ORDER,
+	BUTTON_ORDER,
+	SDL_AXES,
+	SDL_DPAD,
+	SDL_TO_SCC_NAMES,
+	STICK_PAD_AREAS,
+	TRIGGER_AREAS,
+)
+from scc.gui.creg.data import AxisData, DPadEmuData
+from scc.gui.creg.grabs import InputGrabber, StickGrabber, TriggerGrabber
+from scc.gui.creg.tester import Tester
+from scc.gui.editor import Editor
+from scc.gui.input_test import render_test_cursor, rotate_input_vector
+from scc.gui.svg_widget import SVGWidget
+from scc.paths import get_config_path, get_share_path
+from scc.tools import clamp, nameof
+
 log = logging.getLogger("CRegistration")
 
 
 class ControllerRegistration(Editor):
 	GLADE = "creg.glade"
-	UNASSIGNED_COLOR = "#FFFF0000"		# ARGB
+	UNASSIGNED_COLOR = "#FFFF0000"  # ARGB
 	OBSERVE_COLORS = (
 		App.OBSERVE_COLOR,
 		# Following just replaces 'full alpha' in ARGB with various alpha values
@@ -49,10 +61,12 @@ class ControllerRegistration(Editor):
 		Editor.__init__(self)
 		self.app = app
 		self._gamepad_icon = SVGWidget.render_svg_file(
-				os.path.join(self.app.imagepath, "controller-icons", "evdev.svg"), *self.app.get_svg_invert())
+			os.path.join(self.app.imagepath, "controller-icons", "evdev.svg"), *self.app.get_svg_invert()
+		)
 		self._other_icon = SVGWidget.render_svg_file(
-				os.path.join(self.app.imagepath, "controller-icons", "unknown.svg"), *self.app.get_svg_invert())
-		self._axis_data = [ AxisData(name, xy) for (name, xy) in AXIS_ORDER ]
+			os.path.join(self.app.imagepath, "controller-icons", "unknown.svg"), *self.app.get_svg_invert()
+		)
+		self._axis_data = [AxisData(name, xy) for (name, xy) in AXIS_ORDER]
 		self.setup_widgets()
 		self._controller_image = None
 		self._evdevice = None
@@ -65,21 +79,19 @@ class ControllerRegistration(Editor):
 		self._hilighted_area = None
 		self.refresh_devices()
 
-
 	def setup_widgets(self):
 		Editor.setup_widgets(self)
 		cursors = {}
 		for axis in self._axis_data:
 			if "trig" in axis.name:
 				continue
-			axis.cursor = cursors[axis.area] = ( cursors.get(axis.area) or
-				Gtk.Image.new_from_pixbuf(render_test_cursor(os.path.join(
-				self.app.imagepath, "test-cursor.svg"), *self.app.get_svg_invert())) )
-			axis.cursor.position = [ 0, 0 ]
+			axis.cursor = cursors[axis.area] = cursors.get(axis.area) or Gtk.Image.new_from_pixbuf(
+				render_test_cursor(os.path.join(self.app.imagepath, "test-cursor.svg"), *self.app.get_svg_invert())
+			)
+			axis.cursor.position = [0, 0]
 		self.builder.get_object("cbInvert_1").set_active(True)
 		self.builder.get_object("cbInvert_3").set_active(True)
 		self.builder.get_object("cbInvert_5").set_active(True)
-
 
 	@staticmethod
 	def does_he_looks_like_a_gamepad(dev):
@@ -90,7 +102,7 @@ class ControllerRegistration(Editor):
 		"""
 
 		# Strip special symbols
-		name = re.sub( r"[^a-zA-Z0-9.]+", ' ', dev.name.lower() )
+		name = re.sub(r"[^a-zA-Z0-9.]+", " ", dev.name.lower())
 
 		# ... but some cheating first
 		if "keyboard" in name:
@@ -102,13 +114,12 @@ class ControllerRegistration(Editor):
 		if "gamepad" in name:
 			return True
 		caps = dev.capabilities(verbose=False)
-		if evdev.ecodes.EV_ABS in caps: # Has axes
-			if evdev.ecodes.EV_KEY in caps: # Has buttons
+		if evdev.ecodes.EV_ABS in caps:  # Has axes
+			if evdev.ecodes.EV_KEY in caps:  # Has buttons
 				for button in caps[evdev.ecodes.EV_KEY]:
 					if button >= evdev.ecodes.BTN_0 and button <= evdev.ecodes.BTN_GEAR_UP:
 						return True
 		return False
-
 
 	def load_sdl_mappings(self):
 		"""
@@ -126,17 +137,17 @@ class ControllerRegistration(Editor):
 		wordswap = lambda i: ((i & 0xFF) << 8) | ((i & 0xFF00) >> 8)
 		# TODO: version?
 		weird_id = "%.4x%.8x%.8x%.8x0000" % (
-				wordswap(self._evdevice.info.bustype),
-				wordswap(self._evdevice.info.vendor),
-				wordswap(self._evdevice.info.product),
-				wordswap(self._evdevice.info.version)
+			wordswap(self._evdevice.info.bustype),
+			wordswap(self._evdevice.info.vendor),
+			wordswap(self._evdevice.info.product),
+			wordswap(self._evdevice.info.version),
 		)
 
 		# Search in database
 		try:
-			db = open(os.path.join(get_share_path(), "gamecontrollerdb.txt"), "r")
+			db = open(os.path.join(get_share_path(), "gamecontrollerdb.txt"))
 		except Exception as e:
-			log.error('Failed to load gamecontrollerdb')
+			log.error("Failed to load gamecontrollerdb")
 			log.exception(e)
 			return False
 
@@ -156,7 +167,7 @@ class ControllerRegistration(Editor):
 								except IndexError:
 									log.warning("Skipping unknown gamecontrollerdb button mapping: '%s'", v)
 									continue
-							button  = getattr(SCButtons, k.upper())
+							button = getattr(SCButtons, k.upper())
 							self._mappings[keycode] = button
 						elif v.startswith("b") and k in SDL_AXES:
 							try:
@@ -211,7 +222,6 @@ class ControllerRegistration(Editor):
 
 		return False
 
-
 	def generate_mappings(self):
 		"""
 		Generates initial mappings, just to have some preset to show.
@@ -223,23 +233,22 @@ class ControllerRegistration(Editor):
 		log.debug("Axes: %s", self._tester.axes)
 		for axis in self._tester.axes:
 			self._mappings[axis], axes = axes[0], axes[1:]
-			if len(axes) == 0: break
+			if len(axes) == 0:
+				break
 		for button in self._tester.buttons:
 			self._mappings[button], buttons = buttons[0], buttons[1:]
-			if len(buttons) == 0: break
-
+			if len(buttons) == 0:
+				break
 
 	def generate_unassigned(self):
 		unassigned = set()
 		unassigned.clear()
-		assigned_axes = set([ x for x in self._mappings.values()
-							if isinstance(x, AxisData) ])
-		assigned_axes.update([ x.axis_data for x in self._mappings.values()
-							if isinstance(x, DPadEmuData) ])
-		assigned_buttons = set([ x for x in self._mappings.values()
-							if x in SCButtons.__members__.values() ])
-		assigned_buttons.update([ x.button for x in self._mappings.values()
-							if isinstance(x, DPadEmuData) and x.button is not None ])
+		assigned_axes = {x for x in self._mappings.values() if isinstance(x, AxisData)}
+		assigned_axes.update([x.axis_data for x in self._mappings.values() if isinstance(x, DPadEmuData)])
+		assigned_buttons = {x for x in self._mappings.values() if x in SCButtons.__members__.values()}
+		assigned_buttons.update(
+			[x.button for x in self._mappings.values() if isinstance(x, DPadEmuData) and x.button is not None]
+		)
 		for a in BUTTON_ORDER:
 			if a not in assigned_buttons:
 				if a not in (SCButtons.RGRIP, SCButtons.LGRIP):
@@ -254,28 +263,27 @@ class ControllerRegistration(Editor):
 				unassigned.add(a)
 		for a in STICK_PAD_AREAS:
 			area_name, axes = STICK_PAD_AREAS[a]
-			has_mapping = bool(sum([
-				self._axis_data[index] in assigned_axes for index in axes ]))
+			has_mapping = bool(sum([self._axis_data[index] in assigned_axes for index in axes]))
 			if not has_mapping:
 				unassigned.add(area_name)
 
 		hilight = unassigned - self._unassigned
 		unhilight = self._unassigned - unassigned
 		self._unassigned = unassigned
-		for a in hilight:   self.hilight(a, self.UNASSIGNED_COLOR)
-		for a in unhilight: self.unhilight(a)
-
+		for a in hilight:
+			self.hilight(a, self.UNASSIGNED_COLOR)
+		for a in unhilight:
+			self.unhilight(a)
 
 	def generate_raw_data(self):
 		cbControllerButtons = self.builder.get_object("cbControllerButtons")
 		cbControllerType = self.builder.get_object("cbControllerType")
 		buffRawData = self.builder.get_object("buffRawData")
-		config = dict(
-			buttons = {},
-			axes = {},
-			dpads = {},
-		)
-
+		config = {
+			"buttons": {},
+			"axes": {},
+			"dpads": {},
+		}
 
 		def axis_to_json(axisdata):
 			index = self._axis_data.index(axisdata)
@@ -284,11 +292,7 @@ class ControllerRegistration(Editor):
 			if axisdata.invert:
 				min, max = max, min
 
-			rv = dict(
-				axis = target_axis,
-				min = min,
-				max = max
-			)
+			rv = {"axis": target_axis, "min": min, "max": max}
 			if target_axis not in ("ltrig", "rtrig"):
 				# Deadzone is generated with assumption that all sticks are left
 				# in center position before 'Save' is pressed.
@@ -303,60 +307,62 @@ class ControllerRegistration(Editor):
 
 		for code, target in self._mappings.items():
 			if target in SCButtons:
-				config['buttons'][code] = nameof(target)
+				config["buttons"][code] = nameof(target)
 			elif isinstance(target, DPadEmuData):
-				config['dpads'][code] = axis_to_json(target.axis_data)
-				config['dpads'][code]["positive"] = target.positive
+				config["dpads"][code] = axis_to_json(target.axis_data)
+				config["dpads"][code]["positive"] = target.positive
 				if target.button is not None:
-					config['dpads'][code]["button"] = nameof(target.button)
+					config["dpads"][code]["button"] = nameof(target.button)
 			elif isinstance(target, AxisData):
-				config['axes'][code] = axis_to_json(target)
+				config["axes"][code] = axis_to_json(target)
 
 		group = cbControllerButtons.get_model()[cbControllerButtons.get_active()][0]
 		controller = cbControllerType.get_model()[cbControllerType.get_active()][0]
-		config['gui'] = {
-			'background' : controller,
-			'buttons': self._groups[group]
-		}
+		config["gui"] = {"background": controller, "buttons": self._groups[group]}
 
-		buffRawData.set_text(json.dumps(config, sort_keys=True,
-						indent=4, separators=(',', ': ')))
-
+		buffRawData.set_text(json.dumps(config, sort_keys=True, indent=4, separators=(",", ": ")))
 
 	def load_buttons(self):
 		cbControllerButtons = self.builder.get_object("cbControllerButtons")
 		self._groups = {}
 		model = cbControllerButtons.get_model()
-		model.clear()		# re-entry safe; may have been loaded before
-		with open(os.path.join(self.app.imagepath,
-				"button-images", "groups.json"), "r") as fh:
+		model.clear()  # re-entry safe; may have been loaded before
+		with open(os.path.join(self.app.imagepath, "button-images", "groups.json")) as fh:
 			groups = json.loads(fh.read())
 		for group in groups:
 			inverted, brightness = self.app.get_svg_invert()
-			images = [ SVGWidget.render_svg_file(os.path.join(
-				self.app.imagepath, "button-images", "%s.svg" % (b, )), inverted, brightness)
-				for b in group['buttons'][0:4] ]
-			model.append( [group['key']] + images )
-			self._groups[group['key']] = group['buttons']
+			images = [
+				SVGWidget.render_svg_file(
+					os.path.join(self.app.imagepath, "button-images", "%s.svg" % (b,)), inverted, brightness
+				)
+				for b in group["buttons"][0:4]
+			]
+			model.append([group["key"], *images])
+			self._groups[group["key"]] = group["buttons"]
 		cbControllerButtons.set_active(0)
-
 
 	def save_registration(self):
 		self.generate_raw_data()
 		buffRawData = self.builder.get_object("buffRawData")
-		jsondata = buffRawData.get_text(buffRawData.get_start_iter(),
-			buffRawData.get_end_iter(), True)
+		jsondata = buffRawData.get_text(buffRawData.get_start_iter(), buffRawData.get_end_iter(), True)
 		try:
 			os.makedirs(os.path.join(get_config_path(), "devices"))
-		except: pass
+		except Exception:
+			pass
 
-		filename = self._evdevice.name.strip().replace("/","")
+		filename = self._evdevice.name.strip().replace("/", "")
 		if self._tester.driver == "hid":
-			filename = "%.4x:%.4x-%s" % (self._evdevice.info.vendor,
-				self._evdevice.info.product, filename)
+			filename = "%.4x:%.4x-%s" % (self._evdevice.info.vendor, self._evdevice.info.product, filename)
 
-		config_file = os.path.join(get_config_path(), "devices",
-				"%s-%s.json" % (self._tester.driver, filename,))
+		config_file = os.path.join(
+			get_config_path(),
+			"devices",
+			"%s-%s.json"
+			% (
+				self._tester.driver,
+				filename,
+			),
+		)
 
 		with open(config_file, "w") as fh:
 			fh.write(jsondata)
@@ -366,24 +372,20 @@ class ControllerRegistration(Editor):
 		self.window.destroy()
 		GLib.timeout_add_seconds(1, self.app.dm.rescan)
 
-
 	def on_buffRawData_changed(self, buffRawData, *a):
 		btNext = self.builder.get_object("btNext")
-		jsondata = buffRawData.get_text(buffRawData.get_start_iter(),
-			buffRawData.get_end_iter(), True)
+		jsondata = buffRawData.get_text(buffRawData.get_start_iter(), buffRawData.get_end_iter(), True)
 		try:
 			json.loads(jsondata)
 			btNext.set_sensitive(True)
-		except Exception as e:
+		except Exception:
 			# User can modify generated json code before hitting save,
 			# but if he writes something unparsable, save button is disabled
 			btNext.set_sensitive(False)
 
-
 	def on_ibHIDWarning_response(self, *a):
 		rvHIDWarning = self.builder.get_object("rvHIDWarning")
 		rvHIDWarning.set_reveal_child(False)
-
 
 	def on_btNext_clicked(self, *a):
 		rvController = self.builder.get_object("rvController")
@@ -396,13 +398,16 @@ class ControllerRegistration(Editor):
 		if index == 0:
 			model, iter = tvDevices.get_selection().get_selected()
 			dev = evdev.InputDevice(model[iter][0])
-			if (dev.info.vendor, dev.info.product) == (0x054c, 0x09cc):
+			if (dev.info.vendor, dev.info.product) == (0x054C, 0x09CC):
 				# Special case for PS4 controller
 				cbDS4 = self.builder.get_object("cbDS4")
 				imgDS4 = self.builder.get_object("imgDS4")
-				imgDS4.set_from_pixbuf(SVGWidget.render_svg_file(os.path.join(
-						self.app.imagepath, "ds4-small.svg"), *self.app.get_svg_invert()))
-				cbDS4.set_active(Config()['drivers']['ds4drv'])
+				imgDS4.set_from_pixbuf(
+					SVGWidget.render_svg_file(
+						os.path.join(self.app.imagepath, "ds4-small.svg"), *self.app.get_svg_invert()
+					)
+				)
+				cbDS4.set_active(Config()["drivers"]["ds4drv"])
 				stDialog.set_visible_child(pages[3])
 				btBack.set_sensitive(True)
 				btNext.set_label("_Restart Emulation")
@@ -428,7 +433,6 @@ class ControllerRegistration(Editor):
 			self.kill_tester()
 			self.window.destroy()
 
-
 	def on_btBack_clicked(self, *a):
 		stDialog = self.builder.get_object("stDialog")
 		btBack = self.builder.get_object("btBack")
@@ -451,12 +455,10 @@ class ControllerRegistration(Editor):
 			btBack.set_sensitive(False)
 			btNext.set_sensitive(True)
 
-
 	def on_cbDS4_toggled(self, button):
 		config = Config()
-		config['drivers']['ds4drv'] = button.get_active()
+		config["drivers"]["ds4drv"] = button.get_active()
 		config.save()
-
 
 	def prepare_registration(self, dev):
 		self._evdevice = dev
@@ -464,7 +466,8 @@ class ControllerRegistration(Editor):
 
 		def retry_with_evdev(tester, code):
 			if tester:
-				for s in tester.__signals: tester.disconnect(s)
+				for s in tester.__signals:
+					tester.disconnect(s)
 				tester.stop()
 			self.set_hid_enabled(False)
 			if code != 0:
@@ -476,8 +479,8 @@ class ControllerRegistration(Editor):
 			log.debug("Trying to use '%s' with evdev driver...", dev.path)
 			self._tester = Tester("evdev", dev.path)
 			self._tester.__signals = [
-				self._tester.connect('ready', self.on_registration_ready),
-				self._tester.connect('error', self.on_device_open_failed)
+				self._tester.connect("ready", self.on_registration_ready),
+				self._tester.connect("error", self.on_device_open_failed),
 			]
 			self._tester.start()
 
@@ -489,15 +492,13 @@ class ControllerRegistration(Editor):
 			log.debug("Bluetooth device, using evdev driver")
 			retry_with_evdev(None, 0)
 		else:
-			log.debug("Trying to use %.4x:%.4x with HID driver...",
-					dev.info.vendor, dev.info.product)
+			log.debug("Trying to use %.4x:%.4x with HID driver...", dev.info.vendor, dev.info.product)
 			self._tester = Tester("hid", "%.4x:%.4x" % (dev.info.vendor, dev.info.product))
 			self._tester.__signals = [
-				self._tester.connect('ready', self.on_registration_ready),
-				self._tester.connect('error', retry_with_evdev),
+				self._tester.connect("ready", self.on_registration_ready),
+				self._tester.connect("error", retry_with_evdev),
 			]
 			self._tester.start()
-
 
 	def on_registration_ready(self, tester):
 		cbAccessMode = self.builder.get_object("cbAccessMode")
@@ -516,10 +517,11 @@ class ControllerRegistration(Editor):
 			self.generate_unassigned()
 			self.generate_raw_data()
 
-		for s in tester.__signals: tester.disconnect(s)
+		for s in tester.__signals:
+			tester.disconnect(s)
 		tester.__signals = [
-			tester.connect('axis', self.on_tester_axis),
-			tester.connect('button', self.on_tester_button),
+			tester.connect("axis", self.on_tester_axis),
+			tester.connect("button", self.on_tester_button),
 		]
 
 		self._controller_image.get_parent().remove(self._controller_image)
@@ -530,7 +532,6 @@ class ControllerRegistration(Editor):
 		btNext.set_label("_Save")
 		btNext.set_sensitive(True)
 
-
 	def on_device_open_failed(self, *a):
 		"""
 		Called when all (or user-selected) driver fails
@@ -539,33 +540,32 @@ class ControllerRegistration(Editor):
 		Shoudln't be really possible, but something
 		_has_ to happen in such case.
 		"""
-		d = Gtk.MessageDialog(parent=self.window,
-			flags = Gtk.DialogFlags.MODAL,
-			type = Gtk.MessageType.ERROR,
-			buttons = Gtk.ButtonsType.OK,
-			message_format = _("Failed to open device")
+		d = Gtk.MessageDialog(
+			parent=self.window,
+			flags=Gtk.DialogFlags.MODAL,
+			type=Gtk.MessageType.ERROR,
+			buttons=Gtk.ButtonsType.OK,
+			message_format=_("Failed to open device"),
 		)
 		d.run()
 		d.destroy()
 		self.window.destroy()
 
-
 	def kill_tester(self, *a):
-		""" Called when window is closed """
+		"""Called when window is closed"""
 		if self._tester:
 			tester, self._tester = self._tester, None
-			for s in tester.__signals: tester.disconnect(s)
+			for s in tester.__signals:
+				tester.disconnect(s)
 			tester.stop()
 
-
 	def set_hid_enabled(self, enabled):
-		""" Enables or disables option to use HID driver """
+		"""Enables or disables option to use HID driver"""
 		cbAccessMode = self.builder.get_object("cbAccessMode")
 		for x in cbAccessMode.get_model():
 			if x[0] == "hid":
 				x[1] = _("USB HID (recommended)") if enabled else _("USB HID")
 				x[2] = enabled
-
 
 	def on_cbAccessMode_changed(self, cb):
 		if self._tester:
@@ -579,21 +579,20 @@ class ControllerRegistration(Editor):
 				cb.set_sensitive(False)
 				btNext.set_sensitive(False)
 				if target == "hid":
-					self._tester = Tester("hid", "%.4x:%.4x" % (
-						self._evdevice.info.vendor, self._evdevice.info.product))
+					self._tester = Tester(
+						"hid", "%.4x:%.4x" % (self._evdevice.info.vendor, self._evdevice.info.product)
+					)
 				else:
 					self._tester = Tester("evdev", self._evdevice.path)
 				self._tester.__signals = [
-					self._tester.connect('ready', self.on_registration_ready),
-					self._tester.connect('error', self.on_device_open_failed),
+					self._tester.connect("ready", self.on_registration_ready),
+					self._tester.connect("error", self.on_device_open_failed),
 				]
 				GLib.timeout_add_seconds(1, self._tester.start)
-
 
 	def cbInvert_toggled_cb(self, cb, *a):
 		index = int(cb.get_name().split("_")[-1])
 		self._axis_data[index].invert = cb.get_active()
-
 
 	def on_tester_button(self, tester, keycode, pressed):
 		if self._grabber:
@@ -624,7 +623,7 @@ class ControllerRegistration(Editor):
 				self.hilight(nameof(what))
 			else:
 				self.unhilight(nameof(what))
-
+		return None
 
 	def on_tester_axis(self, tester, number, value):
 		self._input_axes[number] = value
@@ -634,7 +633,7 @@ class ControllerRegistration(Editor):
 		axis = self._mappings.get(number)
 		if axis:
 			self.hilight_axis(axis, value)
-
+		return None
 
 	def hilight_axis(self, axis, value):
 		cursor = axis.cursor
@@ -669,8 +668,7 @@ class ControllerRegistration(Editor):
 			px, py = cursor.position
 			# Grab values
 			try:
-				ax, ay, aw, ah = self._controller_image.get_axis_region(
-					axis.area)
+				ax, ay, aw, ah = self._controller_image.get_axis_region(axis.area)
 			except ValueError:
 				# Area not found
 				cursor.set_visible(False)
@@ -679,8 +677,7 @@ class ControllerRegistration(Editor):
 			# Compute center
 			x, y = ax + aw * 0.5 - cw * 0.5, ay + ah * 0.5 - cw * 0.5
 			# Add pad position, aligned to the physical pad artwork when needed.
-			px, py = rotate_input_vector(px, py,
-				self._controller_image.get_input_rotation(axis.area))
+			px, py = rotate_input_vector(px, py, self._controller_image.get_input_rotation(axis.area))
 			x += px * aw / STICK_PAD_MAX * 0.5
 			y += py * ah / STICK_PAD_MAX * 0.5
 			# Move circle
@@ -690,12 +687,9 @@ class ControllerRegistration(Editor):
 			if changed:
 				self.generate_raw_data()
 
-
-
 	def hilight(self, what, color=None):
 		self._hilights[what] = color or self.OBSERVE_COLORS[0]
 		self._controller_image.hilight(self._hilights)
-
 
 	def unhilight(self, what):
 		if what in self._hilights:
@@ -704,11 +698,9 @@ class ControllerRegistration(Editor):
 			self._hilights[what] = self.UNASSIGNED_COLOR
 		self._controller_image.hilight(self._hilights)
 
-
 	def on_exAdditionalOptions_activate(self, ex):
 		rv = self.builder.get_object("rvAdditionalOptions")
 		rv.set_reveal_child(not ex.get_expanded())
-
 
 	def on_exRawData_activate(self, ex):
 		rv = self.builder.get_object("rvRawData")
@@ -717,18 +709,15 @@ class ControllerRegistration(Editor):
 		if not ex.get_expanded():
 			dialog.set_resizable(True)
 
-
 	def on_area_hover(self, trash, what):
 		self.on_area_leave()
 		self._hilighted_area = what
 		self.hilight(what, self.app.HILIGHT_COLOR)
 
-
 	def on_area_leave(self, *a):
 		if self._hilighted_area:
 			self.unhilight(self._hilighted_area)
 			self._hilighted_area = None
-
 
 	def on_area_click(self, trash, what):
 		stDialog = self.builder.get_object("stDialog")
@@ -746,34 +735,28 @@ class ControllerRegistration(Editor):
 				else:
 					mnuStick._what = what
 				mnuStickPress.set_sensitive(what != "DPAD")
-				mnuStick._axes = [ self._axis_data[index] for index in axes ]
+				mnuStick._axes = [self._axis_data[index] for index in axes]
 				mnuStick.popup_at_pointer(None)
 			elif what in TRIGGER_AREAS:
 				self._grabber = TriggerGrabber(self, self._axis_data[TRIGGER_AREAS[what]])
 			elif hasattr(SCButtons, what):
 				self._grabber = InputGrabber(self, getattr(SCButtons, what))
 
-
 	def on_mnuStickPress_activate(self, *a):
 		mnuStick = self.builder.get_object("mnuStick")
-		self._grabber = InputGrabber(self, getattr(SCButtons, mnuStick._what),
-				text=_("Press stick or button..."))
-
+		self._grabber = InputGrabber(self, getattr(SCButtons, mnuStick._what), text=_("Press stick or button..."))
 
 	def on_mnuStickmove_activate(self, *a):
 		mnuStick = self.builder.get_object("mnuStick")
 		if mnuStick._what == "DPAD":
 			# Dpad reported as axes is grabbed directly
-			self._grabber = StickGrabber(self, mnuStick._axes,
-					text=_("Move the dpad, or press buttons"))
+			self._grabber = StickGrabber(self, mnuStick._axes, text=_("Move the dpad, or press buttons"))
 		else:
 			self._grabber = StickGrabber(self, mnuStick._axes)
-
 
 	def on_btCancelInput_clicked(self, *a):
 		if self._grabber:
 			self._grabber.cancel()
-
 
 	def refresh_devices(self, *a):
 		log.debug("Refreshing device list")
@@ -788,9 +771,7 @@ class ControllerRegistration(Editor):
 				# gamepads emulated by SCC
 				continue
 			if is_gamepad or cbShowAllDevices.get_active():
-				lstDevices.append(( fname, dev.name,
-					self._gamepad_icon if is_gamepad else self._other_icon ))
-
+				lstDevices.append((fname, dev.name, self._gamepad_icon if is_gamepad else self._other_icon))
 
 	def refresh_controller_image(self, *a):
 		cbControllerButtons = self.builder.get_object("cbControllerButtons")
@@ -798,7 +779,7 @@ class ControllerRegistration(Editor):
 		rvController = self.builder.get_object("rvController")
 		group = cbControllerButtons.get_model()[cbControllerButtons.get_active()][0]
 		controller = cbControllerType.get_model()[cbControllerType.get_active()][0]
-		config = { 'gui' : { 'background' : controller, 'buttons': self._groups[group] }}
+		config = {"gui": {"background": controller, "buttons": self._groups[group]}}
 
 		if self._controller_image:
 			self._controller_image.use_config(config)
@@ -806,9 +787,9 @@ class ControllerRegistration(Editor):
 			self._controller_image.set_inverted(inverted, brightness)
 		else:
 			self._controller_image = ControllerImage(self.app)
-			self._controller_image.connect('hover', self.on_area_hover)
-			self._controller_image.connect('leave', self.on_area_leave)
-			self._controller_image.connect('click', self.on_area_click)
+			self._controller_image.connect("hover", self.on_area_hover)
+			self._controller_image.connect("leave", self.on_area_leave)
+			self._controller_image.connect("click", self.on_area_click)
 			rvController.add(self._controller_image)
 
 
@@ -817,8 +798,8 @@ def order_evdev_buttons_for_sdl(buttons):
 	Reorders evdev key codes into the order SDL's Linux joystick driver uses
 	to number gamecontrollerdb buttons
 	"""
-	gamepad = [ code for code in buttons if code >= evdev.ecodes.BTN_JOYSTICK ]
-	other = [ code for code in buttons if code < evdev.ecodes.BTN_JOYSTICK ]
+	gamepad = [code for code in buttons if code >= evdev.ecodes.BTN_JOYSTICK]
+	other = [code for code in buttons if code < evdev.ecodes.BTN_JOYSTICK]
 	return gamepad + other
 
 

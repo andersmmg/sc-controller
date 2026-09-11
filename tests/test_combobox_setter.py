@@ -10,7 +10,7 @@ class FakeRow(list):
 		self.iter = self
 
 
-class FakeListStore(object):
+class FakeListStore:
 	def __init__(self, rows):
 		self.rows = [FakeRow(r) for r in rows]
 
@@ -18,7 +18,7 @@ class FakeListStore(object):
 		return iter(self.rows)
 
 
-class FakeComboBox(object):
+class FakeComboBox:
 	def __init__(self, rows):
 		self.model = FakeListStore(rows)
 		self.active = -1
@@ -48,15 +48,15 @@ def _make_combo(rows):
 
 def test_canonical_strips_enum_prefixes():
 	assert canonical_action_string("button(Keys.KEY_UP)") == "button(KEY_UP)"
+	assert (
+		canonical_action_string("trigger(50, button(Keys.KEY_LEFTSHIFT))|trigger(50, button(Keys.KEY_LEFTCTRL))")
+		== TRIGGERS_KEY
+	)
 	assert canonical_action_string(
-			"trigger(50, button(Keys.KEY_LEFTSHIFT))|trigger(50, button(Keys.KEY_LEFTCTRL))"
-	) == TRIGGERS_KEY
-	assert canonical_action_string(
-			"mode(LGRIP, OSK.move(), dpad(button(Keys.KEY_UP), button(Keys.KEY_DOWN),"
-			" button(Keys.KEY_LEFT), button(Keys.KEY_RIGHT)))"
+		"mode(LGRIP, OSK.move(), dpad(button(Keys.KEY_UP), button(Keys.KEY_DOWN),"
+		" button(Keys.KEY_LEFT), button(Keys.KEY_RIGHT)))"
 	) == STICK_KEY.replace("RGRIP", "LGRIP")
-	assert canonical_action_string("profile('default.sccprofile')") == \
-			"profile('default.sccprofile')"
+	assert canonical_action_string("profile('default.sccprofile')") == "profile('default.sccprofile')"
 	assert canonical_action_string(TRIGGERS_KEY) == TRIGGERS_KEY
 
 
@@ -69,11 +69,18 @@ def test_set_cb_matches_bare_and_prefixed_variants():
 	setter = FakeComboSetter()
 	rows = [
 		("Move Keyboard", "OSK.move()", False),
-		("Emulate Arrows", "dpad(button(Keys.KEY_UP), button(Keys.KEY_DOWN), button(Keys.KEY_LEFT), button(Keys.KEY_RIGHT))", False),
+		(
+			"Emulate Arrows",
+			"dpad(button(Keys.KEY_UP), button(Keys.KEY_DOWN), button(Keys.KEY_LEFT), button(Keys.KEY_RIGHT))",
+			False,
+		),
 		("Emulate Arrows, Move Keyboard when Right Grip is Pressed", STICK_KEY.replace("RGRIP", "LGRIP"), False),
 	]
-	rows[-1] = ("Emulate Arrows, Move Keyboard when Right Grip is Pressed",
-			"mode(RGRIP, OSK.move(), dpad(button(Keys.KEY_UP), button(Keys.KEY_DOWN), button(Keys.KEY_LEFT), button(Keys.KEY_RIGHT)))", False)
+	rows[-1] = (
+		"Emulate Arrows, Move Keyboard when Right Grip is Pressed",
+		"mode(RGRIP, OSK.move(), dpad(button(Keys.KEY_UP), button(Keys.KEY_DOWN), button(Keys.KEY_LEFT), button(Keys.KEY_RIGHT)))",
+		False,
+	)
 	cb = _make_combo(rows)
 
 	assert setter.set_cb(cb, STICK_KEY, keyindex=1)
@@ -85,19 +92,22 @@ def test_set_cb_matches_bare_and_prefixed_variants():
 		("Emulate Arrows", "dpad(button(KEY_UP), button(KEY_DOWN), button(KEY_LEFT), button(KEY_RIGHT))", False),
 	]
 	cb2 = _make_combo(rows2)
-	assert setter2.set_cb(cb2,
-			"dpad(button(Keys.KEY_UP), button(Keys.KEY_DOWN), button(Keys.KEY_LEFT), button(Keys.KEY_RIGHT))",
-			keyindex=1)
+	assert setter2.set_cb(
+		cb2,
+		"dpad(button(Keys.KEY_UP), button(Keys.KEY_DOWN), button(Keys.KEY_LEFT), button(Keys.KEY_RIGHT))",
+		keyindex=1,
+	)
 	assert cb2.get_active() == 1
 
 
 def test_set_cb_matches_trigger_combo():
 	setter = FakeComboSetter()
-	cb = _make_combo([
-		("Shift and Ctrl",
-		 "trigger(50, button(Keys.KEY_LEFTSHIFT))|trigger(50, button(Keys.KEY_LEFTCTRL))", False),
-		("Press Keyboard Buttons", "OSK.press(LEFT)|OSK.press(RIGHT)", False),
-	])
+	cb = _make_combo(
+		[
+			("Shift and Ctrl", "trigger(50, button(Keys.KEY_LEFTSHIFT))|trigger(50, button(Keys.KEY_LEFTCTRL))", False),
+			("Press Keyboard Buttons", "OSK.press(LEFT)|OSK.press(RIGHT)", False),
+		]
+	)
 	assert setter.set_cb(cb, TRIGGERS_KEY, keyindex=1)
 	assert cb.get_active() == 0
 

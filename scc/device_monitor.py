@@ -5,23 +5,32 @@ SC-Controller - Device Monitor
 Extends eudevmonitor with options to register callbacks and
 manage plugging/releasing devices.
 """
+
+import ctypes
+import fcntl
+import logging
+import os
+import re
+import select
+import time
+from ctypes.util import find_library
+
 from scc.lib.eudevmonitor import Eudev, Monitor
 from scc.lib.ioctl_opt import IOR
-from ctypes.util import find_library
-import os, ctypes, fcntl, re, select, time, logging
 
 log = logging.getLogger("DevMon")
 
 RE_BT_NUMBERS = re.compile(r"[0-9A-F]{4}:([0-9A-F]{4}):([0-9A-F]{4}).*")
-HCIGETCONNLIST = IOR(ord('H'), 212, ctypes.c_int)
+HCIGETCONNLIST = IOR(ord("H"), 212, ctypes.c_int)
 HAVE_BLUETOOTH_LIB = False
 btlib = None
 try:
-	btlib_name = find_library('bluetooth')
+	btlib_name = find_library("bluetooth")
 	assert btlib_name
 	btlib = ctypes.CDLL(btlib_name)
 	HAVE_BLUETOOTH_LIB = True
-except: pass
+except Exception:
+	pass
 
 # hopefully big enought to avoid most drops but not too big..
 RECEIVE_BUFFER_SIZE = 16 * 1024 * 1024
@@ -34,7 +43,6 @@ UEVENT_SEQNUM = "/sys/kernel/uevent_seqnum"
 
 
 class DeviceMonitor(Monitor):
-
 	def __init__(self, *a):
 		Monitor.__init__(self, *a)
 		self.daemon = None
@@ -45,7 +53,6 @@ class DeviceMonitor(Monitor):
 		self._last_seqnum = None
 		self._ticks = 0
 		self._last_bt_warn = 0
-
 
 	def add_callback(self, subsystem, vendor_id, product_id, added_cb, removed_cb):
 		"""
@@ -61,7 +68,6 @@ class DeviceMonitor(Monitor):
 		self.dev_added_cbs[key] = added_cb
 		self.dev_removed_cbs[key] = removed_cb
 
-
 	def add_remove_callback(self, syspath, cb):
 		"""
 		Adds (possibly replaces) callback that will be called once
@@ -71,9 +77,8 @@ class DeviceMonitor(Monitor):
 			vendor, product, old_cb = self.known_devs.pop(syspath)
 			self.known_devs[syspath] = (vendor, product, cb)
 
-
 	def start(self):
-		""" Registers poller and starts listening for events """
+		"""Registers poller and starts listening for events"""
 		if not HAVE_BLUETOOTH_LIB:
 			log.warning("Failed to load libbluetooth.so, bluetooth support will be incomplete")
 		poller = self.daemon.poller
@@ -83,14 +88,12 @@ class DeviceMonitor(Monitor):
 			log.warning("Failed to increase udev monitor receive buffer: %s", e)
 		poller.register(self.fileno(), poller.POLLIN, self.on_data_ready)
 		Monitor.start(self)
-		self._rescan_task = self.daemon.get_scheduler().schedule(
-			RESCAN_INTERVAL, self._periodic_rescan)
-
+		self._rescan_task = self.daemon.get_scheduler().schedule(RESCAN_INTERVAL, self._periodic_rescan)
 
 	def _on_new_syspath(self, subsystem, syspath):
 		try:
 			vendor, product = self.get_vendor_product(syspath, subsystem)
-		except (OSError, IOError):
+		except OSError:
 			# Cannot grab vendor & product, probably subdevice or bus itself
 			return
 		key = (subsystem, vendor, product)
@@ -108,7 +111,6 @@ class DeviceMonitor(Monitor):
 			except Exception as e:
 				log.exception(e)
 				del self.known_devs[syspath]
-
 
 	def _get_hci_addresses(self):
 		if not HAVE_BLUETOOTH_LIB:
@@ -135,7 +137,7 @@ class DeviceMonitor(Monitor):
 				for i in range(cl.conn_num):
 					ci = cl.conn_info[i]
 					id = "hci%s:%s" % (cl.dev_id, ci.handle)
-					address = ":".join([ hex(x).lstrip("0x").zfill(2).upper() for x in reversed(ci.bdaddr) ])
+					address = ":".join([hex(x).lstrip("0x").zfill(2).upper() for x in reversed(ci.bdaddr)])
 					self.bt_addresses[id] = address
 			finally:
 				# hci_open_dev returns fd that has to be closed, otherwise
@@ -144,14 +146,12 @@ class DeviceMonitor(Monitor):
 		except OSError as e:
 			self._bt_warn("Failed to list bluetooth connections: %s" % (e,))
 
-
 	def _bt_warn(self, msg):
-		""" Logs bluetooth warning, but at most once per BT_WARN_INTERVAL """
+		"""Logs bluetooth warning, but at most once per BT_WARN_INTERVAL"""
 		now = time.time()
 		if now - self._last_bt_warn >= BT_WARN_INTERVAL:
 			self._last_bt_warn = now
 			log.warning(msg)
-
 
 	def _dev_for_hci(self, syspath):
 		"""
@@ -165,7 +165,7 @@ class DeviceMonitor(Monitor):
 			node = os.path.join("/sys/bus/hid/devices/", fname)
 			try:
 				node_addr = DeviceMonitor._find_bt_address(node)
-			except IOError:
+			except OSError:
 				continue
 			try:
 				# SteamOS 3 "Holo" return caps
@@ -176,15 +176,13 @@ class DeviceMonitor(Monitor):
 				pass
 		return None
 
-
 	def _has_data(self):
-		""" Returns True if there are more events waiting in udev monitor socket """
+		"""Returns True if there are more events waiting in udev monitor socket"""
 		try:
-			r, w, x = select.select([ self.fileno() ], [], [], 0)
+			r, w, x = select.select([self.fileno()], [], [], 0)
 			return len(r) > 0
 		except Exception:
 			return False
-
 
 	def _read_uevent_seqnum(self):
 		"""
@@ -198,7 +196,6 @@ class DeviceMonitor(Monitor):
 				return None
 		except Exception:
 			return None
-
 
 	def _periodic_rescan(self):
 		"""
@@ -224,9 +221,7 @@ class DeviceMonitor(Monitor):
 				self.rescan()
 			except Exception as e:
 				log.exception(e)
-		self._rescan_task = self.daemon.get_scheduler().schedule(
-			RESCAN_INTERVAL, self._periodic_rescan)
-
+		self._rescan_task = self.daemon.get_scheduler().schedule(RESCAN_INTERVAL, self._periodic_rescan)
 
 	def on_data_ready(self, *a):
 		try:
@@ -255,9 +250,8 @@ class DeviceMonitor(Monitor):
 			# Monitor errors must no kill daemon
 			log.exception(e)
 
-
 	def rescan(self):
-		""" Scans and calls callbacks for already connected devices """
+		"""Scans and calls callbacks for already connected devices"""
 		self._get_hci_addresses()
 		enumerator = self._eudev.enumerate()
 		subsystem_to_vp_to_callback = {}
@@ -275,7 +269,7 @@ class DeviceMonitor(Monitor):
 			if syspath not in self.known_devs:
 				try:
 					subsystem = DeviceMonitor.get_subsystem(syspath)
-				except (IOError, OSError):
+				except OSError:
 					continue
 				if subsystem in subsystem_to_vp_to_callback:
 					self._on_new_syspath(subsystem, syspath)
@@ -283,14 +277,13 @@ class DeviceMonitor(Monitor):
 		# Fire removal callbacks for devices that disappeared from sysfs,
 		# in case their 'remove' event was missed
 		# Possible this may cause issues but i haven't noticed
-		for syspath in [ s for s in self.known_devs if s not in seen ]:
+		for syspath in [s for s in self.known_devs if s not in seen]:
 			vendor, product, cb = self.known_devs.pop(syspath)
 			if cb:
 				try:
 					cb(syspath, vendor, product)
 				except Exception as e:
 					log.exception(e)
-
 
 	def get_vendor_product(self, syspath, subsystem=None):
 		"""
@@ -300,7 +293,7 @@ class DeviceMonitor(Monitor):
 		"""
 		if os.path.exists(os.path.join(syspath, "idVendor")):
 			with open(os.path.join(syspath, "idVendor")) as fh:
-				vendor  = int(fh.read().strip(), 16)
+				vendor = int(fh.read().strip(), 16)
 			with open(os.path.join(syspath, "idProduct")) as fh:
 				product = int(fh.read().strip(), 16)
 			return vendor, product
@@ -322,10 +315,9 @@ class DeviceMonitor(Monitor):
 			subsystem = DeviceMonitor.get_subsystem(syspath)
 		if subsystem == "bluetooth":
 			# Search for folder that matches regular expression...
-			names = [ name for name in os.listdir(syspath)
-				if os.path.isdir(syspath) and RE_BT_NUMBERS.match(name) ]
+			names = [name for name in os.listdir(syspath) if os.path.isdir(syspath) and RE_BT_NUMBERS.match(name)]
 			if len(names) > 0:
-				vendor, product = [ int(x, 16) for x in RE_BT_NUMBERS.match(names[0]).groups() ]
+				vendor, product = [int(x, 16) for x in RE_BT_NUMBERS.match(names[0]).groups()]
 				return vendor, product
 			# Above method works for anything _but_ SteamController
 			# For that one, following desperate mess is needed
@@ -333,10 +325,9 @@ class DeviceMonitor(Monitor):
 			if node:
 				name = node.split("/")[-1]
 				if RE_BT_NUMBERS.match(name):
-					vendor, product = [ int(x, 16) for x in RE_BT_NUMBERS.match(name).groups() ]
+					vendor, product = [int(x, 16) for x in RE_BT_NUMBERS.match(name).groups()]
 					return vendor, product
 		raise OSError("Cannot determine vendor and product IDs")
-
 
 	def get_hidraw(self, syspath):
 		"""
@@ -352,7 +343,6 @@ class DeviceMonitor(Monitor):
 				return fname
 		return None
 
-
 	@staticmethod
 	def _find_bt_address(syspath):
 		"""
@@ -361,16 +351,16 @@ class DeviceMonitor(Monitor):
 		"""
 		uniq = os.path.join(syspath, "uniq")
 		if os.path.exists(uniq):
-				with open(uniq, "r") as fh:
-					return fh.read().strip()
+			with open(uniq) as fh:
+				return fh.read().strip()
 		for name in os.listdir(syspath):
 			if name.startswith("input"):
 				path = os.path.join(syspath, name)
 				if os.path.isdir(path) and not os.path.islink(path):
 					addr = DeviceMonitor._find_bt_address(path)
-					if addr: return addr
+					if addr:
+						return addr
 		return None
-
 
 	@staticmethod
 	def get_usb_address(syspath):
@@ -380,11 +370,10 @@ class DeviceMonitor(Monitor):
 		May throw all kinds of OSErrors or IOErrors
 		"""
 		with open(os.path.join(syspath, "busnum")) as fh:
-			busnum  = int(fh.read().strip())
+			busnum = int(fh.read().strip())
 		with open(os.path.join(syspath, "devnum")) as fh:
 			devnum = int(fh.read().strip())
 		return busnum, devnum
-
 
 	@staticmethod
 	def get_subsystem(syspath):
@@ -398,20 +387,20 @@ class DeviceMonitor(Monitor):
 
 class hci_conn_info(ctypes.Structure):
 	_fields_ = [
-		('handle', ctypes.c_uint16),
-		('bdaddr', ctypes.c_uint8 * 6),
-		('type', ctypes.c_uint8),
-		('out', ctypes.c_uint8),
-		('state', ctypes.c_uint16),
-		('link_mode', ctypes.c_uint32),
+		("handle", ctypes.c_uint16),
+		("bdaddr", ctypes.c_uint8 * 6),
+		("type", ctypes.c_uint8),
+		("out", ctypes.c_uint8),
+		("state", ctypes.c_uint16),
+		("link_mode", ctypes.c_uint32),
 	]
 
 
 class hci_conn_list_req(ctypes.Structure):
 	_fields_ = [
-		('dev_id', ctypes.c_uint16),
-		('conn_num', ctypes.c_uint16),
-		('conn_info', hci_conn_info * 256),
+		("dev_id", ctypes.c_uint16),
+		("conn_num", ctypes.c_uint16),
+		("conn_info", hci_conn_info * 256),
 	]
 
 

@@ -21,6 +21,4 @@ def test_controller_artwork_has_no_text_objects():
 		if _has_text_element(path)
 	)
 
-	assert not text_assets, (
-		"Live SVG text found; convert it to paths: " + ", ".join(text_assets)
-	)
+	assert not text_assets, "Live SVG text found; convert it to paths: " + ", ".join(text_assets)

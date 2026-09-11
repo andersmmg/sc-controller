@@ -5,11 +5,11 @@ import struct
 import pytest
 
 import scc.drivers.tritondrv as tritondrv
-from scc.constants import SCButtons, STICK_PAD_MIN, STICK_PAD_MAX
+from scc.constants import STICK_PAD_MIN, SCButtons
 from scc.drivers.tritondrv import SC2BTDevice, SC2BTDriver
 
 
-class FakeHidrawDevice(object):
+class FakeHidrawDevice:
 	def __init__(self):
 		self.feature_reports = []
 		self.closed = False
@@ -28,7 +28,7 @@ class FakeHidrawDevice(object):
 		return b"AA:BB:CC:DD:EE:FF"
 
 
-class FakeDeviceMonitor(object):
+class FakeDeviceMonitor:
 	def __init__(self):
 		self.remove_cbs = {}
 		self.add_cbs = {}
@@ -44,7 +44,7 @@ class FakeDeviceMonitor(object):
 		return self.hidraw
 
 
-class FakeScheduler(object):
+class FakeScheduler:
 	def __init__(self):
 		self.tasks = []
 
@@ -57,7 +57,7 @@ class FakeScheduler(object):
 			cb()
 
 
-class FakeDaemon(object):
+class FakeDaemon:
 	def __init__(self):
 		self.device_monitor = FakeDeviceMonitor()
 		self.scheduler = FakeScheduler()
@@ -80,7 +80,7 @@ class FakeDaemon(object):
 		self.removed.append(c)
 
 
-class FakeDriver(object):
+class FakeDriver:
 	def __init__(self, daemon):
 		self.daemon = daemon
 		self.retried = []
@@ -93,7 +93,7 @@ class FakeDriver(object):
 		self.closed.append((syspath, c))
 
 
-class FakeMapper(object):
+class FakeMapper:
 	def __init__(self):
 		self.inputs = []
 
@@ -109,23 +109,19 @@ def make_device(daemon=None, driver=None, hidraw=None):
 	return dev, daemon, driver, hidraw
 
 
-def make_state_report(buttons=0, stick=(0, 0), rstick=(0, 0), pads=(0, 0, 0, 0),
-		gyro=(0, 0, 0), ble=True):
+def make_state_report(buttons=0, stick=(0, 0), rstick=(0, 0), pads=(0, 0, 0, 0), gyro=(0, 0, 0), ble=True):
 	data = bytearray(64)
 	data[0] = tritondrv.REPORT_STATE_BLE if ble else tritondrv.REPORT_STATE
-	struct.pack_into('<IHhhhhh', data, 2, buttons,
-		0, 0, stick[0], stick[1], rstick[0], rstick[1])
-	struct.pack_into('<hhHhhH', data, 18,
-		pads[0], pads[1], 0, pads[2], pads[3], 0)
-	struct.pack_into('<hhh', data, 40, *gyro)
+	struct.pack_into("<IHhhhhh", data, 2, buttons, 0, 0, stick[0], stick[1], rstick[0], rstick[1])
+	struct.pack_into("<hhHhhH", data, 18, pads[0], pads[1], 0, pads[2], pads[3], 0)
+	struct.pack_into("<hhh", data, 40, *gyro)
 	return bytes(data)
 
 
 def test_state_report_parsed_and_dispatched(monkeypatch):
 	dev, daemon, driver, hidraw = make_device()
 	dev.mapper = FakeMapper()
-	report = make_state_report(
-		buttons=1 | (1 << 12), stick=(1000, -2000), gyro=(10, -20, 30))
+	report = make_state_report(buttons=1 | (1 << 12), stick=(1000, -2000), gyro=(10, -20, 30))
 	monkeypatch.setattr(os, "read", lambda fd, n: report)
 
 	dev._input()
@@ -221,10 +217,10 @@ def test_battery_report_stored(monkeypatch):
 
 def test_feature_report_framing():
 	dev, daemon, driver, hidraw = make_device()
-	hidraw.feature_reports.clear()	# discard init-time lizard-off report
-	payload = struct.pack('<BBBBH',
-		tritondrv.FEATURE_REPORT_ID, tritondrv.FEATURE_SET_SETTINGS, 3,
-		tritondrv.SETTING_LIZARD_MODE, 0)
+	hidraw.feature_reports.clear()  # discard init-time lizard-off report
+	payload = struct.pack(
+		"<BBBBH", tritondrv.FEATURE_REPORT_ID, tritondrv.FEATURE_SET_SETTINGS, 3, tritondrv.SETTING_LIZARD_MODE, 0
+	)
 
 	dev._send_feature(payload)
 
@@ -239,7 +235,7 @@ def test_output_report_written_as_is(monkeypatch):
 	dev, daemon, driver, hidraw = make_device()
 	writes = []
 	monkeypatch.setattr(os, "write", lambda fd, data: writes.append((fd, data)))
-	data = struct.pack('<BBHHBHB', 0x80, 0, 0, 100, 0, 200, 0)
+	data = struct.pack("<BBHHBHB", 0x80, 0, 0, 100, 0, 200, 0)
 
 	dev._send_output(data)
 
@@ -347,14 +343,15 @@ def test_close_is_idempotent():
 	assert len(daemon.removed) == 1
 
 
-class FakeFileHandle(object):
-	""" Minimal stand-in for an open hidraw file handle """
+class FakeFileHandle:
+	"""Minimal stand-in for an open hidraw file handle"""
+
 	def close(self):
 		pass
 
 
 def make_working_hidraw(monkeypatch):
-	""" Makes driver's HIDRaw open path succeed, returning a fake device """
+	"""Makes driver's HIDRaw open path succeed, returning a fake device"""
 	monkeypatch.setattr(tritondrv, "HIDRaw", lambda f: FakeHidrawDevice())
 	monkeypatch.setattr("builtins.open", lambda path, mode: FakeFileHandle())
 
@@ -365,7 +362,7 @@ def test_reconnect_loop_retries_until_success(monkeypatch):
 	syspath = "/sys/devices/test"
 
 	driver.retry(syspath)
-	assert daemon.scheduler.tasks	# first attempt scheduled
+	assert daemon.scheduler.tasks  # first attempt scheduled
 
 	# no hidraw node yet, attempt fails and must be rescheduled
 	daemon.scheduler.run_one()
@@ -374,18 +371,17 @@ def test_reconnect_loop_retries_until_success(monkeypatch):
 
 	# hidraw node appears, but device init fails (still down)
 	daemon.device_monitor.hidraw = "hidraw9"
-	monkeypatch.setattr(tritondrv, "HIDRaw",
-			lambda f: (_ for _ in ()).throw(OSError(5, "I/O error")))
+	monkeypatch.setattr(tritondrv, "HIDRaw", lambda f: (_ for _ in ()).throw(OSError(5, "I/O error")))
 	monkeypatch.setattr("builtins.open", lambda path, mode: FakeFileHandle())
 	daemon.scheduler.run_one()
 	assert daemon.added == []
-	assert daemon.scheduler.tasks	# still rescheduled
+	assert daemon.scheduler.tasks  # still rescheduled
 
 	# device finally answers
 	make_working_hidraw(monkeypatch)
 	daemon.scheduler.run_one()
 	assert len(daemon.added) == 1
-	assert daemon.scheduler.tasks == []	# loop stopped
+	assert daemon.scheduler.tasks == []  # loop stopped
 	assert syspath not in driver.reconnecting
 	assert driver._active[syspath] is daemon.added[0]
 

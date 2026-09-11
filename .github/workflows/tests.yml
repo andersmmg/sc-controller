@@ -34,10 +34,21 @@ jobs:
             libusb-1.0-0-dev
 
       - name: Upgrade setuptools
-        run: python3 -m pip install --break-system-packages --upgrade "setuptools==84.0.0" "packaging>=24.2"
+        run: python3 -m pip install --break-system-packages --ignore-installed --upgrade "setuptools==84.0.0" "packaging>=24.2"
 
       - name: Build C extensions
         run: python3 -m pip wheel --no-build-isolation --no-deps --wheel-dir build/wheel .
+
+      - name: Lint
+        run: |
+          python3 -m pip install --break-system-packages "ruff==0.16.6"
+          ruff check scc tests
+          ruff format --check scc tests
+
+      - name: Typecheck
+        run: |
+          python3 -m pip install --break-system-packages "ty==0.0.80"
+          ty check
 
       - name: Run tests
         run: python3 -m pytest tests/ -v

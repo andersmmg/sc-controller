@@ -8,20 +8,27 @@ also called on main thread.
 
 Use schedule(delay, callback, *data) to register one-time task.
 """
-import time, queue, logging
+
+from __future__ import annotations
+
+import logging
+import queue
+import time
+from collections.abc import Callable
+from typing import Any
+
 log = logging.getLogger("Scheduler")
 
 # TODO: Maybe create actual thread for this? Use poler? Scrap everything and rewrite it in GO?
 
-class Scheduler(object):
 
-	def __init__(self):
-		self._scheduled = queue.PriorityQueue()
-		self._next = None
+class Scheduler:
+	def __init__(self) -> None:
+		self._scheduled: queue.PriorityQueue[Task] = queue.PriorityQueue()
+		self._next: Task | None = None
 		self._now = time.time()
 
-
-	def schedule(self, delay, callback, *data):
+	def schedule(self, delay: float, callback: Callable[..., Any], *data: Any) -> Task:
 		"""
 		Schedules one-time task to be executed no sooner than after 'delay' of
 		seconds. Delay may be float number.
@@ -38,8 +45,7 @@ class Scheduler(object):
 			self._scheduled.put(task)
 		return task
 
-
-	def cancel_task(self, task):
+	def cancel_task(self, task: Task) -> bool:
 		"""
 		Returns True if task was sucessfully removed or False if task was
 		already executed or not known at all.
@@ -63,8 +69,7 @@ class Scheduler(object):
 			self._scheduled.put(t)
 		return found
 
-
-	def run(self):
+	def run(self) -> None:
 		self._now = time.time()
 		while self._next and self._now >= self._next.time:
 			callback, data = self._next.callback, self._next.data
@@ -72,20 +77,18 @@ class Scheduler(object):
 			callback(*data)
 
 
-class Task(object):
-
+class Task:
 	_uid = 0
 
-	def __init__(self, time, callback, data):
-		self.time = time
-		self.callback = callback
-		self.data = data
+	def __init__(self, time: float, callback: Callable[..., Any], data: tuple[Any, ...]) -> None:
+		self.time: float = time
+		self.callback: Callable[..., Any] = callback
+		self.data: tuple[Any, ...] = data
 		# tiebreaker
 		Task._uid += 1
 		self._uid = Task._uid
 
-
-	def __lt__(self, other):
+	def __lt__(self, other: Task) -> bool:
 		"""
 		Tasks are ordered by time
 		"""
@@ -93,8 +96,7 @@ class Task(object):
 			return self.time < other.time
 		return self._uid < other._uid
 
-
-	def cancel(self):
-		""" Marks task as canceled, without actually removing it from scheduler """
+	def cancel(self) -> None:
+		"""Marks task as canceled, without actually removing it from scheduler"""
 		self.callback = lambda *a, **b: False
 		self.data = ()

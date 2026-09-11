@@ -4,25 +4,22 @@ SC-Controller - Action Editor
 
 Allows to edit button or trigger action.
 """
-from __future__ import unicode_literals
-from scc.tools import _
 
 import gi
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GLib
-from scc.uinput import Keys
-from scc.actions import MultiAction, HatLeftAction, HatRightAction
-from scc.actions import ButtonAction, AxisAction, MouseAction
-from scc.actions import HatUpAction, HatDownAction
-from scc.gui.svg_widget import SVGWidget
-from scc.gui.gdk_to_key import keyevent_to_key
-from scc.gui.area_to_action import AREA_TO_ACTION
 
-import os, re, logging
+gi.require_version("Gtk", "3.0")
+import logging
+import os
+import re
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+
+from gi.repository import Gdk, Gtk
+
 log = logging.getLogger("Editor")
 
-ENUM_PREFIX_RE = re.compile(
-		r"\b(?:Keys|Axes|Rels|SCButtons|HapticPos)\.([A-Za-z_][A-Za-z0-9_]*)")
+ENUM_PREFIX_RE = re.compile(r"\b(?:Keys|Axes|Rels|SCButtons|HapticPos)\.([A-Za-z_][A-Za-z0-9_]*)")
 
 
 def canonical_action_string(s):
@@ -31,8 +28,7 @@ def canonical_action_string(s):
 	return ENUM_PREFIX_RE.sub(r"\1", s)
 
 
-class ComboSetter(object):
-
+class ComboSetter:
 	def set_cb(self, cb, key, keyindex=0):
 		"""
 		Sets combobox value.
@@ -52,19 +48,18 @@ class ComboSetter(object):
 
 
 class Editor(ComboSetter):
-	""" Common stuff for all editor windows """
+	"""Common stuff for all editor windows"""
+
 	ERROR_CSS = " #error {background-color:green; color:red;} "
 	_error_css_provider = None
 
 	def __init__(self):
-		self.added_widget = None		# See add_widget method
-
+		self.added_widget = None  # See add_widget method
 
 	def on_window_key_press_event(self, trash, event):
-		""" Checks if pressed key was escape and if yes, closes window """
+		"""Checks if pressed key was escape and if yes, closes window"""
 		if event.keyval == Gdk.KEY_Escape:
 			self.close()
-
 
 	def setup_widgets(self):
 		self.builder = Gtk.Builder()
@@ -72,17 +67,14 @@ class Editor(ComboSetter):
 		self.window = self.builder.get_object("Dialog")
 		self.builder.connect_signals(self)
 
-
 	@staticmethod
 	def install_error_css():
 		if Editor._error_css_provider is None:
 			Editor._error_css_provider = Gtk.CssProvider()
 			Editor._error_css_provider.load_from_data(str(Editor.ERROR_CSS))
 			Gtk.StyleContext.add_provider_for_screen(
-					Gdk.Screen.get_default(),
-					Editor._error_css_provider,
-					Gtk.STYLE_PROVIDER_PRIORITY_USER)
-
+				Gdk.Screen.get_default(), Editor._error_css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER
+			)
 
 	def hide_dont_destroy(self, w, *a):
 		"""
@@ -92,15 +84,12 @@ class Editor(ComboSetter):
 		w.hide()
 		return True
 
-
 	def set_title(self, title):
 		self.window.set_title(title)
 		self.builder.get_object("header").set_title(title)
 
-
 	def close(self, *a):
 		self.window.destroy()
-
 
 	def get_transient_for(self):
 		"""
@@ -108,14 +97,12 @@ class Editor(ComboSetter):
 		"""
 		return self._transient_for
 
-
 	def show(self, transient_for):
 		if transient_for:
 			self._transient_for = transient_for
 			self.window.set_transient_for(transient_for)
 			self.window.set_modal(True)
 		self.window.show()
-
 
 	def add_widget(self, label, widget):
 		"""
@@ -137,7 +124,6 @@ class Editor(ComboSetter):
 		vbAddedWidget.pack_start(widget, True, False, 0)
 		vbAddedWidget.set_visible(True)
 
-
 	def remove_added_widget(self):
 		"""
 		Removes added widget, if any.
@@ -148,11 +134,10 @@ class Editor(ComboSetter):
 			vbAddedWidget.remove(ch)
 		self.added_widget = None
 
-
 	def send_added_widget(self, target):
-		""" Transfers added widget to new editor window """
+		"""Transfers added widget to new editor window"""
 		if self.added_widget:
-			vbAddedWidget  = self.builder.get_object("vbAddedWidget")
+			self.builder.get_object("vbAddedWidget")
 			lblAddedWidget = self.builder.get_object("lblAddedWidget")
 			label = lblAddedWidget.get_label()
 			w = self.added_widget

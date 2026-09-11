@@ -4,20 +4,21 @@ SC-Controller - OSD Menu
 
 Displays border around area.
 """
-from __future__ import unicode_literals
-from scc.tools import _, set_logging_level
 
-from gi.repository import Gtk, GLib, GdkX11
-from scc.constants import LEFT, RIGHT, STICK, STICK_PAD_MIN, STICK_PAD_MAX
-from scc.tools import point_in_gtkrect
-from scc.paths import get_share_path
+import logging
+
+import gi
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+gi.require_version("GdkX11", "3.0")
+
+from gi.repository import GdkX11, Gtk
+
 from scc.lib import xwrappers as X
-from scc.menu_data import MenuData
-from scc.gui.daemon_manager import DaemonManager
-from scc.osd.timermanager import TimerManager
 from scc.osd import OSDWindow
+from scc.osd.timermanager import TimerManager
 
-import os, sys, json, logging
 log = logging.getLogger("osd.area")
 
 
@@ -30,30 +31,24 @@ class Area(OSDWindow, TimerManager):
 		self.size = (100, 100)
 		self.add(Gtk.Fixed())
 
-
 	def _add_arguments(self):
 		OSDWindow._add_arguments(self)
-		self.argparser.add_argument('--width', type=int, metavar="pixels", default=20,
-			help="""area width in pixels""")
-		self.argparser.add_argument('--height', type=int, metavar="pixels", default=-20,
-			help="""area height in pixels""")
-
+		self.argparser.add_argument("--width", type=int, metavar="pixels", default=20, help="""area width in pixels""")
+		self.argparser.add_argument(
+			"--height", type=int, metavar="pixels", default=-20, help="""area height in pixels"""
+		)
 
 	def parse_argumets(self, argv):
 		if not OSDWindow.parse_argumets(self, argv):
 			return False
-		self.position = (self.position[0] - self.BORDER_WIDTH,
-			self.position[1] - self.BORDER_WIDTH)
-		self.size = (self.args.width + 2 * self.BORDER_WIDTH,
-			self.args.height + 2 * self.BORDER_WIDTH)
+		self.position = (self.position[0] - self.BORDER_WIDTH, self.position[1] - self.BORDER_WIDTH)
+		self.size = (self.args.width + 2 * self.BORDER_WIDTH, self.args.height + 2 * self.BORDER_WIDTH)
 		return True
-
 
 	def compute_position(self):
 		# Overrides compute_position as Area is requested with exact position
 		# on X screen.
 		return self.position
-
 
 	def show(self):
 		OSDWindow.show(self)
@@ -61,15 +56,13 @@ class Area(OSDWindow, TimerManager):
 		self.resize(*self.size)
 		self.make_hole(self.BORDER_WIDTH)
 
-
 	def update(self, x, y, width, height):
-		""" Updates area size and position """
+		"""Updates area size and position"""
 		self.position = x, y
-		self.size = max(1, width), max(1, height) # Size can't be <1 or GTK will crash
+		self.size = max(1, width), max(1, height)  # Size can't be <1 or GTK will crash
 		self.move(*self.position)
 		self.resize(*self.size)
 		self.make_hole(self.BORDER_WIDTH)
-
 
 	def make_hole(self, border_width):
 		"""
@@ -79,7 +72,7 @@ class Area(OSDWindow, TimerManager):
 		if not isinstance(self.get_window(), GdkX11.X11Window):
 			return
 		width, height = self.size
-		dpy = X.Display(hash(GdkX11.x11_get_default_xdisplay()))		# I have no idea why this works...
+		dpy = X.Display(hash(GdkX11.x11_get_default_xdisplay()))  # I have no idea why this works...
 		wid = X.XID(self.get_window().get_xid())
 
 		mask = X.create_pixmap(dpy, wid, width, height, 1)
@@ -90,8 +83,7 @@ class Area(OSDWindow, TimerManager):
 		X.fill_rectangle(dpy, mask, gc, 0, 0, width, height)
 
 		X.set_foreground(dpy, gc, 0)
-		X.fill_rectangle(dpy, mask, gc, border_width, border_width,
-			width - 2 * border_width, height - 2 * border_width)
+		X.fill_rectangle(dpy, mask, gc, border_width, border_width, width - 2 * border_width, height - 2 * border_width)
 
 		SHAPE_BOUNDING = 0
 		SHAPE_SET = 0

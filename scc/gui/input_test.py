@@ -1,8 +1,7 @@
 """Helpers shared by controller input-test previews."""
 
 import re
-from math import cos, sin, pi
-
+from math import cos, pi, sin
 
 INPUT_TEST_COLOR = "#FF003F9E"  # AARRGGBB
 
@@ -27,13 +26,13 @@ def color_test_cursor_svg(svg, color=INPUT_TEST_COLOR):
 def render_test_cursor(filename, inverted=False, brightness=1.0):
 	"""Renders a themed input-test cursor from its neutral black SVG source."""
 	from scc.gui.svg_widget import SVGWidget
-	with open(filename, "r") as fh:
+
+	with open(filename) as fh:
 		return SVGWidget.render_svg(color_test_cursor_svg(fh.read()), inverted, brightness)
 
 
 def analog_hilight_color(color, value, maximum):
-	"""Returns a base-to-highlight blend for an analog input value.
-	"""
+	"""Returns a base-to-highlight blend for an analog input value."""
 	if maximum <= 0:
 		raise ValueError("maximum must be positive")
 	if len(color) != 9 or not color.startswith("#"):

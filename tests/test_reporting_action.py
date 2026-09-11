@@ -1,15 +1,15 @@
 import io
 
-from scc.constants import STICK, CPAD
+from scc.constants import CPAD, STICK
 from scc.sccdaemon import ReportingAction
 
 
-class FakeController(object):
+class FakeController:
 	def get_id(self):
 		return "testctl"
 
 
-class FakeMapper(object):
+class FakeMapper:
 	def __init__(self):
 		self._c = FakeController()
 
@@ -17,7 +17,7 @@ class FakeMapper(object):
 		return self._c
 
 
-class FakeClient(object):
+class FakeClient:
 	def __init__(self):
 		self.mapper = FakeMapper()
 		self.wfile = io.BytesIO()
@@ -42,6 +42,7 @@ def test_negative_y_movement_reported():
 
 def test_slow_circle_reports():
 	import math
+
 	action, client = _make_action()
 	steps = 72
 	radius = 8000

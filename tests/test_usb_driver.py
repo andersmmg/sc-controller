@@ -1,15 +1,16 @@
 """
 Tests for scc.drivers.usb force_restart / retry queue handling.
 """
+
 import scc.drivers.usb as usb
 
 
-class FakeDeviceDesc(object):
+class FakeDeviceDesc:
 	def getVendorID(self):
-		return 0x045e
+		return 0x045E
 
 	def getProductID(self):
-		return 0x028e
+		return 0x028E
 
 
 def _make_device(syspath):
@@ -29,7 +30,7 @@ def test_force_restart_queues_syspath_and_tp():
 	try:
 		dev.force_restart()
 		assert dev.closed
-		assert lst == [("/sys/bus/usb/devices/3-7", (0x045e, 0x028e))]
+		assert lst == [("/sys/bus/usb/devices/3-7", (0x045E, 0x028E))]
 	finally:
 		usb._usb._retry_devices = saved
 
@@ -42,7 +43,7 @@ def test_retry_consumer_unpacks_force_restart_entry():
 		dev.force_restart()
 		for syspath, (vendor, product) in lst:
 			assert syspath == "/sys/bus/usb/devices/3-7"
-			assert (vendor, product) == (0x045e, 0x028e)
+			assert (vendor, product) == (0x045E, 0x028E)
 	finally:
 		usb._usb._retry_devices = saved
 

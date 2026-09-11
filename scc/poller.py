@@ -8,51 +8,62 @@ register callbacks to be called when data is available in them.
 
 Callback is called as callback(fd, event) where event is one of select.POLL*
 """
-import select, logging
+
+import logging
+import select
+from collections.abc import Callable
+from typing import Any
+
 log = logging.getLogger("Poller")
 
 
-DO_NOTHING = lambda *a: False
+def DO_NOTHING(*a: Any) -> bool:
+	return False
 
-class Poller(object):
+
+class Poller:
 	POLLIN = select.POLLIN
 	POLLOUT = select.POLLOUT
 	POLLPRI = select.POLLPRI
-	
-	def __init__(self):
-		self._events = {}
-		self._callbacks = {}
-		self._pool_in = ()
-		self._pool_out = ()
-		self._pool_pri = ()
-	
-	
-	def register(self, fd, events, callback):
+
+	def __init__(self) -> None:
+		self._events: dict[int, int] = {}
+		self._callbacks: dict[int, Callable[[int, int], Any]] = {}
+		self._pool_in: list[int] = []
+		self._pool_out: list[int] = []
+		self._pool_pri: list[int] = []
+
+	def register(self, fd: int, events: int, callback: Callable[[int, int], Any]) -> None:
 		if fd < 0:
 			raise ValueError("Invalid file descriptor")
 		self._events[fd] = events
 		self._callbacks[fd] = callback
 		self._generate_lists()
-	
-	
-	def unregister(self, fd):
-		if fd in self._events: del self._events[fd]
-		if fd in self._callbacks: del self._callbacks[fd]
+
+	def unregister(self, fd: int) -> None:
+		if fd in self._events:
+			del self._events[fd]
+		if fd in self._callbacks:
+			del self._callbacks[fd]
 		self._generate_lists()
-	
-	
-	def _generate_lists(self):
-		self._pool_in = [ fd for fd, events in self._events.items() if events & Poller.POLLIN ]
-		self._pool_out = [ fd for fd, events in self._events.items() if events & Poller.POLLOUT ]
-		self._pool_pri = [ fd for fd, events in self._events.items() if events & Poller.POLLPRI ]
-	
-	
-	def poll(self, timeout=0.01):
-		inn, out, pri = select.select( self._pool_in, self._pool_out, self._pool_pri, timeout )
-		
+
+	def _generate_lists(self) -> None:
+		self._pool_in = [fd for fd, events in self._events.items() if events & Poller.POLLIN]
+		self._pool_out = [fd for fd, events in self._events.items() if events & Poller.POLLOUT]
+		self._pool_pri = [fd for fd, events in self._events.items() if events & Poller.POLLPRI]
+
+	def poll(self, timeout: float = 0.01) -> None:
+		inn: list[int]
+		out: list[int]
+		pri: list[int]
+		inn, out, pri = select.select(self._pool_in, self._pool_out, self._pool_pri, timeout)
+
 		for fd in inn:
-			self._callbacks.get(fd, DO_NOTHING)(fd, Poller.POLLIN)
+			callback: Callable[[int, int], Any] = self._callbacks.get(fd, DO_NOTHING)
+			callback(fd, Poller.POLLIN)
 		for fd in out:
-			self._callbacks.get(fd, DO_NOTHING)(fd, Poller.POLLOUT)
+			callback = self._callbacks.get(fd, DO_NOTHING)
+			callback(fd, Poller.POLLOUT)
 		for fd in pri:
-			self._callbacks.get(fd, DO_NOTHING)(fd, Poller.POLLPRI)
+			callback = self._callbacks.get(fd, DO_NOTHING)
+			callback(fd, Poller.POLLPRI)

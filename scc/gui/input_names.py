@@ -18,7 +18,7 @@ section of their config json file like this:
 
 Registered devices (files in ~/.config/scc/devices/) can do the same!
 """
-from __future__ import unicode_literals
+
 from scc.tools import nameof
 
 # Default, controller-agnostic names for inputs.
@@ -26,44 +26,43 @@ from scc.tools import nameof
 # Profile constants, trigger ids, ...).
 DEFAULT_INPUT_NAMES = {
 	# Face buttons
-	'A'			: 'A',
-	'B'			: 'B',
-	'X'			: 'X',
-	'Y'			: 'Y',
-	'C'			: 'Center',
-	'BACK'		: 'Back',
-	'START'		: 'Start',
-	'DOTS'		: 'Quick Access',
+	"A": "A",
+	"B": "B",
+	"X": "X",
+	"Y": "Y",
+	"C": "Center",
+	"BACK": "Back",
+	"START": "Start",
+	"DOTS": "Quick Access",
 	# Shoulders and triggers
-	'LB'		: 'LB',
-	'RB'		: 'RB',
-	'LT'		: 'LT',
-	'RT'		: 'RT',
-	'LEFT'		: 'Left Trigger',
-	'RIGHT'		: 'Right Trigger',
+	"LB": "LB",
+	"RB": "RB",
+	"LT": "LT",
+	"RT": "RT",
+	"LEFT": "Left Trigger",
+	"RIGHT": "Right Trigger",
 	# Grips
-	'LGRIP'		: 'Left Grip',
-	'RGRIP'		: 'Right Grip',
-	'LGRIP2'	: 'Left Grip 2',
-	'RGRIP2'	: 'Right Grip 2',
+	"LGRIP": "Left Grip",
+	"RGRIP": "Right Grip",
+	"LGRIP2": "Left Grip 2",
+	"RGRIP2": "Right Grip 2",
 	# Pads, sticks, dpad, gyro
-	'LPAD'		: 'Left Pad',
-	'RPAD'		: 'Right Pad',
-	'CPAD'		: 'Touch Pad',
-	'STICK'		: 'Left Stick',
-	'RSTICK'	: 'Right Stick',
-	'DPAD'		: 'D-Pad',
-	'GYRO'		: 'Gyro',
+	"LPAD": "Left Pad",
+	"RPAD": "Right Pad",
+	"CPAD": "Touch Pad",
+	"STICK": "Left Stick",
+	"RSTICK": "Right Stick",
+	"DPAD": "D-Pad",
+	"GYRO": "Gyro",
 	# Touch variants
-	'LPADTOUCH'		: 'Left Pad',
-	'RPADTOUCH'		: 'Right Pad',
-	'CPADTOUCH'		: 'Touch Pad',
-	'LSTICKTOUCH'	: 'Left Stick Touch',
-	'RSTICKTOUCH'	: 'Right Stick Touch',
-	'LSENSE'		: 'Left Grip',
-	'RSENSE'		: 'Right Grip',
+	"LPADTOUCH": "Left Pad",
+	"RPADTOUCH": "Right Pad",
+	"CPADTOUCH": "Touch Pad",
+	"LSTICKTOUCH": "Left Stick Touch",
+	"RSTICKTOUCH": "Right Stick Touch",
+	"LSENSE": "Left Grip",
+	"RSENSE": "Right Grip",
 }
-
 
 
 def get_input_name(id, config=None, default=None):
@@ -87,7 +86,7 @@ def get_input_name(id, config=None, default=None):
 	if key.endswith("PRESS"):
 		# No default for this pressed variant (e.g. RSTICKPRESS);
 		# show base input name with " Press" appended, e.g. "Right Stick Press".
-		base = key[:-len("PRESS")]
+		base = key[: -len("PRESS")]
 		if base:
 			return get_input_name(base, config) + " Press"
 	return key

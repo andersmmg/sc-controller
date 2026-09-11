@@ -4,16 +4,28 @@ SC-Controller - tools
 
 Various stuff that I don't care to fit anywhere else.
 """
-from __future__ import unicode_literals
 
-from scc.paths import get_controller_icons_path, get_default_controller_icons_path
-from scc.paths import get_menuicons_path, get_default_menuicons_path
-from scc.paths import get_profiles_path, get_default_profiles_path
-from scc.paths import get_menus_path, get_default_menus_path
-from scc.paths import get_button_images_path
-from math import pi as PI, sin, cos, atan2, sqrt
-import os, sys, ctypes, shlex, gettext, logging
+import ctypes
+import logging
+import os
+import shlex
+from collections.abc import Callable, Iterable, Sequence
 from importlib import machinery as importlib_machinery
+from math import atan2, cos, sin, sqrt
+from math import pi as PI
+from typing import Any, cast
+
+from scc.paths import (
+	get_button_images_path,
+	get_controller_icons_path,
+	get_default_controller_icons_path,
+	get_default_menuicons_path,
+	get_default_menus_path,
+	get_default_profiles_path,
+	get_menuicons_path,
+	get_menus_path,
+	get_profiles_path,
+)
 
 unicode = str  # Python 2 compatibility alias
 
@@ -21,16 +33,18 @@ unicode = str  # Python 2 compatibility alias
 HAVE_POSIX1E = False
 try:
 	import posix1e
+
 	HAVE_POSIX1E = True
 except ImportError:
 	pass
 
 log = logging.getLogger("tools.py")
-_ = lambda x : x
+_ = lambda x: x
 
-LOG_FORMAT				= "%(levelname)s %(name)-13s %(message)s"
+LOG_FORMAT = "%(levelname)s %(name)-13s %(message)s"
 
-def init_logging(prefix="", suffix="", logfile=None, level=None):
+
+def init_logging(prefix: str = "", suffix: str = "", logfile: str | None = None, level: int | None = None) -> None:
 	"""
 	Initializes logging, sets custom logging format and adds one
 	logging level with name and method to call.
@@ -40,7 +54,7 @@ def init_logging(prefix="", suffix="", logfile=None, level=None):
 	If level is specified, it overrides default.
 	"""
 	if logfile:
-		logging.basicConfig(format=LOG_FORMAT, filename=logfile, filemode='a')
+		logging.basicConfig(format=LOG_FORMAT, filename=logfile, filemode="a")
 	else:
 		logging.basicConfig(format=LOG_FORMAT)
 
@@ -49,51 +63,63 @@ def init_logging(prefix="", suffix="", logfile=None, level=None):
 		logger.setLevel(level)
 
 	# Rename levels
-	logging.addLevelName(10, prefix + "D" + suffix)	# Debug
-	logging.addLevelName(20, prefix + "I" + suffix)	# Info
-	logging.addLevelName(30, prefix + "W" + suffix)	# Warning
-	logging.addLevelName(40, prefix + "E" + suffix)	# Error
+	logging.addLevelName(10, prefix + "D" + suffix)  # Debug
+	logging.addLevelName(20, prefix + "I" + suffix)  # Info
+	logging.addLevelName(30, prefix + "W" + suffix)  # Warning
+	logging.addLevelName(40, prefix + "E" + suffix)  # Error
 	# Create additional, "verbose" level
-	logging.addLevelName(15, prefix + "V" + suffix)	# Verbose
+	logging.addLevelName(15, prefix + "V" + suffix)  # Verbose
+
 	# Add 'logging.verbose' method
-	def verbose(self, msg, *args, **kwargs):
-		return self.log(15, msg, *args, **kwargs)
-	logging.Logger.verbose = verbose
+	def verbose(self: logging.Logger, msg: str, *args: Any, **kwargs: Any) -> None:
+		self.log(15, msg, *args, **kwargs)
+
+	# mypy sees attr-defined; ty sees unresolved-attribute
+	logging.Logger.verbose = verbose  # type: ignore
 	# Wrap Logger._log in something that can handle utf-8 exceptions
 	old_log = logging.Logger._log
-	def _log(self, level, msg, args, exc_info=None, extra=None):
-		args = tuple([
-			(c.decode("utf-8") if isinstance(c, bytes) else c)
-			for c in args
-		])
+
+	def _log(
+		self: logging.Logger,
+		level: int,
+		msg: object,
+		args: Any,
+		exc_info: Any = None,
+		extra: Any = None,
+		stack_info: bool = False,
+		stacklevel: int = 1,
+	) -> None:
+		args = tuple([(c.decode("utf-8") if isinstance(c, bytes) else c) for c in args])
 		msg = msg if isinstance(msg, str) else str(msg)
-		old_log(self, level, msg, args, exc_info, extra)
+		old_log(self, level, msg, args, exc_info, extra, stack_info=stack_info, stacklevel=stacklevel)
+
 	logging.Logger._log = _log
 
 
-def set_logging_level(verbose, debug):
-	""" Sets logging level """
+def set_logging_level(verbose: bool, debug: bool) -> None:
+	"""Sets logging level"""
 	logger = logging.getLogger()
-	if debug:		# everything
+	if debug:  # everything
 		logger.setLevel(0)
-	elif verbose:	# everything but debug
+	elif verbose:  # everything but debug
 		logger.setLevel(11)
-	else:			# INFO and worse
+	else:  # INFO and worse
 		logger.setLevel(20)
 
 
-def ensure_size(n, lst, fill_with=None):
+def ensure_size(n: int, lst: Iterable[Any], fill_with: Any = None) -> list[Any]:
 	"""
 	Returns copy of lst with size 'n'.
 	If lst is shorter, None's are appended.
 	If lst is longer, it is cat.
 	"""
 	l = list(lst)
-	while len(l) < n : l.append(fill_with)
+	while len(l) < n:
+		l.append(fill_with)
 	return l[0:n]
 
 
-def quat2euler(q0, q1, q2, q3):
+def quat2euler(q0: float, q1: float, q2: float, q3: float) -> tuple[float, float, float]:
 	"""
 	Converts quaterion to (pitch, yaw, roll).
 	Values are in -PI to PI range.
@@ -105,56 +131,59 @@ def quat2euler(q0, q1, q2, q3):
 	yn = 2 * (q1 * q2 + q0 * q3)
 	zn = qq3 + qq2 - qq0 - qq1
 
-	pitch = atan2(xb , xa)
-	yaw   = atan2(xn , sqrt(1 - xn**2))
-	roll  = atan2(yn , zn)
+	pitch = atan2(xb, xa)
+	yaw = atan2(xn, sqrt(1 - xn**2))
+	roll = atan2(yn, zn)
 	return pitch, yaw, roll
 
 
-def point_in_gtkrect(rect, x, y):
-	return (x > rect.x and y > rect.y and
-		x < rect.x + rect.width and y < rect.y + rect.height)
+def point_in_gtkrect(rect: Any, x: float, y: float) -> bool:
+	result = x > rect.x and y > rect.y and x < rect.x + rect.width and y < rect.y + rect.height
+	return bool(result)
 
 
-def anglediff(a1, a2):
-	""" Excpects values in radians """
-	return (a2 - a1 + PI) % (2.0*PI) - PI
+def anglediff(a1: float, a2: float) -> float:
+	"""Excpects values in radians"""
+	return (a2 - a1 + PI) % (2.0 * PI) - PI
 
 
-def degdiff(a1, a2):
-	""" Excpects values in degrees """
+def degdiff(a1: float, a2: float) -> float:
+	"""Excpects values in degrees"""
 	return (a2 - a1 + 180.0) % 360.0 - 180.0
 
 
-def nameof(e):
+def nameof(e: Any) -> str:
 	"""
 	If 'e' is enum value, returns e.name.
 	Otherwise, returns str(e).
 	"""
-	return e.name if hasattr(e, "name") else str(e)
+	if hasattr(e, "name"):
+		# getattr returns Any; the declared return type is str
+		return cast(str, e.name)
+	return str(e)
 
 
-def shjoin(lst):
-	""" Joins list into shell-escaped, utf-8 encoded byte string """
-	s = [ str(x).encode("utf-8") for x in lst ]
+def shjoin(lst: Iterable[Any]) -> bytes:
+	"""Joins list into shell-escaped, utf-8 encoded byte string"""
+	s = [str(x).encode("utf-8") for x in lst]
 	#   - escape quotes
-	s = [ x.replace(b'"', b'\\"').replace(b"'", b"\\'") if (b'"' in x or b"'" in x) else x for x in s ]
+	s = [x.replace(b'"', b'\\"').replace(b"'", b"\\'") if (b'"' in x or b"'" in x) else x for x in s]
 	#   - quote strings with spaces
-	s = [ b"'%s'" % (x,) if b" " in x else x for x in s ]
+	s = [b"'%s'" % (x,) if b" " in x else x for x in s]
 	return b" ".join(s)
 
 
-def shsplit(s):
-	""" Returns original list from what shjoin returned """
+def shsplit(s: str | bytes) -> list[str]:
+	"""Returns original list from what shjoin returned"""
 	if isinstance(s, bytes):
 		s = s.decode("utf-8")
 	lex = shlex.shlex(s, posix=True)
-	lex.escapedquotes = '"\''
+	lex.escapedquotes = "\"'"
 	lex.whitespace_split = True
 	return list(lex)
 
 
-def string_escape(s):
+def string_escape(s: str | bytes) -> str:
 	"""
 	Reimplementation of Python 2 'string_escape' codec for str objects.
 	Returns escaped ASCII string.
@@ -164,7 +193,7 @@ def string_escape(s):
 	return s.encode("unicode_escape").decode("ascii")
 
 
-def string_unescape(s):
+def string_unescape(s: str | bytes) -> str:
 	"""
 	Reimplementation of Python 2 'string_escape' codec (decode side)
 	for str objects. Reverses string_escape().
@@ -174,18 +203,19 @@ def string_unescape(s):
 	return s.encode("latin-1", "backslashreplace").decode("unicode_escape")
 
 
-def static_vars(**kwargs):
+def static_vars(**kwargs: Any) -> Callable[[Any], Any]:
 	"""Static variable func decorator"""
 
-	def decorate(func):
+	def decorate(func: Callable[..., Any]) -> Callable[..., Any]:
 		"""inner function used to add kwargs attribute to a func"""
 		for k in kwargs:
 			setattr(func, k, kwargs[k])
 		return func
+
 	return decorate
 
 
-def profile_is_override(name):
+def profile_is_override(name: str) -> bool:
 	"""
 	Returns True if named profile exists both in user config directory and
 	default_profiles directory.
@@ -197,7 +227,7 @@ def profile_is_override(name):
 	return False
 
 
-def profile_is_default(name):
+def profile_is_default(name: str) -> bool:
 	"""
 	Returns True if named profile exists in default_profiles directory, even
 	if it is overrided by profile in user config directory.
@@ -206,18 +236,20 @@ def profile_is_default(name):
 	return os.path.exists(os.path.join(get_default_profiles_path(), filename))
 
 
-def get_profile_name(path):
+def get_profile_name(path: str) -> str:
 	"""
 	Returns profile name for specified path. Basically removes path and
 	.sccprofile and .mod extension.
 	"""
 	parts = os.path.split(path)[-1].split(".")
-	if parts[-1] == "mod": parts = parts[0:-1]
-	if parts[-1] == "sccprofile": parts = parts[0:-1]
+	if parts[-1] == "mod":
+		parts = parts[0:-1]
+	if parts[-1] == "sccprofile":
+		parts = parts[0:-1]
 	return ".".join(parts)
 
 
-def find_profile(name):
+def find_profile(name: str) -> str | None:
 	"""
 	Returns filename for specified profile name.
 	This is done by searching for name + '.sccprofile' in ~/.config/scc/profiles
@@ -234,7 +266,12 @@ def find_profile(name):
 	return None
 
 
-def find_icon(name, prefer_bw=False, paths=None, extensions=("png", "svg")):
+def find_icon(
+	name: str | None,
+	prefer_bw: bool = False,
+	paths: Sequence[str] | None = None,
+	extensions: Sequence[str] = ("png", "svg"),
+) -> tuple[str | None, bool]:
 	"""
 	Returns (filename, has_colors) for specified icon name.
 	This is done by searching for name + '.png' and name + ".bw.png"
@@ -252,7 +289,7 @@ def find_icon(name, prefer_bw=False, paths=None, extensions=("png", "svg")):
 		# Special case, so code can pass menuitem.icon directly
 		return None, False
 	if paths is None:
-		paths = get_default_menuicons_path(), get_menuicons_path()
+		paths = (get_default_menuicons_path(), get_menuicons_path())
 	if name.endswith(".bw"):
 		name = name[0:-3]
 	for extension in extensions:
@@ -281,13 +318,12 @@ def find_icon(name, prefer_bw=False, paths=None, extensions=("png", "svg")):
 	return None, False
 
 
-def find_button_image(name, prefer_bw=False):
-	""" Similar to find_icon, but searches for button image """
-	return find_icon(nameof(name), prefer_bw,
-			paths=[get_button_images_path()], extensions=("svg",))
+def find_button_image(name: str, prefer_bw: bool = False) -> tuple[str | None, bool]:
+	"""Similar to find_icon, but searches for button image"""
+	return find_icon(nameof(name), prefer_bw, paths=[get_button_images_path()], extensions=("svg",))
 
 
-def menu_is_default(name):
+def menu_is_default(name: str) -> bool:
 	"""
 	Returns True if named menu exists in default_menus directory, even
 	if it is overrided by menu in user config directory.
@@ -295,7 +331,7 @@ def menu_is_default(name):
 	return os.path.exists(os.path.join(get_default_menus_path(), name))
 
 
-def find_menu(name):
+def find_menu(name: str) -> str | None:
 	"""
 	Returns filename for specified menu name.
 	This is done by searching for name in ~/.config/scc/menus
@@ -310,7 +346,7 @@ def find_menu(name):
 	return None
 
 
-def find_controller_icon(name):
+def find_controller_icon(name: str) -> str | None:
 	"""
 	Returns filename for specified controller icon name.
 	This is done by searching for name in ~/.config/controller-icons
@@ -325,7 +361,7 @@ def find_controller_icon(name):
 	return None
 
 
-def find_binary(name):
+def find_binary(name: str) -> str:
 	"""
 	Returns full path to script or binary.
 
@@ -343,7 +379,7 @@ def find_binary(name):
 		path = os.path.join(source_scripts, name)
 		if os.path.isfile(path):
 			return os.path.abspath(path)
-	user_path = os.environ['PATH'].split(":")
+	user_path = os.environ["PATH"].split(":")
 	# Try to add the standard binary paths if not present in PATH
 	for d in ["/sbin", "/bin", "/usr/sbin", "/usr/bin"]:
 		if d not in user_path:
@@ -356,7 +392,7 @@ def find_binary(name):
 	return name
 
 
-def find_library(libname):
+def find_library(libname: str) -> ctypes.CDLL:
 	"""
 	Search for 'libname.so'.
 	Returns library loaded with ctypes.CDLL
@@ -367,11 +403,9 @@ def find_library(libname):
 	so_extensions = importlib_machinery.EXTENSION_SUFFIXES
 	for extension in so_extensions:
 		search_paths += [
-			os.path.abspath(os.path.normpath(
-				os.path.join( base_path, '..', libname + extension ))),
-			os.path.abspath(os.path.normpath(
-				os.path.join( base_path, '../..', libname + extension )))
-			]
+			os.path.abspath(os.path.normpath(os.path.join(base_path, "..", libname + extension))),
+			os.path.abspath(os.path.normpath(os.path.join(base_path, "../..", libname + extension))),
+		]
 
 	for path in search_paths:
 		if os.path.exists(path):
@@ -379,12 +413,11 @@ def find_library(libname):
 			break
 
 	if not lib:
-		raise OSError('Cant find %s.so. searched at:\n %s' % (
-			libname, '\n'.join(search_paths)))
+		raise OSError("Cant find %s.so. searched at:\n %s" % (libname, "\n".join(search_paths)))
 	return ctypes.CDLL(lib)
 
 
-def find_gksudo():
+def find_gksudo() -> list[str] | None:
 	"""
 	Searchs for gksudo or other known graphical sudoing tool.
 	Returns list of arguments.
@@ -398,7 +431,7 @@ def find_gksudo():
 	return None
 
 
-def check_access(filename, write_required=True):
+def check_access(filename: str, write_required: bool = True) -> bool:
 	"""
 	Checks if user has read and optionaly write access to specified file.
 	Uses acl first and possix file permisions if acl cannot be used.
@@ -417,7 +450,7 @@ def check_access(filename, write_required=True):
 	return os.access(filename, os.R_OK)
 
 
-def strip_gesture(gstr):
+def strip_gesture(gstr: str) -> str:
 	"""
 	Converts gesture string to version where stroke lenght is ignored.
 
@@ -428,16 +461,18 @@ def strip_gesture(gstr):
 		if x != last:
 			uniq.append(x)
 		last = x
-	if uniq[0] != 'i':
-		uniq = [ 'i' ] + uniq
+	if uniq[0] != "i":
+		uniq = ["i", *uniq]
 	return "".join(uniq)
 
 
-clamp = lambda low, value, high : min(high, max(low, value))
+clamp = lambda low, value, high: min(high, max(low, value))
 
 
 PId4 = PI / 4.0
-def circle_to_square(x, y):
+
+
+def circle_to_square(x: float, y: float) -> tuple[float, float]:
 	"""
 	Projects coordinate in circle (of radius 1.0) to coordinate in square.
 	"""
@@ -446,6 +481,7 @@ def circle_to_square(x, y):
 	# Determine the theta angle
 	angle = atan2(y, x) + PI
 
+	squared: tuple[float, float]
 	squared = 0, 0
 	# Scale according to which wall we're clamping to
 	# X+ wall
