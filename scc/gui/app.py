@@ -1268,6 +1268,8 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		Disables and re-enables Input Test mode. If sniffing is disabled in
 		daemon configuration, 2nd call fails and logs error.
 		"""
+		if not self.config["enable_sniffing"]:
+			return
 		if self.dm.is_alive() and not self.osd_mode:
 			if self.test_mode_controller:
 				self.test_mode_controller.unlock_all()

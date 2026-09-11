@@ -323,50 +323,21 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 	
 	
 	def save_config(self):
-		""" Transfers settings from UI back to config """
-		# Store hard stuff
-		tvItems = self.builder.get_object("tvItems")
-		cbShowOSD = self.builder.get_object("cbShowOSD")
-		cbEnableStatusIcon = self.builder.get_object("cbEnableStatusIcon")
-		cbMinimizeToStatusIcon = self.builder.get_object("cbMinimizeToStatusIcon")
-		conds = []
-		for row in tvItems.get_model():
-			conds.append({
-				'condition' : row[0].condition.encode(),
-				'action' : row[0].action.to_string()
-			})
-		# Apply status icon settings
-		if self.app.config['gui']['enable_status_icon'] != cbEnableStatusIcon.get_active():
-			self.app.config['gui']['enable_status_icon'] = cbEnableStatusIcon.get_active()
-			cbMinimizeToStatusIcon.set_sensitive(not IS_UNITY and cbEnableStatusIcon.get_active())
-			if cbEnableStatusIcon.get_active():
-				self.app.setup_statusicon()
-			else:
-				self.app.destroy_statusicon()
-		# Store rest
-		self.app.config['autoswitch'] = conds
-		self.app.config['autoswitch_osd'] = cbShowOSD.get_active()
-		self.app.config['enable_sniffing'] = self.builder.get_object("cbInputTestMode").get_active()
-		self.app.config['ignore_serials'] = not self.builder.get_object("cbEnableSerials").get_active()
-		self.app.config['output']['rumble'] = self.builder.get_object("cbEnableRumble").get_active()
-		self.app.config['gui']['enable_status_icon'] = self.builder.get_object("cbEnableStatusIcon").get_active()
-		self.app.config['gui']['minimize_to_status_icon'] = self.builder.get_object("cbMinimizeToStatusIcon").get_active()
-		self.app.config['gui']['minimize_on_start'] = self.builder.get_object("cbMinimizeOnStart").get_active()
-		self.app.config['gui']['autokill_daemon'] = self.builder.get_object("cbAutokillDaemon").get_active()
-		self.app.config['gui']['news']['enabled'] = self.builder.get_object("cbNewRelease").get_active()
-		self.app.config['gui']['svg_invert_mode'] = ('system', 'inverted', 'normal')[
-			self.builder.get_object("cbSvgInvertMode").get_active()]
-		self.app.config['gui']['svg_invert_brightness'] = (
-			self.builder.get_object("sclSvgInvertBrightness").get_value() / 100.0)
-		self.app.config['gui']['tray_icon_mode'] = ('system', 'dark', 'light')[
-			self.builder.get_object("cbTrayIconMode").get_active()]
-		
-		# Save
+		"""Persist the current config without reading unrelated widgets."""
 		self.app.save_config()
+
+
+	def save_autoswitch_config(self):
+		tvItems = self.builder.get_object("tvItems")
+		self.app.config['autoswitch'] = [{
+			'condition': row[0].condition.encode(),
+			'action': row[0].action.to_string()
+		} for row in tvItems.get_model()]
 	
 	
 	def on_cbShowOSD_toggled(self, cb):
 		if self._recursing: return
+		self.app.config['autoswitch_osd'] = cb.get_active()
 		self.save_config()
 	
 	
@@ -452,8 +423,34 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		self._needs_restart()
 	
 	
-	def on_random_checkbox_toggled(self, *a):
+	def on_random_checkbox_toggled(self, cb, *a):
 		if self._recursing: return
+		widgets = {
+			"cbInputTestMode": ("enable_sniffing",),
+			"cbEnableSerials": ("ignore_serials",),
+			"cbEnableRumble": ("output", "rumble"),
+			"cbEnableStatusIcon": ("gui", "enable_status_icon"),
+			"cbMinimizeToStatusIcon": ("gui", "minimize_to_status_icon"),
+			"cbMinimizeOnStart": ("gui", "minimize_on_start"),
+			"cbAutokillDaemon": ("gui", "autokill_daemon"),
+			"cbNewRelease": ("gui", "news", "enabled"),
+		}
+		path = widgets.get(cb.get_name())
+		if path:
+			value = cb.get_active()
+			if path == ("ignore_serials",):
+				value = not value
+			config = self.app.config
+			for key in path[:-1]:
+				config = config[key]
+			config[path[-1]] = value
+		if cb is self.builder.get_object("cbEnableStatusIcon"):
+			cbMinimize = self.builder.get_object("cbMinimizeToStatusIcon")
+			cbMinimize.set_sensitive(not IS_UNITY and cb.get_active())
+			if cb.get_active():
+				self.app.setup_statusicon()
+			else:
+				self.app.destroy_statusicon()
 		self.save_config()
 	
 	
@@ -565,6 +562,7 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		model.set_value(iter, 1, condition.describe())
 		model.set_value(iter, 2, action.describe(Action.AC_SWITCHER))
 		self.hide_dont_destroy(ce)
+		self.save_autoswitch_config()
 		self.save_config()
 	
 	
@@ -587,6 +585,7 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		model, iter = tvItems.get_selection().get_selected()
 		if iter is not None:
 			model.remove(iter)
+		self.save_autoswitch_config()
 		self.save_config()
 		self.on_tvItems_cursor_changed()
 	
