@@ -314,7 +314,7 @@ class Menu(OSDWindow):
 
 	def _check_on_screen_position(self, quick=False):
 		gdk_window = self.get_window()
-		if gdk_window is None:
+		if gdk_window is None or self._selected is None:
 			return
 		x, y = Menu._get_on_screen_position(self._selected.widget)
 		try:
