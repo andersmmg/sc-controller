@@ -24,6 +24,16 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/andersmmg/sc-controller"
 
+# only tools, dependencies need to be in system
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+	"ruff==0.16.6",
+	"ty==0.0.80",
+]
+
 [project.scripts]
 scc = "scc._launcher:scc"
 scc-daemon = "scc._launcher:scc_daemon"
