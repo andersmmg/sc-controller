@@ -58,11 +58,18 @@ jobs:
         id: build
         uses: ./.github/actions/build-appimage
 
+      - name: Prepare Nightly Filename
+        id: prep
+        run: |
+          asset="SC_Controller-x86_64-nightly.AppImage"
+          cp "${{ steps.build.outputs.appimage }}" "${asset}"
+          echo "asset=${asset}" >> "$GITHUB_OUTPUT"
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SC_Controller-nightly-x86_64.AppImage
-          path: ${{ steps.build.outputs.appimage }}
+          name: ${{ steps.prep.outputs.asset }}
+          path: ${{ steps.prep.outputs.asset }}
           if-no-files-found: error
 
       - name: Publish rolling nightly release
@@ -71,7 +78,7 @@ jobs:
         run: |
           gh release delete nightly --yes --cleanup-tag || true
           gh release create nightly \
-            "${{ steps.build.outputs.appimage }}" \
+            "${{ steps.prep.outputs.asset }}" \
             --target "${GITHUB_SHA}" \
             --title "Nightly build ($(date -u +%Y-%m-%d))" \
             --notes "$(cat <<EOF
