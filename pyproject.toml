@@ -125,7 +125,7 @@ include = [
 	"scc/custom.py",
 	"scc/device_monitor.py",
 	"scc/gestures.py",
-	# "scc/macros.py",
+	"scc/macros.py",
 	"scc/mapper.py",
 	"scc/menu_data.py",
 	"scc/modifiers.py",

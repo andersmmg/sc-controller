@@ -6,8 +6,9 @@ Frontier is my favorite.
 """
 
 import logging
+from typing import override
 
-from scc.actions import Action, ButtonAction
+from scc.actions import Action, ButtonAction, SupportsHaptic, SupportsSpeed
 from scc.uinput import Keys
 
 log = logging.getLogger("Macros")
@@ -25,12 +26,12 @@ class Macro(Action):
 
 	def __init__(self, *parameters):
 		Action.__init__(self, *parameters)
-		self.actions = []
+		self.actions: list[Action] = []
 		self.repeat = False
 		self.hold_time = Macro.HOLD_TIME
 		self._active = False
-		self._current = None
-		self._release = None
+		self._current: list[Action] | None = None
+		self._release: Action | None = None
 		for p in parameters:
 			if type(p) == float and len(self.actions):
 				self.actions[-1].delay_after = p
@@ -41,6 +42,7 @@ class Macro(Action):
 			else:
 				self.actions.append(ButtonAction(p))
 
+	@override
 	def button_press(self, mapper):
 		# Macro can be executed only by pressing button
 		if len(self.actions) < 1:
@@ -57,18 +59,24 @@ class Macro(Action):
 	def timer(self, mapper):
 		if self._release is None:
 			# Execute next action
-			self._release, self._current = self._current[0], self._current[1:]
+			current = self._current
+			if current is None:
+				return
+			self._release, self._current = current[0], current[1:]
 			self._release.button_press(mapper)
 			mapper.schedule(self.hold_time, self.timer)
 		else:
 			# Finish execited action
 			self._release.button_release(mapper)
-			if len(self._current) == 0 and self.repeat and self._active:
+			current = self._current
+			if current is None:
+				return
+			if len(current) == 0 and self.repeat and self._active:
 				# Repeating
 				self._current = [*self.actions]
 				mapper.schedule(self._release.delay_after, self.timer)
 				self._release = None
-			elif len(self._current) == 0:
+			elif len(current) == 0:
 				# Finished
 				self._current = None
 				self._release = None
@@ -77,35 +85,38 @@ class Macro(Action):
 				mapper.schedule(self._release.delay_after, self.timer)
 				self._release = None
 
+	@override
 	def cancel(self, mapper):
 		for a in self.actions:
 			a.cancel(mapper)
 
 	def set_haptic(self, hapticdata):
 		for a in self.actions:
-			if a and hasattr(a, "set_haptic"):
+			if a and isinstance(a, SupportsHaptic):
 				a.set_haptic(hapticdata)
 
 	def get_haptic(self):
 		for a in self.actions:
-			if a and hasattr(a, "set_haptic"):
+			if a and isinstance(a, SupportsHaptic):
 				return a.get_haptic()
 		return None
 
 	def set_speed(self, x, y, z):
 		for a in self.actions:
-			if hasattr(a, "set_speed"):
+			if isinstance(a, SupportsSpeed):
 				a.set_speed(x, y, z)
 
 	def get_speed(self):
 		for a in self.actions:
-			if hasattr(a, "set_speed"):
+			if isinstance(a, SupportsSpeed):
 				return a.get_speed()
 		return (1.0,)
 
+	@override
 	def button_release(self, mapper):
 		self._active = False
 
+	@override
 	def describe(self, context):
 		if self.name:
 			return self.name
@@ -113,12 +124,14 @@ class Macro(Action):
 			return "repeat " + "; ".join([x.describe(context) for x in self.actions])
 		return "; ".join([x.describe(context) for x in self.actions])
 
+	@override
 	def to_string(self, multiline=False, pad=0):
 		lst = "; ".join([x.to_string() for x in self.actions])
 		if self.repeat:
 			return (" " * pad) + ("repeat(%s)" % (lst,))
 		return (" " * pad) + lst
 
+	@override
 	def __str__(self):
 		if self.repeat:
 			return "<[repeat %s ]>" % ("; ".join([str(x) for x in self.actions]),)
@@ -165,6 +178,7 @@ class Type(Macro):
 		Macro.__init__(self, *params)
 		self.letters = string
 
+	@override
 	def to_string(self, multiline=False, pad=0):
 		return (" " * pad) + self.COMMAND + "(" + repr(self.letters).strip("u") + ")"
 
@@ -180,29 +194,34 @@ class Cycle(Macro):
 
 	def __init__(self, *parameters):
 		Action.__init__(self, *parameters)
-		self.actions = parameters
-		self._current = 0
+		self.actions = list(parameters)
+		self._index = 0
 
+	@override
 	def button_press(self, mapper):
 		if len(self.actions) > 0:
-			self.actions[self._current].button_press(mapper)
+			self.actions[self._index].button_press(mapper)
 
+	@override
 	def button_release(self, mapper):
 		if len(self.actions) > 0:
-			self.actions[self._current].button_release(mapper)
-			self._current += 1
-			if self._current >= len(self.actions):
-				self._current = 0
+			self.actions[self._index].button_release(mapper)
+			self._index += 1
+			if self._index >= len(self.actions):
+				self._index = 0
 
+	@override
 	def describe(self, context):
 		if self.name:
 			return self.name
 		return _("Cycle Actions")
 
+	@override
 	def to_string(self, multiline=False, pad=0):
 		lst = ", ".join([x.to_string() for x in self.actions])
 		return (" " * pad) + self.COMMAND + "(" + lst + ")"
 
+	@override
 	def __str__(self):
 		return "<cycle %s >" % ("; ".join([str(x) for x in self.actions]),)
 
@@ -237,6 +256,7 @@ class SleepAction(Action):
 		self.delay = float(delay)
 		self.delay_after = self.delay - Macro.HOLD_TIME
 
+	@override
 	def describe(self, context):
 		if self.name:
 			return self.name
@@ -245,12 +265,15 @@ class SleepAction(Action):
 		s = ("%0.2f" % (self.delay,)).strip(".0")
 		return _("Wait %ss") % (s,)
 
+	@override
 	def to_string(self, multiline=False, pad=0):
 		return (" " * pad) + "%s(%0.3f)" % (self.COMMAND, self.delay)
 
+	@override
 	def button_press(self, mapper):
 		pass
 
+	@override
 	def button_release(self, mapper):
 		pass
 
@@ -276,14 +299,17 @@ class PressAction(Action):
 			return ButtonAction.describe_button(self.action)
 		return self.action.describe(Action.AC_BUTTON)
 
+	@override
 	def describe(self, context):
 		if self.name:
 			return self.name
 		return self.PR + " " + self.describe_short()
 
+	@override
 	def button_press(self, mapper):
 		self.action.button_press(mapper)
 
+	@override
 	def button_release(self, mapper):
 		# This is activated only when button is pressed
 		pass
@@ -298,6 +324,7 @@ class ReleaseAction(PressAction):
 	COMMAND = "release"
 	PR = _("Release")
 
+	@override
 	def button_press(self, mapper):
 		self.action.button_release(mapper)
 
@@ -321,6 +348,7 @@ class TapAction(PressAction):
 		self.button = button
 		self.count = count
 
+	@override
 	def button_press(self, mapper):
 		if len(self._lst):
 			# Still executing from scheduler
@@ -383,6 +411,7 @@ class TapAction(PressAction):
 			mapper.schedule(self.PAUSE, self._rel_tap_press)
 		return None
 
+	@override
 	def button_release(self, mapper):
 		if self._keep_pressed:
 			self._keep_pressed = False
@@ -392,6 +421,7 @@ class TapAction(PressAction):
 			else:
 				ButtonAction._button_release(mapper, self.button)
 
+	@override
 	def describe_short(self):
 		"""Used in macro editor"""
 		if self.count <= 1:
@@ -400,11 +430,13 @@ class TapAction(PressAction):
 			return "%s %s" % (_("DblTap"), ButtonAction.describe_button(self.button))
 		return "%s%s %s" % (self.count, _("-tap"), ButtonAction.describe_button(self.button))
 
+	@override
 	def describe(self, context):
 		if self.name:
 			return self.name
 		return self.describe_short()
 
+	@override
 	def to_string(self, multiline=False, pad=0):
 		if self.count <= 1:
 			return "%s(%s)" % (self.COMMAND, self.button)
