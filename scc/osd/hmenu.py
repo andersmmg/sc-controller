@@ -47,10 +47,8 @@ class HorizontalMenu(GridMenu):
 		return widget
 
 	def pack_items(self, parent, items):
-		x = 0
-		for item in items:
-			parent.attach(item.widget, x, 0, 1, 1)
-			x += 1
+		for i, item in enumerate(items):
+			parent.attach(item.widget, i, 0, 1, 1)
 
 	def on_stick_direction(self, trash, x, y):
 		if x != 0:

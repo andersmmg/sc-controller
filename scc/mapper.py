@@ -97,8 +97,7 @@ class Mapper:
 		name = cfg["output"]["name"]
 		rumble = cfg["output"]["rumble"] and poller != None
 		axes = []
-		i = 0
-		for min, max in cfg["output"]["axes"]:
+		for i, (min, max) in enumerate(cfg["output"]["axes"]):
 			fuzz, flat = 0, 0
 			if abs(max - min) > STICK_PAD_MAX:
 				fuzz, flat = 16, 128
@@ -107,7 +106,6 @@ class Mapper:
 			except IndexError:
 				# Out of axes
 				break
-			i += 1
 
 		ui = UInput(
 			vendor=vendor, product=product, version=version, name=name, keys=keys, axes=axes, rels=[], rumble=rumble

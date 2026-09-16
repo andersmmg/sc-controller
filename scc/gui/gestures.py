@@ -65,15 +65,13 @@ class GestureDraw(Gtk.DrawingArea):
 		col = self.colors["hilight"]
 		alpha = col.alpha
 		alpha_fallout = alpha * 0.5 / self.MAX_STEPS
-		step = 0
-		for x, y in reversed(self._detector.get_positions()):
+		for step, (x, y) in enumerate(reversed(self._detector.get_positions())):
 			if step > self.MAX_STEPS:
 				break
 			col.alpha = alpha - alpha_fallout * step
 			Gdk.cairo_set_source_rgba(cr, col)
 			cr.rectangle(box_width * x, box_width * y, box_width, box_width)
 			cr.fill()
-			step += 1
 		col.alpha = alpha
 
 		# Grid

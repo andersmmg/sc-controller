@@ -203,7 +203,7 @@ class ModeshiftEditor(Editor):
 			grActions.attach(clearb, 2, j + 1, 1, 1)
 		# Regenereate combobox with removed button added back to it
 		# - Store acive item from in combobox
-		active, i, index = None, 0, -1
+		active, index = None, -1
 		try:
 			active = model.get_value(cbButtonChooser.get_active_iter(), 0)
 		except Exception:
@@ -211,14 +211,13 @@ class ModeshiftEditor(Editor):
 		# Clear entire combobox
 		model.clear()
 		# Fill it again
-		for button, text in self.BUTTONS:
+		for i, (button, text) in enumerate(self.BUTTONS):
 			model.append(
 				(None if button is None else nameof(button), None if text is None else self._input_name(button, text))
 			)
 			if button is not None:
 				if nameof(button) == active:
 					index = i
-			i += 1
 		# Reselect formely active item
 		if index >= 0:
 			cbButtonChooser.set_active(index)
