@@ -14,6 +14,7 @@ import threading
 import time
 import traceback
 from socketserver import StreamRequestHandler, ThreadingMixIn, UnixStreamServer
+from typing import override
 
 from scc import drivers
 from scc.actions import Action
@@ -96,6 +97,7 @@ class SCCDaemon(Daemon):
 		log.debug("Initializing drivers...")
 		cfg = Config()
 		self._to_start = set()  # del-eted later by start_drivers
+		self._to_stop = set()
 		to_init = []
 		for importer, modname, ispkg in pkgutil.walk_packages(path=drivers.__path__, onerror=lambda x: None):
 			if not ispkg and modname != "driver":
@@ -116,6 +118,8 @@ class SCCDaemon(Daemon):
 			if mod.init(self, cfg):
 				if hasattr(mod, "start"):
 					self._to_start.add(mod.start)
+				if hasattr(mod, "stop"):
+					self._to_stop.add(mod.stop)
 
 	def init_default_mapper(self):
 		"""
@@ -139,7 +143,7 @@ class SCCDaemon(Daemon):
 		del self._to_start
 
 	def stop_drivers(self):
-		for s in self.drivers_to_stop:
+		for s in self._to_stop:
 			s(self)
 
 	def get_poller(self):
@@ -241,7 +245,7 @@ class SCCDaemon(Daemon):
 		with self.lock:
 			for c in self.clients:
 				c.close()
-		os.system("%s %s None restart &" % (sys.executable, sys.argv[0]))
+		subprocess.Popen([sys.executable, sys.argv[0], "None", "restart"])
 
 	def on_sa_led(self, mapper, action):
 		"""Called when 'led' action is used"""
@@ -383,6 +387,7 @@ class SCCDaemon(Daemon):
 			return
 		log.error("Cannot load profile: Profile '%s' not found", name)
 
+	@override
 	def on_start(self):
 		os.chdir(self.cwd)
 
@@ -468,6 +473,8 @@ class SCCDaemon(Daemon):
 
 	def load_default_profile(self, mapper=None):
 		mapper = mapper or self.default_mapper
+		if mapper is None:
+			return
 		if self.default_profile == None:
 			try:
 				self.default_profile = find_profile(Config()["recent_profiles"][0])
@@ -623,6 +630,7 @@ class SCCDaemon(Daemon):
 		if not default_sent:
 			self.send_profile_info(None, method, mapper=self.default_mapper)
 
+	@override
 	def run(self):
 		log.debug("Starting SCCDaemon...")
 		signal.signal(signal.SIGTERM, self.sigterm)
@@ -649,6 +657,7 @@ class SCCDaemon(Daemon):
 		instance = self
 
 		class SSHandler(StreamRequestHandler):
+			@override
 			def handle(self):
 				instance._sshandler(self.connection, self.rfile, self.wfile)
 
@@ -676,6 +685,9 @@ class SCCDaemon(Daemon):
 			callback(gesture)
 
 		def set(action):
+			if gd is None:
+				# Cannot happen, set() is called only after gd is created
+				return action
 			# ObservingAction should be above GestureDetector
 			if isinstance(action, ObservingAction):
 				gd.original_action = action.original_action
@@ -807,10 +819,13 @@ class SCCDaemon(Daemon):
 		elif message.startswith("Replace:"):
 			try:
 				l, actionstr = message.split(":", 1)[1].strip(" \t\r").split(" ", 1)
-				action = TalkingActionParser().restart(actionstr).parse().compress()
+				action = TalkingActionParser().restart(actionstr).parse()
+				if action is None:
+					raise ValueError("Failed to parse action")
+				action = action.compress()
 			except Exception as e:
 				e = string_escape(str(e)).encode("utf-8")
-				client.wfile.write(b"Fail: failed to parse: " + e + "\n")
+				client.wfile.write(b"Fail: failed to parse: " + e + b"\n")
 				return
 			with self.lock:
 				try:
@@ -918,6 +933,8 @@ class SCCDaemon(Daemon):
 			menuaction = None
 
 			def press(mapper):
+				if menuaction is None:
+					return
 				try:
 					menuaction.button_press(mapper)
 					client.mapper.schedule(0.1, release)
@@ -926,6 +943,8 @@ class SCCDaemon(Daemon):
 					log.exception(e)
 
 			def release(mapper):
+				if menuaction is None:
+					return
 				try:
 					menuaction.button_release(mapper)
 				except Exception as e:
@@ -1078,7 +1097,8 @@ class SCCDaemon(Daemon):
 		raise ValueError("Unknown source: %s" % (s,))
 
 	def _remove_socket(self):
-		self.sserver.shutdown()
+		if self.sserver is not None:
+			self.sserver.shutdown()
 		if os.path.exists(self.socket_file):
 			os.unlink(self.socket_file)
 		log.debug("Control socket removed")
@@ -1200,6 +1220,7 @@ class ReportingAction(Action):
 			self.client.locked_actions[self.mapper] = set()
 		self.client.locked_actions[self.mapper].add(self)
 
+	@override
 	def __repr__(self):
 		return "<%s of %x>" % (self.__class__.__name__, hash(self.client))
 
@@ -1213,12 +1234,14 @@ class ReportingAction(Action):
 			self.client.rfile.close()
 			self.client.wfile.close()
 
+	@override
 	def trigger(self, mapper, position, old_position):
 		if mapper.get_controller():
 			self._report(
 				"Event: %s %s %s %s\n" % (mapper.get_controller().get_id(), nameof(self.what), position, old_position)
 			)
 
+	@override
 	def button_press(self, mapper, number=1):
 		if mapper.get_controller():
 			if self.what == SCButtons.STICKPRESS:
@@ -1226,9 +1249,11 @@ class ReportingAction(Action):
 			else:
 				self._report("Event: %s %s %s\n" % (mapper.get_controller().get_id(), nameof(self.what), number))
 
+	@override
 	def button_release(self, mapper):
 		ReportingAction.button_press(self, mapper, 0)
 
+	@override
 	def whole(self, mapper, x, y, what):
 		min_difference = self.MIN_DIFFERENCE
 		if what == CPAD:
@@ -1276,18 +1301,23 @@ class ReplacedAction(LockedAction):
 		self._store_lock()
 		log.debug("%s replaced by %s", self.what, self.client)
 
+	@override
 	def reaply(self, client, daemon):
 		client.replace_action(daemon, self.what, self.new_action)
 
+	@override
 	def trigger(self, mapper, position, old_position):
 		self.new_action.trigger(mapper, position, old_position)
 
+	@override
 	def button_press(self, mapper, number=1):
 		self.new_action.button_press(mapper, mapper)
 
+	@override
 	def button_release(self, mapper):
 		self.new_action.button_release(mapper, mapper)
 
+	@override
 	def whole(self, mapper, x, y, what):
 		self.new_action.whole(mapper, x, y, what)
 
@@ -1306,6 +1336,7 @@ class ObservingAction(ReportingAction):
 	def reaply(self, client, daemon):
 		client.observe_action(daemon, self.what)
 
+	@override
 	def cancel(self, mapper):
 		self.original_action.cancel(mapper)
 
@@ -1324,18 +1355,22 @@ class ObservingAction(ReportingAction):
 		daemon._apply(self.mapper, self.what, _unobserve)
 		log.debug("%s on %s no longer observed by %x", self.what, self.mapper.get_controller(), hash(self.client))
 
+	@override
 	def trigger(self, mapper, position, old_position):
 		ReportingAction.trigger(self, mapper, position, old_position)
 		self.original_action.trigger(mapper, position, old_position)
 
+	@override
 	def button_press(self, mapper, number=1):
 		ReportingAction.button_press(self, mapper, number)
 		self.original_action.button_press(mapper)
 
+	@override
 	def button_release(self, mapper):
 		ReportingAction.button_release(self, mapper)
 		self.original_action.button_release(mapper)
 
+	@override
 	def whole(self, mapper, x, y, what):
 		ReportingAction.whole(self, mapper, x, y, what)
 		self.original_action.whole(mapper, x, y, what)
@@ -1368,7 +1403,8 @@ class Subprocess:
 				self.p = None
 				return
 			self.p = None
-			if not self._killed:
+			# _killed can be set from another thread by mark_killed()
+			if not self._killed:  # ty: ignore[redundant-condition-strict]
 				log.warning("%s died; restarting after %ss", self.binary_name, self.restart_after)
 				time.sleep(self.restart_after)
 

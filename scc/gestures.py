@@ -39,6 +39,7 @@ class GestureDetector(Action):
 		self._up_direction = up_direction
 		self._on_finished = on_finished
 		self._enabled = False
+		self.original_action: Action | None = None
 		self._positions = []
 		self._result = []
 
