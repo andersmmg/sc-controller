@@ -6,11 +6,14 @@ Parses action(s) expressed as string or in dict loaded from json file into
 one or more Action instances.
 """
 
+from __future__ import annotations
+
 import sys
 import token as TokenType
 from collections import namedtuple
 from io import StringIO
 from tokenize import TokenError, generate_tokens
+from typing import Any, cast
 
 from scc.actions import Action, MultiAction, NoAction, RangeOP
 from scc.constants import PARSER_CONSTANTS, STICK, HapticPos, SCButtons
@@ -23,7 +26,7 @@ class ParseError(Exception):
 	pass
 
 
-def build_action_constants():
+def build_action_constants() -> dict[str, Any]:
 	"""Generates dicts for ActionParser.CONSTS"""
 	rv = {
 		"Keys": Keys,
@@ -56,14 +59,17 @@ class ActionParser:
 			# do something with error
 	"""
 
-	Token = namedtuple("Token", "type value")
+	Token = namedtuple("Token", ["type", "value"])
 
 	CONSTS = build_action_constants()
 
-	def __init__(self, string=""):
+	tokens: list[Token] | None
+	index: int
+
+	def __init__(self, string: str = "") -> None:
 		self.restart(string)
 
-	def from_json_data(self, data, key=None):
+	def from_json_data(self, data: dict[str, Any], key: str | None = None) -> Action:
 		"""
 		Converts dict stored in profile file into action.
 
@@ -77,21 +83,22 @@ class ActionParser:
 				return self.from_json_data(data[key], None)
 			return NoAction()
 
+		a: Action
 		if "action" in data:
 			a = self.restart(data["action"]).parse() or NoAction()
 		else:
 			a = NoAction()
-		decoders = set()
+		decoders: set[Any] = set()
 		for key in data:
 			if key in Action.PKEYS:
 				decoders.add(Action.PKEYS[key])
 
 		if decoders:
 			for cls in sorted(decoders, key=lambda a: a.PROFILE_KEY_PRIORITY):
-				a = cls.decode(data, a, self, 0)  # Profile version is not yet used anywhere
+				a = cast(Action, cls.decode(data, a, self, 0))  # Profile version is not yet used anywhere
 		return a
 
-	def restart(self, string):
+	def restart(self, string: str) -> ActionParser:
 		"""
 		Restarts parsing with new string
 		Returns self for chaining.
@@ -108,20 +115,23 @@ class ActionParser:
 		self.index = 0
 		return self
 
-	def _next_token(self):
+	def _next_token(self) -> ActionParser.Token:
+		assert self.tokens is not None
 		rv = self.tokens[self.index]
 		self.index += 1
 		return rv
 
-	def _peek_token(self):
+	def _peek_token(self) -> ActionParser.Token:
 		"""As _next_token, but without increasing counter"""
+		assert self.tokens is not None
 		return self.tokens[self.index]
 
-	def _tokens_left(self):
+	def _tokens_left(self) -> bool:
 		"""Returns True if there are any tokens left"""
+		assert self.tokens is not None
 		return self.index < len(self.tokens)
 
-	def _parse_parameter(self):
+	def _parse_parameter(self) -> Any:
 		"""Parses single parameter"""
 		t = self._next_token()
 		while t.type == TokenType.NEWLINE or t.value == "\n":
@@ -198,7 +208,7 @@ class ActionParser:
 
 		raise ParseError("Expected parameter, got '%s'" % (t.value,))
 
-	def _parse_number(self):
+	def _parse_number(self) -> float | int:
 		t = self._next_token()
 		if t.type != TokenType.NUMBER:
 			raise ParseError("Expected number, got '%s'" % (t.value,))
@@ -210,7 +220,7 @@ class ActionParser:
 			return int(t.value, 2)
 		return int(t.value)
 
-	def _parse_parameters(self):
+	def _parse_parameters(self) -> list[Any]:
 		"""Parses parameter list"""
 		# Check and skip over '('
 		t = self._next_token()
@@ -244,7 +254,7 @@ class ActionParser:
 		# Code shouldn't reach here, unless there is not closing ')' in parameter list
 		raise ParseError("Unmatched parenthesis")
 
-	def _create_action(self, cls, *pars):
+	def _create_action(self, cls: type[Action], *pars: Any) -> Action:
 		try:
 			return cls(*pars)
 		except ValueError as e:
@@ -253,7 +263,7 @@ class ActionParser:
 			print(e, file=sys.stderr)
 			raise ParseError("Invalid number of parameters for '%s'" % (cls.COMMAND)) from e
 
-	def _parse_action(self, frm=Action.ALL):
+	def _parse_action(self, frm: dict[str, Any] = Action.ALL) -> Action:
 		"""
 		Parses one action, that is one of:
 			- something(params)
@@ -328,12 +338,13 @@ class ActionParser:
 
 		return self._create_action(action_class, *parameters)
 
-	def parse(self):
+	def parse(self) -> Action | None:
 		"""
 		Returns parsed action.
 		Throws ParseError if action cannot be parsed.
+		Error-tolerant subclasses (e.g. TalkingActionParser) return None instead.
 		"""
-		if self.tokens == None:
+		if self.tokens is None:
 			raise ParseError("Syntax error")
 		a = self._parse_action()
 		if self._tokens_left():
@@ -347,11 +358,13 @@ class TalkingActionParser(ActionParser):
 	trowing exception and outputs message to stderr
 	"""
 
-	def restart(self, string):
+	string: str
+
+	def restart(self, string: str) -> ActionParser:  # ty: ignore[missing-override-decorator]
 		self.string = string
 		return ActionParser.restart(self, string)
 
-	def parse(self):
+	def parse(self) -> Action | None:  # ty: ignore[missing-override-decorator]
 		"""
 		Returns parsed action or None if action cannot be parsed.
 		"""

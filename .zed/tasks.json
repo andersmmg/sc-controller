@@ -18,9 +18,11 @@
   {
     "label": "Run Tests",
     "command": "PYTHONPATH=. pytest -q",
+    "save": "all",
   },
   {
     "label": "Run Checks",
     "command": "ty check && ruff check",
+    "save": "all",
   }
 ]
