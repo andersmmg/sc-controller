@@ -35,8 +35,9 @@ def load_custom_module(log, who_calls="daemon"):
 		import importlib.util
 
 		spec = importlib.util.spec_from_file_location("custom", filename)
-		module = importlib.util.module_from_spec(spec)
-		spec.loader.exec_module(module)
+		if spec is not None and spec.loader is not None:
+			module = importlib.util.module_from_spec(spec)
+			spec.loader.exec_module(module)
 		log.warning("=" * 60)
 		return True
 	return False

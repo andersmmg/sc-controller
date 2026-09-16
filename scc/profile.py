@@ -7,8 +7,9 @@ Handles mapping profile stored in json file
 
 import json
 import logging
+from typing import Any, override
 
-from scc.actions import NoAction
+from scc.actions import Action, NoAction
 from scc.constants import CPAD, DPAD, GYRO, LEFT, RIGHT, RSTICK, STICK, WHOLE, SCButtons
 from scc.lib.jsonencoder import JSONEncoder
 from scc.menu_data import MenuData
@@ -40,6 +41,9 @@ class Profile:
 
 	def __init__(self, parser):
 		self.parser = parser
+		self.buttons: dict[SCButtons, Action] = {}
+		self.triggers: dict[str, Action] = {}
+		self.pads: dict[str, Action] = {}
 		self.clear()
 		self.filename = None
 		# UI-only values
@@ -216,8 +220,7 @@ class Profile:
 		and ignores menus.
 		"""
 		for dct in (self.buttons, self.triggers, self.pads):
-			for k in dct:
-				yield dct[k]
+			yield from dct.values()
 		yield from (self.stick, self.rstick, self.gyro)
 
 	def get_filename(self):
@@ -231,9 +234,12 @@ class Profile:
 		Calls compress on every action to throw out some redundant stuff.
 		Note that calling save() after compress() will cause data loss.
 		"""
-		for dct in (self.buttons, self.triggers, self.pads):
-			for x in dct:
-				dct[x] = dct[x].compress()
+		for x, action in self.buttons.items():
+			self.buttons[x] = action.compress()
+		for x, action in self.triggers.items():
+			self.triggers[x] = action.compress()
+		for x, action in self.pads.items():
+			self.pads[x] = action.compress()
 		self.rstick = self.rstick.compress()
 		self.stick = self.stick.compress()
 		self.gyro = self.gyro.compress()
@@ -325,9 +331,10 @@ class Profile:
 
 
 class Encoder(JSONEncoder):
-	def default(self, obj):
-		# if type(obj) in (list, tuple):
-		# 	return basestring("[" + ", ".join(self.encode(x) for x in obj) + " ]")
-		if hasattr(obj, "encode"):
-			return obj.encode()
-		return JSONEncoder.default(self, obj)
+	@override
+	def default(self, o: Any) -> Any:
+		# if type(o) in (list, tuple):
+		# 	return basestring("[" + ", ".join(self.encode(x) for x in o) + " ]")
+		if hasattr(o, "encode"):
+			return o.encode()
+		return JSONEncoder.default(self, o)

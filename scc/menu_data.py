@@ -7,6 +7,7 @@ Container for list of menu items + required parsers
 
 import json
 import os
+from typing import override
 
 from scc.actions import Action
 from scc.tools import _
@@ -218,11 +219,13 @@ class Separator(MenuItem):
 	def __init__(self, label=None):
 		MenuItem.__init__(self, None, label)
 
+	@override
 	def describe(self):
 		if self.label:
 			return _("----[ %s ]----") % (self.label,)
 		return _("---- Separator ----")
 
+	@override
 	def encode(self):
 		if self.label:
 			return {"separator": True, "name": self.label}
@@ -238,9 +241,11 @@ class Submenu(MenuItem):
 		self.filename = filename
 		MenuItem.__init__(self, str(id(self)), label=label, icon=icon)
 
+	@override
 	def describe(self):
 		return self.label + "  " + _(">>")
 
+	@override
 	def encode(self):
 		rv = {"submenu": self.filename}
 		if self.label:
