@@ -59,7 +59,7 @@ class Mapper:
 		log.debug("Keyboard: %s" % (self.keyboard,))
 		self.mouse = self.create_mouse(mouse) if mouse else Dummy()
 		log.debug("Mouse:    %s" % (self.mouse,))
-		self.gamepad = self.create_gamepad(gamepad, poller) if gamepad else Dummy()
+		self.gamepad: UInput | Dummy = self.create_gamepad(gamepad, poller) if gamepad else Dummy()
 		log.debug("Gamepad:  %s" % (self.gamepad,))
 
 		# Set by SCCDaemon instance; Used to handle actions
@@ -84,7 +84,7 @@ class Mapper:
 			# Completly undocumented and for debuging purposes only.
 			# If set, no gamepad is emulated
 			self.gamepad = Dummy()
-			return None
+			return self.gamepad
 		cfg = Config()
 		keys = list(ALL_BUTTONS[0 : cfg["output"]["buttons"]])
 		# ensure dpad buttons are included
@@ -123,7 +123,10 @@ class Mapper:
 		return Mouse(name=name)
 
 	def _rumble_ready(self, fd, event):
-		ef = self.gamepad.ff_read()
+		gamepad = self.gamepad
+		if isinstance(gamepad, Dummy):
+			return
+		ef = gamepad.ff_read()
 		if ef:  # tale of...
 			self.send_feedback(
 				HapticData(
@@ -370,7 +373,7 @@ class Mapper:
 		self.buttons = state.buttons
 
 		if (
-			(self.controller.flags & ControllerFlags.IS_SC2) == 0
+			(controller.flags & ControllerFlags.IS_SC2) == 0
 			and self.buttons & SCButtons.LPAD
 			and not self.buttons & (SCButtons.LPADTOUCH | STICKTILT)
 		):
@@ -406,7 +409,7 @@ class Mapper:
 						self.send_feedback(HapticData(HapticPos.RIGHT, amplitude=512, count=1))
 
 			# Check sticks
-			if self.controller.flags & ControllerFlags.SEPARATE_STICK:
+			if controller.flags & ControllerFlags.SEPARATE_STICK:
 				if (
 					FE_STICK in fe
 					or self.old_state.stick_x != state.stick_x
@@ -424,7 +427,7 @@ class Mapper:
 					or (btn_rem & SCButtons.LSTICKTOUCH)
 				):
 					self.profile.stick.whole(self, state.lpad_x, state.lpad_y, STICK)
-			if self.controller.flags & ControllerFlags.HAS_RSTICK and hasattr(state, "rstick_x"):
+			if controller.flags & ControllerFlags.HAS_RSTICK and hasattr(state, "rstick_x"):
 				if (
 					FE_STICK in fe
 					or self.old_state.rstick_x != state.rstick_x
@@ -462,10 +465,7 @@ class Mapper:
 					self.profile.pads[DPAD].whole(self, state.dpad_x, state.dpad_y, DPAD)
 
 			# LPAD
-			if (
-				self.controller.flags & ControllerFlags.SEPARATE_STICK
-				and not self.controller.flags & ControllerFlags.IS_SC2
-			):
+			if controller.flags & ControllerFlags.SEPARATE_STICK and not controller.flags & ControllerFlags.IS_SC2:
 				if FE_PAD in fe or self.old_state.lpad_x != state.lpad_x or self.old_state.lpad_y != state.lpad_y:
 					self.profile.pads[LEFT].whole(self, state.lpad_x, state.lpad_y, LEFT)
 			else:

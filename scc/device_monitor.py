@@ -14,9 +14,13 @@ import re
 import select
 import time
 from ctypes.util import find_library
+from typing import TYPE_CHECKING, override
 
 from scc.lib.eudevmonitor import Eudev, Monitor
 from scc.lib.ioctl_opt import IOR
+
+if TYPE_CHECKING:
+	from scc.sccdaemon import SCCDaemon
 
 log = logging.getLogger("DevMon")
 
@@ -45,10 +49,10 @@ UEVENT_SEQNUM = "/sys/kernel/uevent_seqnum"
 class DeviceMonitor(Monitor):
 	def __init__(self, *a):
 		Monitor.__init__(self, *a)
-		self.daemon = None
+		self.daemon: SCCDaemon | None = None
 		self.dev_added_cbs = {}
 		self.dev_removed_cbs = {}
-		self.bt_addresses = {}
+		self.bt_addresses: dict[str, str] = {}
 		self.known_devs = {}
 		self._last_seqnum = None
 		self._ticks = 0
@@ -77,18 +81,23 @@ class DeviceMonitor(Monitor):
 			vendor, product, old_cb = self.known_devs.pop(syspath)
 			self.known_devs[syspath] = (vendor, product, cb)
 
+	@override
 	def start(self):
 		"""Registers poller and starts listening for events"""
 		if not HAVE_BLUETOOTH_LIB:
 			log.warning("Failed to load libbluetooth.so, bluetooth support will be incomplete")
-		poller = self.daemon.poller
+		daemon = self.daemon
+		if daemon is None:
+			log.error("Device monitor not started: no daemon assigned")
+			return
+		poller = daemon.poller
 		try:
 			self.set_receive_buffer_size(RECEIVE_BUFFER_SIZE)
 		except OSError as e:
 			log.warning("Failed to increase udev monitor receive buffer: %s", e)
 		poller.register(self.fileno(), poller.POLLIN, self.on_data_ready)
 		Monitor.start(self)
-		self._rescan_task = self.daemon.get_scheduler().schedule(RESCAN_INTERVAL, self._periodic_rescan)
+		self._rescan_task = daemon.get_scheduler().schedule(RESCAN_INTERVAL, self._periodic_rescan)
 
 	def _on_new_syspath(self, subsystem, syspath):
 		try:
@@ -161,19 +170,16 @@ class DeviceMonitor(Monitor):
 		if ":" not in name:
 			return None
 		addr = self.bt_addresses.get(name)
+		if addr is None:
+			return None
 		for fname in os.listdir("/sys/bus/hid/devices/"):
 			node = os.path.join("/sys/bus/hid/devices/", fname)
 			try:
 				node_addr = DeviceMonitor._find_bt_address(node)
 			except OSError:
 				continue
-			try:
-				# SteamOS 3 "Holo" return caps
-				if node_addr.lower() == addr.lower():
-					return node
-			# None
-			except AttributeError:
-				pass
+			if node_addr is not None and node_addr.lower() == addr.lower():
+				return node
 		return None
 
 	def _has_data(self):
@@ -221,7 +227,9 @@ class DeviceMonitor(Monitor):
 				self.rescan()
 			except Exception as e:
 				log.exception(e)
-		self._rescan_task = self.daemon.get_scheduler().schedule(RESCAN_INTERVAL, self._periodic_rescan)
+		daemon = self.daemon
+		if daemon is not None:
+			self._rescan_task = daemon.get_scheduler().schedule(RESCAN_INTERVAL, self._periodic_rescan)
 
 	def on_data_ready(self, *a):
 		try:
@@ -306,9 +314,7 @@ class DeviceMonitor(Monitor):
 						if line.startswith("PRODUCT="):
 							parts = line.split("=")[1].split("/")
 							if len(parts) >= 3:
-								vendor = int(parts[1], 16)
-								product = int(parts[2], 16)
-							return vendor, product
+								return int(parts[1], 16), int(parts[2], 16)
 			except (ValueError, IndexError):
 				pass
 		if subsystem is None:
@@ -317,15 +323,18 @@ class DeviceMonitor(Monitor):
 			# Search for folder that matches regular expression...
 			names = [name for name in os.listdir(syspath) if os.path.isdir(syspath) and RE_BT_NUMBERS.match(name)]
 			if len(names) > 0:
-				vendor, product = [int(x, 16) for x in RE_BT_NUMBERS.match(names[0]).groups()]
-				return vendor, product
+				match = RE_BT_NUMBERS.match(names[0])
+				if match is not None:
+					vendor, product = [int(x, 16) for x in match.groups()]
+					return vendor, product
 			# Above method works for anything _but_ SteamController
 			# For that one, following desperate mess is needed
 			node = self._dev_for_hci(syspath)
 			if node:
 				name = node.split("/")[-1]
-				if RE_BT_NUMBERS.match(name):
-					vendor, product = [int(x, 16) for x in RE_BT_NUMBERS.match(name).groups()]
+				match = RE_BT_NUMBERS.match(name)
+				if match is not None:
+					vendor, product = [int(x, 16) for x in match.groups()]
 					return vendor, product
 		raise OSError("Cannot determine vendor and product IDs")
 

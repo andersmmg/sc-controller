@@ -8,6 +8,7 @@ it clean.
 """
 
 import logging
+from typing import override
 
 from scc.actions import Action
 from scc.constants import CPAD, CPAD_MIN, CPAD_X_MAX, CPAD_Y_MAX, STICK_PAD_MAX, STICK_PAD_MIN
@@ -58,6 +59,7 @@ class GestureDetector(Action):
 		"""Returns gesture resolution"""
 		return self._resolution
 
+	@override
 	def whole(self, mapper, x, y, what):
 		if self._enabled:
 			if (x, y) == (0, 0):
