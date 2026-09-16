@@ -13,7 +13,7 @@ import token as TokenType
 from collections import namedtuple
 from io import StringIO
 from tokenize import TokenError, generate_tokens
-from typing import Any, cast
+from typing import Any, cast, override
 
 from scc.actions import Action, MultiAction, NoAction, RangeOP
 from scc.constants import PARSER_CONSTANTS, STICK, HapticPos, SCButtons
@@ -360,11 +360,13 @@ class TalkingActionParser(ActionParser):
 
 	string: str
 
-	def restart(self, string: str) -> ActionParser:  # ty: ignore[missing-override-decorator]
+	@override
+	def restart(self, string: str) -> ActionParser:
 		self.string = string
 		return ActionParser.restart(self, string)
 
-	def parse(self) -> Action | None:  # ty: ignore[missing-override-decorator]
+	@override
+	def parse(self) -> Action | None:
 		"""
 		Returns parsed action or None if action cannot be parsed.
 		"""

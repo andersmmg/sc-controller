@@ -10,7 +10,7 @@ readme = "README.md"
 license = "GPL-2.0"
 license-files = ["LICENSE", "ADDITIONAL-LICENSES"]
 authors = [{ name = "andersmmg" }]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 keywords = ["steam", "controller", "gamepad", "mapping"]
 classifiers = [
 	"Development Status :: 4 - Beta",
@@ -45,6 +45,11 @@ scc-osd-menu = "scc._launcher:osd_menu"
 scc-osd-message = "scc._launcher:osd_message"
 scc-osd-radial-menu = "scc._launcher:osd_radial_menu"
 scc-osd-show-bindings = "scc._launcher:osd_show_bindings"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning:gi",
+]
 
 [tool.ruff]
 line-length = 120
