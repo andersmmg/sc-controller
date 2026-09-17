@@ -50,11 +50,11 @@ def test_analog_hilight_color_rejects_invalid_arguments(color, maximum):
 
 def test_svg_inversion_includes_cursor_gradient_stops():
 	color = INPUT_TEST_COLOR[-6:].lower()
-	tree = ET.fromstring('<svg><stop style="stop-color:%s" /></svg>' % color)
+	tree = ET.fromstring(f'<svg><stop style="stop-color:{color}" /></svg>')
 
 	SVGEditor.invert_colors(tree)
 
-	assert "stop-color:%s" % SVGEditor._invert_color("#" + color) in tree[0].attrib["style"]
+	assert "stop-color:{}".format(SVGEditor._invert_color("#" + color)) in tree[0].attrib["style"]
 
 
 def test_svg_inversion_treats_omitted_shape_fill_as_black():
@@ -62,7 +62,7 @@ def test_svg_inversion_treats_omitted_shape_fill_as_black():
 
 	SVGEditor.invert_colors(tree)
 
-	assert "fill:%s" % SVGEditor._invert_color("#000000") in tree[0].attrib["style"]
+	assert "fill:{}".format(SVGEditor._invert_color("#000000")) in tree[0].attrib["style"]
 
 
 def test_svg_inversion_preserves_explicit_none_fill():

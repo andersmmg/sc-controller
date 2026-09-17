@@ -136,12 +136,7 @@ class ControllerRegistration(Editor):
 		# Generate database ID
 		wordswap = lambda i: ((i & 0xFF) << 8) | ((i & 0xFF00) >> 8)
 		# TODO: version?
-		weird_id = "%.4x%.8x%.8x%.8x0000" % (
-			wordswap(self._evdevice.info.bustype),
-			wordswap(self._evdevice.info.vendor),
-			wordswap(self._evdevice.info.product),
-			wordswap(self._evdevice.info.version),
-		)
+		weird_id = f"{wordswap(self._evdevice.info.bustype):04x}{wordswap(self._evdevice.info.vendor):08x}{wordswap(self._evdevice.info.product):08x}{wordswap(self._evdevice.info.version):08x}0000"
 
 		# Search in database
 		try:
@@ -333,7 +328,7 @@ class ControllerRegistration(Editor):
 			inverted, brightness = self.app.get_svg_invert()
 			images = [
 				SVGWidget.render_svg_file(
-					os.path.join(self.app.imagepath, "button-images", "%s.svg" % (b,)), inverted, brightness
+					os.path.join(self.app.imagepath, "button-images", f"{b}.svg"), inverted, brightness
 				)
 				for b in group["buttons"][0:4]
 			]
@@ -352,16 +347,12 @@ class ControllerRegistration(Editor):
 
 		filename = self._evdevice.name.strip().replace("/", "")
 		if self._tester.driver == "hid":
-			filename = "%.4x:%.4x-%s" % (self._evdevice.info.vendor, self._evdevice.info.product, filename)
+			filename = f"{self._evdevice.info.vendor:04x}:{self._evdevice.info.product:04x}-{filename}"
 
 		config_file = os.path.join(
 			get_config_path(),
 			"devices",
-			"%s-%s.json"
-			% (
-				self._tester.driver,
-				filename,
-			),
+			f"{self._tester.driver}-{filename}.json",
 		)
 
 		with open(config_file, "w") as fh:
@@ -493,7 +484,7 @@ class ControllerRegistration(Editor):
 			retry_with_evdev(None, 0)
 		else:
 			log.debug("Trying to use %.4x:%.4x with HID driver...", dev.info.vendor, dev.info.product)
-			self._tester = Tester("hid", "%.4x:%.4x" % (dev.info.vendor, dev.info.product))
+			self._tester = Tester("hid", f"{dev.info.vendor:04x}:{dev.info.product:04x}")
 			self._tester.__signals = [
 				self._tester.connect("ready", self.on_registration_ready),
 				self._tester.connect("error", retry_with_evdev),
@@ -579,9 +570,7 @@ class ControllerRegistration(Editor):
 				cb.set_sensitive(False)
 				btNext.set_sensitive(False)
 				if target == "hid":
-					self._tester = Tester(
-						"hid", "%.4x:%.4x" % (self._evdevice.info.vendor, self._evdevice.info.product)
-					)
+					self._tester = Tester("hid", f"{self._evdevice.info.vendor:04x}:{self._evdevice.info.product:04x}")
 				else:
 					self._tester = Tester("evdev", self._evdevice.path)
 				self._tester.__signals = [

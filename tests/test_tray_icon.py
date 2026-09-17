@@ -77,7 +77,7 @@ def test_invert_statusicon_current_color():
 	vals = _paint_values(data)
 	assert "none" in vals
 	assert "currentColor" not in vals
-	assert any(v.startswith("#") and int(v[1:3], 16) > 128 for v in vals), "stroke was not inverted: %s" % vals
+	assert any(v.startswith("#") and int(v[1:3], 16) > 128 for v in vals), f"stroke was not inverted: {vals}"
 
 
 def test_tray_icon_light_mode_uses_original(tmp_path):

@@ -85,7 +85,7 @@ class Daemon:
 			# Check if PID coresponds to running daemon process and fail if yes
 			try:
 				assert os.path.exists("/proc")  # Just in case of BSD...
-				with open("/proc/%s/cmdline" % (pid,)) as cmdf:
+				with open(f"/proc/{pid}/cmdline") as cmdf:
 					cmdline = cmdf.read().replace("\x00", " ").strip()
 				if sys.argv[0] in cmdline:
 					raise Exception("already running")

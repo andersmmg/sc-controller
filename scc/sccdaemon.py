@@ -103,7 +103,7 @@ class SCCDaemon(Daemon):
 			if not ispkg and modname != "driver":
 				if modname == "usb" or cfg["drivers"].get(modname):
 					# 'usb' driver has to be always active
-					mod = getattr(__import__("scc.drivers.%s" % (modname,)).drivers, modname)
+					mod = getattr(__import__(f"scc.drivers.{modname}").drivers, modname)
 					if hasattr(mod, "init"):
 						to_init.append(mod)
 				else:
@@ -576,7 +576,7 @@ class SCCDaemon(Daemon):
 		"""
 		with self.lock:
 			self.errors.append((id, error))
-			self._send_to_all(("Error: %s\n" % (error,)).encode("utf-8"))
+			self._send_to_all((f"Error: {error}\n").encode())
 
 	def remove_error(self, id):
 		"""
@@ -596,12 +596,8 @@ class SCCDaemon(Daemon):
 		Sends controller count and list of controllers using provided method
 		"""
 		for c in self.controllers:
-			method(
-				("Controller: %s %s %s %s\n" % (c.get_id(), c.get_type(), c.flags, c.get_gui_config_file())).encode(
-					"utf-8"
-				)
-			)
-		method(("Controller Count: %s\n" % (len(self.controllers),)).encode("utf-8"))
+			method((f"Controller: {c.get_id()} {c.get_type()} {c.flags} {c.get_gui_config_file()}\n").encode())
+		method((f"Controller Count: {len(self.controllers)}\n").encode())
 
 	def send_profile_info(self, controller, method, mapper=None):
 		"""
@@ -610,11 +606,9 @@ class SCCDaemon(Daemon):
 		"""
 		mapper = mapper if mapper else controller.mapper
 		if controller:
-			method(
-				("Controller profile: %s %s\n" % (controller.get_id(), mapper.profile.get_filename())).encode("utf-8")
-			)
+			method((f"Controller profile: {controller.get_id()} {mapper.profile.get_filename()}\n").encode())
 		if mapper == self.default_mapper:
-			method(("Current profile: %s\n" % (mapper.profile.get_filename(),)).encode("utf-8"))
+			method((f"Current profile: {mapper.profile.get_filename()}\n").encode())
 			return True
 		return False
 
@@ -705,15 +699,15 @@ class SCCDaemon(Daemon):
 			client = Client(connection, self.default_mapper, rfile, wfile)
 			self.clients.add(client)
 			wfile.write(b"SCCDaemon\n")
-			wfile.write(("Version: %s\n" % (DAEMON_VERSION,)).encode("utf-8"))
-			wfile.write(("PID: %s\n" % (os.getpid(),)).encode("utf-8"))
+			wfile.write((f"Version: {DAEMON_VERSION}\n").encode())
+			wfile.write((f"PID: {os.getpid()}\n").encode())
 			self.send_controller_list(wfile.write)
 			self.send_all_profiles(wfile.write)
 			if len(self.errors) == 0:
 				wfile.write(b"Ready.\n")
 			else:
 				for id, error in self.errors:
-					wfile.write(("Error: %s\n" % (error,)).encode("utf-8"))
+					wfile.write((f"Error: {error}\n").encode())
 
 		while True:
 			try:
@@ -1072,7 +1066,7 @@ class SCCDaemon(Daemon):
 			a.whole(mapper, 0, 0, what)
 			mapper.profile.pads[what] = a
 		else:
-			raise ValueError("Unknown source: %s" % (what,))
+			raise ValueError(f"Unknown source: {what}")
 
 	@staticmethod
 	def source_to_constant(s):
@@ -1094,7 +1088,7 @@ class SCCDaemon(Daemon):
 			return SCButtons.STICKPRESS
 		if hasattr(SCButtons, s):
 			return getattr(SCButtons, s)
-		raise ValueError("Unknown source: %s" % (s,))
+		raise ValueError(f"Unknown source: {s}")
 
 	def _remove_socket(self):
 		if self.sserver is not None:
@@ -1222,7 +1216,7 @@ class ReportingAction(Action):
 
 	@override
 	def __repr__(self):
-		return "<%s of %x>" % (self.__class__.__name__, hash(self.client))
+		return f"<{self.__class__.__name__} of {hash(self.client):x}>"
 
 	__str__ = __repr__
 
@@ -1237,17 +1231,15 @@ class ReportingAction(Action):
 	@override
 	def trigger(self, mapper, position, old_position):
 		if mapper.get_controller():
-			self._report(
-				"Event: %s %s %s %s\n" % (mapper.get_controller().get_id(), nameof(self.what), position, old_position)
-			)
+			self._report(f"Event: {mapper.get_controller().get_id()} {nameof(self.what)} {position} {old_position}\n")
 
 	@override
 	def button_press(self, mapper, number=1):
 		if mapper.get_controller():
 			if self.what == SCButtons.STICKPRESS:
-				self._report("Event: %s STICKPRESS %s\n" % (mapper.get_controller().get_id(), number))
+				self._report(f"Event: {mapper.get_controller().get_id()} STICKPRESS {number}\n")
 			else:
-				self._report("Event: %s %s %s\n" % (mapper.get_controller().get_id(), nameof(self.what), number))
+				self._report(f"Event: {mapper.get_controller().get_id()} {nameof(self.what)} {number}\n")
 
 	@override
 	def button_release(self, mapper):
@@ -1262,7 +1254,7 @@ class ReportingAction(Action):
 		if (x == 0 and y == 0) or dx * dx + dy * dy > min_difference * min_difference:
 			self.old_pos = x, y
 			if mapper.get_controller():
-				self._report("Event: %s %s %s %s\n" % (mapper.get_controller().get_id(), what, x, y))
+				self._report(f"Event: {mapper.get_controller().get_id()} {what} {x} {y}\n")
 
 
 class LockedAction(ReportingAction):

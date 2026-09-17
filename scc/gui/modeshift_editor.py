@@ -156,12 +156,12 @@ class ModeshiftEditor(Editor):
 				what.value = -1
 			if what.value == -1:
 				# Range with value taken from "Soft Pull Level" slider
-				l.set_markup("<b>%s (soft pull)</b>" % (self._input_name(what.what),))
+				l.set_markup(f"<b>{self._input_name(what.what)} (soft pull)</b>")
 			else:
 				# Any other range
-				l.set_markup("<b>%s</b>" % (self._input_name(what),))
+				l.set_markup(f"<b>{self._input_name(what)}</b>")
 		else:
-			l.set_markup("<b>%s</b>" % (self._input_name(what),))
+			l.set_markup(f"<b>{self._input_name(what)}</b>")
 		l.set_xalign(0.0)
 		b = Gtk.Button.new_with_label(action.describe(self.mode))
 		b.set_property("hexpand", True)
@@ -288,7 +288,7 @@ class ModeshiftEditor(Editor):
 			self._add_action(self.current_page, b, NoAction())
 
 	def on_sclSoftLevel_format_value(self, scale, value):
-		return "%s%%" % (int(value * 100.0),)
+		return f"{int(value * 100.0)}%"
 
 	def on_btClear_clicked(self, *a):
 		"""Handler for clear button"""

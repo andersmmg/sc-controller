@@ -77,7 +77,7 @@ class RemotePadController(Controller):
 
 	def __init__(self, driver, address):
 		Controller.__init__(self)
-		self._id = "rpad%s" % (self._id,)
+		self._id = f"rpad{self._id}"
 		self._driver = driver
 		self._address = address
 		self._enabled = True

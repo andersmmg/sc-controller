@@ -142,31 +142,31 @@ class VDFProfile(Profile):
 			return ButtonAction(b).set_name(name)
 		if binding in ("mode_shift"):
 			if button is None:
-				log.warning("Ignoring modeshift assigned to no button: '%s'" % (lst_or_str,))
+				log.warning(f"Ignoring modeshift assigned to no button: '{lst_or_str}'")
 				return NoAction()
 			if button not in VDFProfile.BUTTON_TO_BUTTON:
-				log.warning("Ignoring modeshift assigned to unknown button: '%s'" % (button,))
+				log.warning(f"Ignoring modeshift assigned to unknown button: '{button}'")
 				return NoAction()
 			self.modeshift_buttons[VDFProfile.BUTTON_TO_BUTTON[button]] = (params[1], params[0])
 			return NoAction()
 		if binding in ("controller_action"):
 			if params[0] == "CHANGE_PRESET":
 				id = int(params[1]) - 1
-				cpa = ChangeProfileAction("action_set:%s" % (id,))
+				cpa = ChangeProfileAction(f"action_set:{id}")
 				self.action_set_switches.add(cpa)
 				return cpa
 
-			log.warning("Ignoring controller_action '%s' binding" % (params[0],))
+			log.warning(f"Ignoring controller_action '{params[0]}' binding")
 			return NoAction()
 		if binding == "mouse_wheel":
 			if params[0].lower() == "scroll_down":
 				return MouseAction(Rels.REL_WHEEL, -1)
 			return MouseAction(Rels.REL_WHEEL, 1)
 		if binding == "game_action":
-			log.warning("Ignoring game_action binding: '%s'" % (lst_or_str,))
+			log.warning(f"Ignoring game_action binding: '{lst_or_str}'")
 			return NoAction()
 
-		raise ParseError("Unknown binding: '%s'" % (binding,))
+		raise ParseError(f"Unknown binding: '{binding}'")
 
 	@staticmethod
 	def parse_modifiers(group, action, side):
@@ -209,20 +209,20 @@ class VDFProfile(Profile):
 		if name in VDFProfile.SPECIAL_KEYS:
 			return VDFProfile.SPECIAL_KEYS[name]
 		if name.endswith("_ARROW"):
-			key = "KEY_%s" % (name[:-6],)
+			key = f"KEY_{name[:-6]}"
 		elif "KEYPAD_" in name:
-			key = "KEY_%s" % (name.replace("KEYPAD_", "KP"),)
+			key = "KEY_{}".format(name.replace("KEYPAD_", "KP"))
 		elif "LEFT_" in name:
-			key = "KEY_%s" % (name.replace("LEFT_", "LEFT"),)
+			key = "KEY_{}".format(name.replace("LEFT_", "LEFT"))
 		elif "RIGHT_" in name:
-			key = "KEY_%s" % (name.replace("RIGHT_", "RIGHT"),)
+			key = "KEY_{}".format(name.replace("RIGHT_", "RIGHT"))
 		else:
-			key = "KEY_%s" % (name,)
+			key = f"KEY_{name}"
 		if hasattr(Keys, key):
 			return getattr(Keys, key)
 		if hasattr(Keys, key.upper()):
 			return getattr(Keys, key.upper())
-		raise ParseError("Unknown key: '%s'" % (name,))
+		raise ParseError(f"Unknown key: '{name}'")
 
 	@staticmethod
 	def convert_button_name(name):
@@ -231,10 +231,10 @@ class VDFProfile(Profile):
 		"""
 		if name.lower() in VDFProfile.SPECIAL_BUTTONS:
 			return VDFProfile.SPECIAL_BUTTONS[name.lower()]
-		key = "BTN_%s" % (name.upper(),)
+		key = f"BTN_{name.upper()}"
 		if hasattr(Keys, key):
 			return getattr(Keys, key)
-		raise ParseError("Unknown button: '%s'" % (name,))
+		raise ParseError(f"Unknown button: '{name}'")
 
 	def parse_button(self, bdef, button=None):
 		"""
@@ -267,7 +267,7 @@ class VDFProfile(Profile):
 			action = DoubleclickModifier(double, normal)
 			action.holdaction = hold
 			return action
-		log.warning("Failed to parse button definition: %s" % (bdef,))
+		log.warning(f"Failed to parse button definition: {bdef}")
 		return None
 
 	@staticmethod
@@ -352,10 +352,10 @@ class VDFProfile(Profile):
 			next_item_id = 1
 			for k in inputs:
 				action = self.parse_button(inputs[k])
-				items.append(MenuItem("item_%s" % (next_item_id,), action.describe(Action.AC_BUTTON), action))
+				items.append(MenuItem(f"item_{next_item_id}", action.describe(Action.AC_BUTTON), action))
 				next_item_id += 1
 			# Menu is stored in profile, with generated ID
-			menu_id = "menu_%s" % (self.next_menu_id,)
+			menu_id = f"menu_{self.next_menu_id}"
 			self.next_menu_id += 1
 			self.menus[menu_id] = MenuData(*items)
 
@@ -411,7 +411,7 @@ class VDFProfile(Profile):
 
 			action = RelAreaAction(x1, y1, x2, y2)
 		else:
-			raise ParseError("Unknown mode: '%s'" % (group["mode"],))
+			raise ParseError("Unknown mode: '{}'".format(group["mode"]))
 
 		return VDFProfile.parse_modifiers(group, action, side)
 
@@ -426,7 +426,7 @@ class VDFProfile(Profile):
 			elif button in VDFProfile.BUTTON_TO_BUTTON:
 				self.add_by_binding(VDFProfile.BUTTON_TO_BUTTON[button], self.parse_button(inputs[button], button))
 			else:
-				raise ParseError("Unknown button: '%s'" % (button,))
+				raise ParseError(f"Unknown button: '{button}'")
 
 	def parse_input_binding(self, data, group_id, binding):
 		group = VDFProfile.find_group(data, group_id)
@@ -466,7 +466,7 @@ class VDFProfile(Profile):
 		elif binding.startswith("gyro"):
 			self.gyro = action
 		else:
-			raise ParseError("Unknown group source binding: '%s'" % (binding,))
+			raise ParseError(f"Unknown group source binding: '{binding}'")
 
 	def add_by_binding(self, binding, action):
 		"""
@@ -500,7 +500,7 @@ class VDFProfile(Profile):
 			return self.stick
 		if binding.startswith("gyro"):
 			return self.gyro
-		raise ParseError("Unknown group source binding: '%s'" % (binding,))
+		raise ParseError(f"Unknown group source binding: '{binding}'")
 
 	@staticmethod
 	def _load_preset(data, profile, preset):

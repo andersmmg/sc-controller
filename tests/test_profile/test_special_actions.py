@@ -93,7 +93,7 @@ class TestSpecialActions:
 		Tests if all Menu*Actions are parsed correctly from json.
 		"""
 		for cls in MENU_CLASSES:
-			a_str = "%s('some.menu', LEFT, X, Y, True)" % (cls.COMMAND,)
+			a_str = f"{cls.COMMAND}('some.menu', LEFT, X, Y, True)"
 			a = parser.from_json_data({"action": a_str})
 			assert isinstance(a, cls)
 			assert a.control_with == HapticPos.LEFT

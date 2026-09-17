@@ -150,7 +150,7 @@ class ControllerSettings(Editor, UserDataManager, ComboSetter):
 		if self._recursing:
 			return
 		c = cb.get_rgba()
-		color = "#%02x%02x%02x" % (int(c.red * 255), int(c.green * 255), int(c.blue * 255))
+		color = f"#{int(c.red * 255):02x}{int(c.green * 255):02x}{int(c.blue * 255):02x}"
 		self.select_color(color)
 
 	def on_Dialog_destroy(self, *a):

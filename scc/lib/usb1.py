@@ -536,32 +536,19 @@ class USBTransfer:
 			iso_length, remainder = divmod(buffer_length, num_iso_packets)
 			if remainder:
 				raise ValueError(
-					"Buffer size %i cannot be evenly distributed among %i "
-					"transfers"
-					% (
-						buffer_length,
-						num_iso_packets,
-					)
+					f"Buffer size {buffer_length} cannot be evenly distributed among {num_iso_packets} transfers"
 				)
 			iso_transfer_length_list = [iso_length] * num_iso_packets
 		configured_iso_packets = len(iso_transfer_length_list)
 		if configured_iso_packets > num_iso_packets:
 			raise ValueError(
-				"Too many ISO transfer lengths (%i), there are "
-				"only %i ISO transfers available"
-				% (
-					configured_iso_packets,
-					num_iso_packets,
-				)
+				f"Too many ISO transfer lengths ({configured_iso_packets}), there are "
+				f"only {num_iso_packets} ISO transfers available"
 			)
 		if sum(iso_transfer_length_list) > buffer_length:
 			raise ValueError(
-				"ISO transfers too long (%i), there are only "
-				"%i bytes available"
-				% (
-					sum(iso_transfer_length_list),
-					buffer_length,
-				)
+				f"ISO transfers too long ({sum(iso_transfer_length_list)}), there are only "
+				f"{buffer_length} bytes available"
 			)
 		transfer_p = self.__transfer
 		self.__initialized = False
@@ -844,7 +831,7 @@ class USBTransferHelper:
 			TRANSFER_OVERFLOW
 		"""
 		if event not in EVENT_CALLBACK_SET:
-			raise ValueError("Unknown event %r." % (event,))
+			raise ValueError(f"Unknown event {event!r}.")
 		self.__event_callback_dict[event] = callback
 
 	def setDefaultCallback(self, callback):
@@ -1614,7 +1601,7 @@ class USBConfiguration:
 		if not isinstance(interface, int):
 			raise TypeError("interface parameter must be an integer")
 		if not 0 <= interface < self.getNumInterfaces():
-			raise IndexError("No such interface: %r" % (interface,))
+			raise IndexError(f"No such interface: {interface!r}")
 		return USBInterface(self.__context, self.__config.interface[interface])
 
 
@@ -1654,7 +1641,7 @@ class USBInterface:
 		if not isinstance(alt_setting, int):
 			raise TypeError("alt_setting parameter must be an integer")
 		if not 0 <= alt_setting < self.getNumSettings():
-			raise IndexError("No such setting: %r" % (alt_setting,))
+			raise IndexError(f"No such setting: {alt_setting!r}")
 		return USBInterfaceSetting(self.__context, self.__interface.altsetting[alt_setting])
 
 
@@ -1726,7 +1713,7 @@ class USBInterfaceSetting:
 		if not isinstance(endpoint, int):
 			raise TypeError("endpoint parameter must be an integer")
 		if not 0 <= endpoint < self.getNumEndpoints():
-			raise ValueError("No such endpoint: %r" % (endpoint,))
+			raise ValueError(f"No such endpoint: {endpoint!r}")
 		return USBEndpoint(self.__context, self.__alt_setting.endpoint[endpoint])
 
 
@@ -1826,11 +1813,9 @@ class USBDevice:
 		self.device_p = None
 
 	def __str__(self):
-		return "Bus %03i Device %03i: ID %04x:%04x" % (
-			self.getBusNumber(),
-			self.getDeviceAddress(),
-			self.getVendorID(),
-			self.getProductID(),
+		return (
+			f"Bus {self.getBusNumber():03} Device {self.getDeviceAddress():03}: "
+			f"ID {self.getVendorID():04x}:{self.getProductID():04x}"
 		)
 
 	def __len__(self):

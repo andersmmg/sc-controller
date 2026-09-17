@@ -74,7 +74,7 @@ class OSDWindow(Gtk.Window):
 
 		colors = {}
 		for x in config["osk_colors"]:
-			colors["osk_%s" % (x,)] = config["osk_colors"][x]
+			colors[f"osk_{x}"] = config["osk_colors"][x]
 		for x in config["osd_colors"]:
 			colors[x] = config["osd_colors"][x]
 		colors = OSDCssMagic(colors)
@@ -289,7 +289,7 @@ class OSDCssMagic(dict):
 			rgba.red = min(1.0, rgba.red + number)
 			rgba.green = min(1.0, rgba.green + number)
 			rgba.blue = min(1.0, rgba.blue + number)
-			return "%s%s%s" % (
+			return "{}{}{}".format(
 				hex(int(rgba.red * 255)).split("x")[-1].zfill(2),
 				hex(int(rgba.green * 255)).split("x")[-1].zfill(2),
 				hex(int(rgba.blue * 255)).split("x")[-1].zfill(2),
@@ -301,7 +301,7 @@ class OSDCssMagic(dict):
 			rgba.red = max(0.0, rgba.red - number)
 			rgba.green = max(0.0, rgba.green - number)
 			rgba.blue = max(0.0, rgba.blue - number)
-			return "%s%s%s" % (
+			return "{}{}{}".format(
 				hex(int(rgba.red * 255)).split("x")[-1].zfill(2),
 				hex(int(rgba.green * 255)).split("x")[-1].zfill(2),
 				hex(int(rgba.blue * 255)).split("x")[-1].zfill(2),

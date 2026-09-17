@@ -49,7 +49,7 @@ class ChangeProfileAction(Action, SpecialAction):
 
 	@override
 	def to_string(self, multiline=False, pad=0):
-		return (" " * pad) + "%s('%s')" % (self.COMMAND, string_escape(self.profile))
+		return (" " * pad) + f"{self.COMMAND}('{string_escape(self.profile)}')"
 
 	@override
 	def button_press(self, mapper):
@@ -89,7 +89,7 @@ class ShellCommandAction(Action, SpecialAction):
 
 	@override
 	def to_string(self, multiline=False, pad=0):
-		return (" " * pad) + "%s('%s')" % (self.COMMAND, string_escape(self.parameters[0]))
+		return (" " * pad) + f"{self.COMMAND}('{string_escape(self.parameters[0])}')"
 
 	@override
 	def button_press(self, mapper):
@@ -117,7 +117,7 @@ class TurnOffAction(Action, SpecialAction):
 
 	@override
 	def to_string(self, multiline=False, pad=0):
-		return (" " * pad) + "%s()" % (self.COMMAND,)
+		return (" " * pad) + f"{self.COMMAND}()"
 
 	@override
 	def get_compatible_modifiers(self):
@@ -150,7 +150,7 @@ class RestartDaemonAction(Action, SpecialAction):
 
 	@override
 	def to_string(self, multiline=False, pad=0):
-		return (" " * pad) + "%s()" % (self.COMMAND,)
+		return (" " * pad) + f"{self.COMMAND}()"
 
 	@override
 	def button_release(self, mapper):
@@ -234,7 +234,7 @@ class OSDAction(Action, SpecialAction):
 		if self.action:
 			return _("%s (with OSD)") % (self.action.describe(context),)
 		if context == Action.AC_OSD:
-			return _("Display '%s'" % self.text)
+			return _(f"Display '{self.text}'")
 		return _("OSD Message")
 
 	@override
@@ -247,8 +247,8 @@ class OSDAction(Action, SpecialAction):
 		if self.action:
 			parameters.append(self.action.to_string(multiline=multiline, pad=pad))
 		else:
-			parameters.append("'%s'" % (string_escape(str(self.text)),))
-		return (" " * pad) + "%s(%s)" % (self.COMMAND, ",".join(parameters))
+			parameters.append(f"'{string_escape(str(self.text))}'")
+		return (" " * pad) + "{}({})".format(self.COMMAND, ",".join(parameters))
 
 	@override
 	def strip(self):
@@ -368,10 +368,10 @@ class MenuAction(Action, SpecialAction, HapticEnabledAction):
 			if dflt == vals:
 				# Special case when menu is assigned to pad
 				if self.size == 0:
-					return "%s%s('%s')" % (" " * pad, self.COMMAND, self.menu_id)
-				return "%s%s('%s', %s)" % (" " * pad, self.COMMAND, self.menu_id, self.size)
+					return "{}{}('{}')".format(" " * pad, self.COMMAND, self.menu_id)
+				return "{}{}('{}', {})".format(" " * pad, self.COMMAND, self.menu_id, self.size)
 
-		return "%s%s(%s)" % (" " * pad, self.COMMAND, ",".join(Action.encode_parameters(self.strip_defaults())))
+		return "{}{}({})".format(" " * pad, self.COMMAND, ",".join(Action.encode_parameters(self.strip_defaults())))
 
 	@override
 	def get_previewable(self):
@@ -587,16 +587,16 @@ class DialogAction(Action, SpecialAction):
 
 	@override
 	def to_string(self, multiline=False, pad=0):
-		rv = "%s%s(" % (" " * pad, self.COMMAND)
+		rv = "{}{}(".format(" " * pad, self.COMMAND)
 		if self.confirm_with != DEFAULT:
-			rv += "%s, " % (nameof(self.confirm_with),)
+			rv += f"{nameof(self.confirm_with)}, "
 			if self.cancel_with != DEFAULT:
-				rv += "%s, " % (nameof(self.cancel_with),)
-		rv += "'%s', " % (string_escape(self.text),)
+				rv += f"{nameof(self.cancel_with)}, "
+		rv += f"'{string_escape(self.text)}', "
 		if multiline:
 			rv += "\n%s" % (" " * (pad + 2))
 		for option in self.options:
-			rv += "%s, " % (option.to_string(False),)
+			rv += f"{option.to_string(False)}, "
 			if multiline:
 				rv += "\n%s" % (" " * (pad + 2))
 
@@ -656,7 +656,7 @@ class KeyboardAction(Action, SpecialAction):
 
 	@override
 	def to_string(self, multiline=False, pad=0):
-		return (" " * pad) + "%s()" % (self.COMMAND,)
+		return (" " * pad) + f"{self.COMMAND}()"
 
 	@override
 	def button_press(self, mapper):
@@ -720,7 +720,7 @@ class GesturesAction(Action, OSDEnabledAction, SpecialAction):
 				self.gestures[gstr] = i
 				gstr = None
 			else:
-				raise ValueError("Invalid parameter for '%s': unexpected %s" % (self.COMMAND, i))
+				raise ValueError(f"Invalid parameter for '{self.COMMAND}': unexpected {i}")
 
 	@override
 	def get_compatible_modifiers(self):
@@ -737,7 +737,7 @@ class GesturesAction(Action, OSDEnabledAction, SpecialAction):
 		if multiline:
 			rv = [(" " * pad) + self.COMMAND + "("]
 			if self.precision != self.DEFAULT_PRECISION:
-				rv[0] += "%s," % (self.precision)
+				rv[0] += f"{self.precision},"
 			for gstr in self.gestures:
 				a_str = self.gestures[gstr].to_string(True).split("\n")
 				a_str[0] = (" " * pad) + "  '" + (gstr + "',").ljust(11) + a_str[0]  # Key has to be one of SCButtons
@@ -753,7 +753,7 @@ class GesturesAction(Action, OSDEnabledAction, SpecialAction):
 		if self.precision != self.DEFAULT_PRECISION:
 			rv.append(str(self.precision))
 		for gstr in self.gestures:
-			rv += ["'%s'" % (gstr,), self.gestures[gstr].to_string(False)]
+			rv += [f"'{gstr}'", self.gestures[gstr].to_string(False)]
 		return self.COMMAND + "(" + ", ".join(rv) + ")"
 
 	@override

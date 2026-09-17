@@ -47,7 +47,7 @@ class IconChooser(Editor, UserDataManager):
 		clIcon.set_attributes(cr, icon=1, has_colors=2)
 		clIcon.set_attributes(crIconName, text=0)
 		btUserFolder.set_label("Add icons...")
-		btUserFolder.set_uri("file://%s" % (get_menuicons_path(),))
+		btUserFolder.set_uri(f"file://{get_menuicons_path()}")
 
 		headerbar(self.builder.get_object("header"))
 		self.load_menu_icons()
@@ -78,7 +78,7 @@ class IconChooser(Editor, UserDataManager):
 			category = model.get_value(iter, 0)
 			model, iter = tsIcons.get_selected()
 			icon_name = model.get_value(iter, 0)
-			return "%s/%s" % (category, icon_name)
+			return f"{category}/{icon_name}"
 		except TypeError:
 			# This part may throw TypeError if either list has nothing selected.
 			return None
@@ -105,8 +105,8 @@ class IconChooser(Editor, UserDataManager):
 			if license:
 				m = RE_URL.match(license)
 				if m:
-					license = "%s<a href='%s'>%s</a>%s" % (m.group(1), m.group(2), m.group(2), m.group(3))
-				lblLicense.set_markup(_("Free-use icon created by %s" % (license,)))
+					license = f"{m.group(1)}<a href='{m.group(2)}'>{m.group(2)}</a>{m.group(3)}"
+				lblLicense.set_markup(_(f"Free-use icon created by {license}"))
 			rvLicense.set_reveal_child(bool(license))
 
 	def on_tvCategories_cursor_changed(self, view):

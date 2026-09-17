@@ -32,19 +32,19 @@ class UserDataManager:
 	def __init__(self):
 		profiles_path = get_profiles_path()
 		if not os.path.exists(profiles_path):
-			log.info("Creting profile directory '%s'" % (profiles_path,))
+			log.info(f"Creting profile directory '{profiles_path}'")
 			os.makedirs(profiles_path)
 		menus_path = get_menus_path()
 		if not os.path.exists(menus_path):
-			log.info("Creating menu directory '%s'" % (menus_path,))
+			log.info(f"Creating menu directory '{menus_path}'")
 			os.makedirs(menus_path)
 		menuicons_path = get_menuicons_path()
 		if not os.path.exists(menuicons_path):
-			log.info("Creating menu-icon directory '%s'" % (menuicons_path,))
+			log.info(f"Creating menu-icon directory '{menuicons_path}'")
 			os.makedirs(menuicons_path)
 		controller_icons_path = get_controller_icons_path()
 		if not os.path.exists(controller_icons_path):
-			log.info("Creating controller-icons directory '%s'" % (controller_icons_path,))
+			log.info(f"Creating controller-icons directory '{controller_icons_path}'")
 			os.makedirs(controller_icons_path)
 
 	def load_profile(self, giofile):

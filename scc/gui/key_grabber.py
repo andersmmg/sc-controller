@@ -83,7 +83,7 @@ class KeyGrabber:
 		"""
 		key = keyevent_to_key(event)
 		if key is None:
-			log.warning("Unknown keycode %s/%s" % (event.keyval, event.hardware_keycode))
+			log.warning(f"Unknown keycode {event.keyval}/{event.hardware_keycode}")
 			return
 
 		if key in MODIFIERS:

@@ -36,7 +36,7 @@ class FakeController(Controller):
 	def __init__(self, number):
 		Controller.__init__(self)
 		self._number = number
-		self._id = "fake%s" % (self._number,)
+		self._id = f"fake{self._number}"
 
 	def get_type(self):
 		return "fake"
@@ -45,4 +45,4 @@ class FakeController(Controller):
 		log.debug("FakeController %s led level set to %s", self.get_id(), level)
 
 	def __repr__(self):
-		return "<FakeController %s>" % (self.get_id(),)
+		return f"<FakeController {self.get_id()}>"

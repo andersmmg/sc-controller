@@ -50,7 +50,7 @@ def _load_lib(*names: str) -> CDLL:
 			return CDLL(l)
 		except OSError:
 			pass
-	raise OSError("Failed to load %s, library not found" % (names[0],))
+	raise OSError(f"Failed to load {names[0]}, library not found")
 
 
 libXFixes = _load_lib("libXfixes.so", "libXfixes.so.3")
@@ -190,7 +190,7 @@ class XError(Exception):
 	"""
 
 	def __init__(self, error_code: int, request_code: int) -> None:
-		Exception.__init__(self, "X error %s on request %s" % (error_code, request_code))
+		Exception.__init__(self, f"X error {error_code} on request {request_code}")
 		self.error_code = error_code
 		self.request_code = request_code
 

@@ -61,7 +61,7 @@ except ImportError:
 	elif sizeof(c_longlong) == sizeof(c_size_t):
 		c_ssize_t = c_longlong
 	else:
-		raise ValueError("Unsupported arch: sizeof(c_size_t) = %r" % (sizeof(c_size_t),))
+		raise ValueError(f"Unsupported arch: sizeof(c_size_t) = {sizeof(c_size_t)!r}")
 import ctypes.util
 import os.path
 import platform
@@ -84,7 +84,7 @@ class Enum:
 				next_value += 1
 			forward_dict[name] = value
 			if value in reverse_dict:
-				raise ValueError("Multiple names for value %r: %r, %r" % (value, reverse_dict[value], name))
+				raise ValueError(f"Multiple names for value {value!r}: {reverse_dict[value]!r}, {name!r}")
 			reverse_dict[value] = name
 			scope_dict[name] = value
 		self.forward_dict = forward_dict
@@ -153,7 +153,7 @@ class USBError(Exception):
 			self.value = value
 
 	def __str__(self):
-		return "%s [%s]" % (libusb_error.get(self.value, "Unknown error"), self.value)
+		return "{} [{}]".format(libusb_error.get(self.value, "Unknown error"), self.value)
 
 
 if sys.version_info[0] == 3:
@@ -1210,7 +1210,7 @@ def get_extra(descriptor):
 			length = _string_item_to_int(extra[0])
 			if not 0 < length <= len(extra):
 				raise ValueError(
-					"Extra descriptor %i is incomplete/invalid" % (len(result),),
+					f"Extra descriptor {len(result)} is incomplete/invalid",
 				)
 			append(extra[:length])
 			extra = extra[length:]

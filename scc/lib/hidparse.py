@@ -82,7 +82,7 @@ class ReservedItem:
 		self.value = value
 
 	def __repr__(self):
-		return "<Reserved ID 0x%x>" % (self.value,)
+		return f"<Reserved ID 0x{self.value:x}>"
 
 	__str__ = __repr__
 
@@ -346,7 +346,7 @@ class Parser:
 		self.count = count
 		self.len = count * size
 		if self.len > 64:
-			raise ValueError("Too many bytes in value: %i" % (self.len,))
+			raise ValueError(f"Too many bytes in value: {self.len}")
 		if self.len > 32:
 			self.byte_len = 8
 			self.fmt = "<Q"
@@ -374,14 +374,14 @@ class HIDButtonParser(Parser):
 	TYPE = HIDPARSE_TYPE_BUTTONS
 
 	def __repr__(self):
-		return "<HID Buttons @%s len %s value %s>" % (self.offset, self.len, self.value)
+		return f"<HID Buttons @{self.offset} len {self.len} value {self.value}>"
 
 
 class HIDAxisParser(Parser):
 	TYPE = HIDPARSE_TYPE_AXIS
 
 	def __repr__(self):
-		return "<HID Axis @%s len %s value %s>" % (self.offset, self.len, self.value)
+		return f"<HID Axis @{self.offset} len {self.len} value {self.value}>"
 
 
 def make_parsers(data):

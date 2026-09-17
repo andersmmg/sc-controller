@@ -160,7 +160,7 @@ class DS4Controller(HIDController):
 		return "ds4-config.json"
 
 	def __repr__(self):
-		return "<DS4Controller %s>" % (self.get_id(),)
+		return f"<DS4Controller {self.get_id()}>"
 
 	def _generate_id(self):
 		"""
@@ -170,7 +170,7 @@ class DS4Controller(HIDController):
 		magic_number = 1
 		id = "ds4"
 		while id in self.daemon.get_active_ids():
-			id = "ds4:%s" % (magic_number,)
+			id = f"ds4:{magic_number}"
 			magic_number += 1
 		return id
 
@@ -336,7 +336,7 @@ class DS4EvdevController(EvdevController):
 		return "ds4-config.json"
 
 	def __repr__(self):
-		return "<DS4EvdevController %s>" % (self.get_id(),)
+		return f"<DS4EvdevController {self.get_id()}>"
 
 	def _generate_id(self):
 		"""
@@ -346,7 +346,7 @@ class DS4EvdevController(EvdevController):
 		magic_number = 1
 		id = "ds4"
 		while id in self.daemon.get_active_ids():
-			id = "ds4:%s" % (magic_number,)
+			id = f"ds4:{magic_number}"
 			magic_number += 1
 		return id
 

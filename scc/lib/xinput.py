@@ -76,6 +76,6 @@ class XIDevice:
 		return "slave" in self._type
 
 	def __str__(self):
-		return "<XIDevice #%s '%s' (%s)>" % (self._id, self._name, self._type)
+		return f"<XIDevice #{self._id} '{self._name}' ({self._type})>"
 
 	__repr__ = __str__

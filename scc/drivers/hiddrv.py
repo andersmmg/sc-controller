@@ -354,7 +354,7 @@ class HIDController(USBDevice, Controller):
 				elif x[1] == ItemType.Data:
 					if kind in AXES:
 						if size not in ALLOWED_SIZES:
-							raise UnparsableDescriptor("Axis with invalid size (%s bits)" % (size,))
+							raise UnparsableDescriptor(f"Axis with invalid size ({size} bits)")
 						for i in range(count):
 							if next_axis < AXIS_COUNT:
 								log.debug("Found axis #%s at bit %s", int(next_axis), total)
@@ -376,7 +376,7 @@ class HIDController(USBDevice, Controller):
 							total += size
 					elif kind == GenericDesktopPage.Hatswitch:
 						if count * size != 4:
-							raise UnparsableDescriptor("Invalid size for Hatswitch (%sb)" % (count * size,))
+							raise UnparsableDescriptor(f"Invalid size for Hatswitch ({count * size}b)")
 						if next_axis + 1 < AXIS_COUNT:
 							log.debug("Found hat #%s at bit %s", int(next_axis), total)
 							if config:
@@ -458,7 +458,7 @@ class HIDController(USBDevice, Controller):
 					pass
 			return None
 
-		pattern = ":%.4x:%.4x" % (vid, pid)
+		pattern = f":{vid:04x}:{pid:04x}"
 		full_path = recursive_search(pattern, SYS_DEVICES)
 		try:
 			if full_path:
@@ -488,9 +488,9 @@ class HIDController(USBDevice, Controller):
 		"""
 		magic_number = 1
 		vid, pid = self.device.getVendorID(), self.device.getProductID()
-		id = "hid%.4x:%.4x" % (vid, pid)
+		id = f"hid{vid:04x}:{pid:04x}"
 		while id in self.daemon.get_active_ids():
-			id = "hid%.4x:%.4x:%s" % (vid, pid, magic_number)
+			id = f"hid{vid:04x}:{pid:04x}:{magic_number}"
 			magic_number += 1
 		return id
 
@@ -502,7 +502,7 @@ class HIDController(USBDevice, Controller):
 
 	def __repr__(self):
 		vid, pid = self.device.getVendorID(), self.device.getProductID()
-		return "<HID %.4x%.4x>" % (vid, pid)
+		return f"<HID {vid:04x}{pid:04x}>"
 
 	def test_input(self, endpoint, data):
 		if not _decode(ctypes.byref(self._decoder), data):
@@ -581,16 +581,16 @@ class HIDRawController(HIDController):
 		daemon.add_controller(self)
 
 	def _generate_hidraw_id(self):
-		base = "hidbt%.4x:%.4x" % (self._vendor, self._product)
+		base = f"hidbt{self._vendor:04x}:{self._product:04x}"
 		identifier = base
 		index = 1
 		while identifier in self.daemon.get_active_ids():
-			identifier = "%s:%s" % (base, index)
+			identifier = f"{base}:{index}"
 			index += 1
 		return identifier
 
 	def __repr__(self):
-		return "<HID Bluetooth %.4x:%.4x>" % (self._vendor, self._product)
+		return f"<HID Bluetooth {self._vendor:04x}:{self._product:04x}>"
 
 	def input(self, endpoint=None, data=None):
 		try:
@@ -758,7 +758,7 @@ def hiddrv_test(cls, args):
 		try:
 			return cls(device, None, handle, None, None, test_mode=True)
 		except NotHIDDevice:
-			print("%.4x:%.4x is not a HID device" % (vid, pid), file=sys.stderr)
+			print(f"{vid:04x}:{pid:04x} is not a HID device", file=sys.stderr)
 
 			fake_daemon.exitcode = 3
 		except UnparsableDescriptor as e:

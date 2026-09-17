@@ -220,7 +220,7 @@ def profile_is_override(name: str) -> bool:
 	Returns True if named profile exists both in user config directory and
 	default_profiles directory.
 	"""
-	filename = "%s.sccprofile" % (name,)
+	filename = f"{name}.sccprofile"
 	if os.path.exists(os.path.join(get_profiles_path(), filename)):
 		if os.path.exists(os.path.join(get_default_profiles_path(), filename)):
 			return True
@@ -232,7 +232,7 @@ def profile_is_default(name: str) -> bool:
 	Returns True if named profile exists in default_profiles directory, even
 	if it is overrided by profile in user config directory.
 	"""
-	filename = "%s.sccprofile" % (name,)
+	filename = f"{name}.sccprofile"
 	return os.path.exists(os.path.join(get_default_profiles_path(), filename))
 
 
@@ -258,7 +258,7 @@ def find_profile(name: str) -> str | None:
 
 	Returns None if profile cannot be found.
 	"""
-	filename = "%s.sccprofile" % (name,)
+	filename = f"{name}.sccprofile"
 	for p in (get_profiles_path(), get_default_profiles_path()):
 		path = os.path.join(p, filename)
 		if os.path.exists(path):
@@ -293,8 +293,8 @@ def find_icon(
 	if name.endswith(".bw"):
 		name = name[0:-3]
 	for extension in extensions:
-		gray_filename = "%s.bw.%s" % (name, extension)
-		colors_filename = "%s.%s" % (name, extension)
+		gray_filename = f"{name}.bw.{extension}"
+		colors_filename = f"{name}.{extension}"
 		gray, colors = None, None
 		for p in paths:
 			# Check grayscale
@@ -413,7 +413,7 @@ def find_library(libname: str) -> ctypes.CDLL:
 			break
 
 	if not lib:
-		raise OSError("Cant find %s.so. searched at:\n %s" % (libname, "\n".join(search_paths)))
+		raise OSError("Cant find {}.so. searched at:\n {}".format(libname, "\n".join(search_paths)))
 	return ctypes.CDLL(lib)
 
 

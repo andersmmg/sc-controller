@@ -72,7 +72,7 @@ class QuickMenu(Menu):
 			item.button = self.BUTTONS[self._button_index]
 			self._button_index += 1
 
-			icon_file, has_colors = find_icon("buttons/%s" % item.button, False)
+			icon_file, has_colors = find_icon(f"buttons/{item.button}", False)
 			icon = MenuIcon(icon_file, has_colors)
 			label = widget.get_children()[0]
 			for c in [*widget.get_children()]:
@@ -122,7 +122,7 @@ class QuickMenu(Menu):
 					for i in range(len(self._icons)):
 						icon = self._icons[i]
 						name = buttons[self.BUTTON_INDEXES[i]]
-						filename, trash = find_icon("buttons/%s" % name)
+						filename, trash = find_icon(f"buttons/{name}")
 						icon.set_filename(filename)
 						icon.queue_draw()
 				except IndexError:
@@ -156,7 +156,7 @@ class QuickMenu(Menu):
 				self.items.append(item)
 		self.pack_items(self.parent, self.items)
 		if len(self.items) == 0:
-			print("%s: error: no items in menu" % (sys.argv[0]), file=sys.stderr)
+			print(f"{sys.argv[0]}: error: no items in menu", file=sys.stderr)
 
 			return False
 

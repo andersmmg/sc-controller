@@ -48,18 +48,18 @@ class SCByCable(USBDevice, SCController):
 		self.read_serial()
 
 	def generate_serial(self):
-		self._serial = "%s:%s" % (self.device.getBusNumber(), self.device.getPortNumber())
+		self._serial = f"{self.device.getBusNumber()}:{self.device.getPortNumber()}"
 
 	def disconnected(self):
 		# Overrided to skip returning serial# to pool.
 		pass
 
 	def __repr__(self):
-		return "<SCByCable %s>" % (self.get_id(),)
+		return f"<SCByCable {self.get_id()}>"
 
 	def on_serial_got(self):
 		log.debug("Got wired SC with serial %s", self._serial)
-		self._id = "sc%s" % (self._serial,)
+		self._id = f"sc{self._serial}"
 		self.set_input_interrupt(ENDPOINT, 64, self._wait_input)
 
 	def _wait_input(self, endpoint, data):

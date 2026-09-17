@@ -42,7 +42,7 @@ def build_action_constants() -> dict[str, Any]:
 		for x in tpl:
 			rv[x.name] = x
 	for b in ("A", "B", "X", "Y", "START", "SELECT"):
-		name = "BTN_%s" % (b,)
+		name = f"BTN_{b}"
 		rv[name] = getattr(Keys, name)
 	return rv
 
@@ -157,7 +157,7 @@ class ActionParser:
 			else:
 				# Constant
 				if t.value not in ActionParser.CONSTS:
-					raise ParseError("Expected parameter, got '%s' which is not defined" % (t.value,))
+					raise ParseError(f"Expected parameter, got '{t.value}' which is not defined")
 				parameter = ActionParser.CONSTS[t.value]
 
 			# Check for dots
@@ -168,13 +168,7 @@ class ActionParser:
 
 				t = self._next_token()
 				if not hasattr(parameter, t.value):
-					raise ParseError(
-						"%s has no attribute '%s'"
-						% (
-							parameter,
-							t.value,
-						)
-					)
+					raise ParseError(f"{parameter} has no attribute '{t.value}'")
 				parameter = getattr(parameter, t.value)
 
 			# Check for ranges (<, >, <=, >=)
@@ -183,13 +177,13 @@ class ActionParser:
 					op = self._next_token().value
 					# TODO: Maybe other axes
 					if parameter not in (STICK, SCButtons.LT, SCButtons.RT, SCButtons.X, SCButtons.Y):
-						raise ParseError("'%s' is not trigger nor axis" % (nameof(parameter),))
+						raise ParseError(f"'{nameof(parameter)}' is not trigger nor axis")
 					if not self._tokens_left():
-						raise ParseError("Excepted number after '%s'" % (op,))
+						raise ParseError(f"Excepted number after '{op}'")
 					try:
 						number = float(self._next_token().value)
 					except ValueError:
-						raise ParseError("Excepted number after '%s'" % (op,)) from None
+						raise ParseError(f"Excepted number after '{op}'") from None
 					parameter = RangeOP(parameter, op, number)
 
 			return parameter
@@ -206,12 +200,12 @@ class ActionParser:
 		if t.type == TokenType.STRING:
 			return string_unescape(t.value[1:-1])
 
-		raise ParseError("Expected parameter, got '%s'" % (t.value,))
+		raise ParseError(f"Expected parameter, got '{t.value}'")
 
 	def _parse_number(self) -> float | int:
 		t = self._next_token()
 		if t.type != TokenType.NUMBER:
-			raise ParseError("Expected number, got '%s'" % (t.value,))
+			raise ParseError(f"Expected number, got '{t.value}'")
 		if "." in t.value or "e" in t.value.lower():
 			return float(t.value)
 		if t.value.lower().startswith("0x"):
@@ -225,7 +219,7 @@ class ActionParser:
 		# Check and skip over '('
 		t = self._next_token()
 		if t.type != TokenType.OP or t.value != "(":
-			raise ParseError("Expected '(' of parameter list, got '%s'" % (t.value,))
+			raise ParseError(f"Expected '(' of parameter list, got '{t.value}'")
 
 		parameters = []
 		while self._tokens_left():
@@ -242,14 +236,14 @@ class ActionParser:
 			while t.type == TokenType.NEWLINE or t.value == "\n":
 				self._next_token()
 				if not self._tokens_left():
-					raise ParseError("Expected ',' or end of parameter list after parameter '%s'" % (parameters[-1],))
+					raise ParseError(f"Expected ',' or end of parameter list after parameter '{parameters[-1]}'")
 				t = self._peek_token()
 			if t.type == TokenType.OP and t.value == ")":
 				pass
 			elif t.type == TokenType.OP and t.value == ",":
 				self._next_token()
 			else:
-				raise ParseError("Expected ',' or end of parameter list after parameter '%s'" % (parameters[-1],))
+				raise ParseError(f"Expected ',' or end of parameter list after parameter '{parameters[-1]}'")
 
 		# Code shouldn't reach here, unless there is not closing ')' in parameter list
 		raise ParseError("Unmatched parenthesis")
@@ -261,7 +255,7 @@ class ActionParser:
 			raise ParseError(str(e)) from e
 		except TypeError as e:
 			print(e, file=sys.stderr)
-			raise ParseError("Invalid number of parameters for '%s'" % (cls.COMMAND)) from e
+			raise ParseError(f"Invalid number of parameters for '{cls.COMMAND}'") from e
 
 	def _parse_action(self, frm: dict[str, Any] = Action.ALL) -> Action:
 		"""
@@ -273,9 +267,9 @@ class ActionParser:
 		# Check if next token is TokenType.NAME and grab action name from it
 		t = self._next_token()
 		if t.type != TokenType.NAME:
-			raise ParseError("Expected action name, got '%s'" % (t.value,))
+			raise ParseError(f"Expected action name, got '{t.value}'")
 		if t.value not in frm:
-			raise ParseError("Unknown action '%s'" % (t.value,))
+			raise ParseError(f"Unknown action '{t.value}'")
 		action_name = t.value
 		action_class = frm[action_name]
 
@@ -293,7 +287,7 @@ class ActionParser:
 			if type(action_class) == dict:
 				self._next_token()
 				return self._parse_action(action_class)
-			raise ParseError("Unexpected '.' after '%s'" % (action_name,))
+			raise ParseError(f"Unexpected '.' after '{action_name}'")
 		if t.type == TokenType.OP and t.value == "(":
 			parameters = self._parse_parameters()
 			if not self._tokens_left():
@@ -348,7 +342,7 @@ class ActionParser:
 			raise ParseError("Syntax error")
 		a = self._parse_action()
 		if self._tokens_left():
-			raise ParseError("Unexpected '%s'" % (self._next_token().value,))
+			raise ParseError(f"Unexpected '{self._next_token().value}'")
 		return a
 
 
@@ -373,4 +367,4 @@ class TalkingActionParser(ActionParser):
 		try:
 			return ActionParser.parse(self)
 		except ParseError as e:
-			print("Warning: Failed to parse '%s':" % (self.string,), e, file=sys.stderr)
+			print(f"Warning: Failed to parse '{self.string}':", e, file=sys.stderr)

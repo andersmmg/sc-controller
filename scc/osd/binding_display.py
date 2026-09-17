@@ -191,7 +191,7 @@ class Line:
 		return self
 
 	def to_string(self):
-		return "%-10s: %s" % (",".join([x for x in self.icons if x]), self.text)
+		return f"{','.join([x for x in self.icons if x]):<10}: {self.text}"
 
 
 class LineCollection:
@@ -224,7 +224,7 @@ class Box:
 		self.min_height = min_height
 
 	def to_string(self):
-		return "--- %s ---\n%s\n" % (self.name, "\n".join([x.to_string() for x in self.lines]))
+		return "--- {} ---\n{}\n".format(self.name, "\n".join([x.to_string() for x in self.lines]))
 
 	def add(self, icon, context, action):
 		if not action:
@@ -312,7 +312,7 @@ class Box:
 			style="opacity:1;fill-opacity:0.1;stroke-width:2.0;",
 			fill="#00FF00",
 			stroke="#06a400",
-			id="box_%s" % (self.name,),
+			id=f"box_{self.name}",
 			width=self.width,
 			height=self.height,
 			x=self.x,
@@ -330,7 +330,7 @@ class Box:
 					# (library that gnome uses to render SVGs) can't render
 					# linked images. Embeding is used instead.
 					with open(image, "rb") as fh:
-						image = "data:image/svg+xml;base64,%s" % (base64.b64encode(fh.read()))
+						image = f"data:image/svg+xml;base64,{base64.b64encode(fh.read())}"
 					# rsvg draws image only when href uses proper xlink
 					# namespace.  literal "xlink:href" is serialized
 					# undeclared and rsvg then fails with 'Namespace
@@ -376,7 +376,7 @@ class Box:
 			elif self.align & Align.RIGHT != 0:
 				edges = [[x1, y1], [x2, y2]]
 
-		targets = SVGEditor.get_element(root, "markers_%s" % (self.name,))
+		targets = SVGEditor.get_element(root, f"markers_{self.name}")
 		if targets is None:
 			return
 		i = 0

@@ -126,7 +126,7 @@ class ControllerButton(ControllerWidget):
 			if len(txt) > LONG_TEXT or "\n" in txt:
 				txt = "\n".join(txt.split("\n")[0:2])
 				txt = txt.replace("<", "&lt;").replace(">", "&gt;")
-				self.label.set_markup("<small>%s</small>" % (txt,))
+				self.label.set_markup(f"<small>{txt}</small>")
 			else:
 				txt = txt.replace("<", "&lt;").replace(">", "&gt;")
 				self.label.set_markup(txt)
@@ -216,14 +216,14 @@ class ControllerStick(ControllerWidget):
 			lines = []
 			if action.normalaction:
 				txt = action.normalaction.describe(self.ACTION_CONTEXT)
-				lines.append("Pressed: %s" % (escape(txt),))
+				lines.append(f"Pressed: {escape(txt)}")
 			if action.holdaction:
 				txt = action.holdaction.describe(self.ACTION_CONTEXT)
-				lines.append("Hold: %s" % (escape(txt),))
-			self.pressed.set_markup("<small>%s</small>" % ("\n".join(lines),))
+				lines.append(f"Hold: {escape(txt)}")
+			self.pressed.set_markup("<small>{}</small>".format("\n".join(lines)))
 		else:
 			txt = escape(action.describe(self.ACTION_CONTEXT))
-			self.pressed.set_markup("<small>Pressed: %s</small>" % (txt,))
+			self.pressed.set_markup(f"<small>Pressed: {txt}</small>")
 
 
 class ControllerTrigger(ControllerButton):

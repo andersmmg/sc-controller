@@ -237,9 +237,9 @@ class AxisActionComponent(AEComponent, TimerManager):
 			if y2 < y1:
 				y1, y2 = y2, y1
 			if isinstance(action, WinAreaAction):
-				key = "window-%s%s" % (t1, t2)
+				key = f"window-{t1}{t2}"
 			else:
-				key = "screen-%s%s" % (t1, t2)
+				key = f"screen-{t1}{t2}"
 
 		self._recursing = True
 		self.builder.get_object("sbAreaX1").set_value(x1)
@@ -271,7 +271,7 @@ class AxisActionComponent(AEComponent, TimerManager):
 
 		def cb(action):
 			self.circular_buttons[index] = action.button
-			btCircularButton = self.builder.get_object("btCircularButton%s" % (index,))
+			btCircularButton = self.builder.get_object(f"btCircularButton{index}")
 			btCircularButton.set_label(action.describe(Action.AC_PAD))
 			self.editor.set_action(self.make_circular_action())
 
@@ -447,9 +447,9 @@ class AxisActionComponent(AEComponent, TimerManager):
 
 	def on_sbArea_output(self, button, *a):
 		if self.relative_area:
-			button.set_text("%s %%" % (button.get_value()))
+			button.set_text(f"{button.get_value()} %")
 		else:
-			button.set_text("%s px" % (int(button.get_value())))
+			button.set_text(f"{int(button.get_value())} px")
 
 	def on_sbArea_focus_out_event(self, button, *a):
 		GLib.idle_add(self.on_sbArea_output, button)

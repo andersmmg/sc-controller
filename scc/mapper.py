@@ -56,11 +56,11 @@ class Mapper:
 		# Create virtual devices
 		log.debug("Creating virtual devices")
 		self.keyboard = self.create_keyboard(keyboard) if keyboard else Dummy()
-		log.debug("Keyboard: %s" % (self.keyboard,))
+		log.debug(f"Keyboard: {self.keyboard}")
 		self.mouse = self.create_mouse(mouse) if mouse else Dummy()
-		log.debug("Mouse:    %s" % (self.mouse,))
+		log.debug(f"Mouse:    {self.mouse}")
 		self.gamepad: UInput | Dummy = self.create_gamepad(gamepad, poller) if gamepad else Dummy()
-		log.debug("Gamepad:  %s" % (self.gamepad,))
+		log.debug(f"Gamepad:  {self.gamepad}")
 
 		# Set by SCCDaemon instance; Used to handle actions
 		# from scc.special_actions

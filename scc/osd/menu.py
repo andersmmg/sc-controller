@@ -184,11 +184,11 @@ class Menu(OSDWindow):
 				self._menuid = self.args.items[0]
 				self.items = MenuData.from_profile(self.args.from_profile, self._menuid)
 			except OSError:
-				print("%s: error: profile file not found" % (sys.argv[0]), file=sys.stderr)
+				print(f"{sys.argv[0]}: error: profile file not found", file=sys.stderr)
 
 				return False
 			except ValueError:
-				print("%s: error: menu not found" % (sys.argv[0]), file=sys.stderr)
+				print(f"{sys.argv[0]}: error: menu not found", file=sys.stderr)
 
 				return False
 		elif self.args.from_file:
@@ -196,7 +196,7 @@ class Menu(OSDWindow):
 				self._menuid = self.args.from_file
 				self.items = MenuData.from_file(self.args.from_file)
 			except Exception:
-				print("%s: error: failed to load menu file" % (sys.argv[0]), file=sys.stderr)
+				print(f"{sys.argv[0]}: error: failed to load menu file", file=sys.stderr)
 
 				return False
 		else:
@@ -204,7 +204,7 @@ class Menu(OSDWindow):
 				self.items = MenuData.from_args(self.args.items)
 				self._menuid = None
 			except ValueError:
-				print("%s: error: invalid number of arguments" % (sys.argv[0]), file=sys.stderr)
+				print(f"{sys.argv[0]}: error: invalid number of arguments", file=sys.stderr)
 
 				return False
 		return True
@@ -229,13 +229,13 @@ class Menu(OSDWindow):
 				self.items.append(item)
 		self.pack_items(self.parent, self.items)
 		if len(self.items) == 0:
-			print("%s: error: no items in menu" % (sys.argv[0]), file=sys.stderr)
+			print(f"{sys.argv[0]}: error: no items in menu", file=sys.stderr)
 
 			return False
 
 		if self.args.print_items:
 			max_id_len = max(*[len(x.id) for x in self.items])
-			row_format = "{:>%s}:\t{}" % (max_id_len,)
+			row_format = f"{{:>{max_id_len}}}:\t{{}}"
 			for item in self.items:
 				print(row_format.format(item.id, item.label))
 

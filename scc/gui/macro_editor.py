@@ -350,7 +350,7 @@ class MacroEditor(Editor):
 		cbMacroType = self.builder.get_object("cbMacroType")
 		self.id = id
 		self.mode = mode
-		self.set_title("Macro for %s" % (id.name if id in SCButtons else str(id),))
+		self.set_title(f"Macro for {id.name if id in SCButtons else str(id)}")
 		if isinstance(action, Cycle):
 			cbMacroType.set_active(2)
 		elif action.repeat:

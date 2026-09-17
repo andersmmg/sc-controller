@@ -216,5 +216,5 @@ class SpecialActionComponent(AEComponent, MenuActionCofC):
 		if value > 60.0:
 			return _("forever")
 		if value < 1:
-			return "%sms" % int(value * 1000)
-		return "%ss" % value
+			return f"{int(value * 1000)}ms"
+		return f"{value}s"

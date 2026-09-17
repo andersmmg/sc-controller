@@ -95,7 +95,7 @@ class MenuEditor(Editor):
 					item.label = item.action.describe(Action.AC_OSD)
 					item.icon = self.selected_icon
 				else:
-					raise TypeError("Edited %s" % (item.__class__.__name__))
+					raise TypeError(f"Edited {item.__class__.__name__}")
 				i[1] = item.describe()
 				break
 
@@ -180,7 +180,7 @@ class MenuEditor(Editor):
 		model = tvItems.get_model()
 		o = GObject.GObject()
 		if not item.id:
-			item.id = "_auto_id_%s" % (self.next_auto_id,)
+			item.id = f"_auto_id_{self.next_auto_id}"
 			self.next_auto_id += 1
 		o.item = item
 		iter = model.append((o, o.item.describe()))
@@ -237,7 +237,7 @@ class MenuEditor(Editor):
 		else:
 			# Menu stored as file
 			if id != self.original_id:
-				path = os.path.join(get_menus_path(), "%s.menu" % (id,))
+				path = os.path.join(get_menus_path(), f"{id}.menu")
 				if os.path.exists(path):
 					self._bad_id_duplicate()
 					return
@@ -325,7 +325,7 @@ class MenuEditor(Editor):
 
 	def _load_items_from_file(self, id):
 		for p in (get_menus_path(), get_default_menus_path()):
-			path = os.path.join(p, "%s.menu" % (id,))
+			path = os.path.join(p, f"{id}.menu")
 			if os.path.exists(path):
 				return MenuData.from_file(path, TalkingActionParser())
 		# Menu file not found
@@ -349,7 +349,7 @@ class MenuEditor(Editor):
 				pass
 		elif self.original_type == MenuEditor.TYPE_GLOBAL:
 			try:
-				path = os.path.join(get_menus_path(), "%s.menu" % (self.original_id,))
+				path = os.path.join(get_menus_path(), f"{self.original_id}.menu")
 				log.debug("Removing %s", path)
 				os.unlink(path)
 			except Exception:
@@ -363,7 +363,7 @@ class MenuEditor(Editor):
 		data = MenuData(*[i[0].item for i in model])
 		i = 1
 		for item in data:
-			item.id = "item%s" % (i,)
+			item.id = f"item{i}"
 			i += 1
 		return data
 
@@ -382,7 +382,7 @@ class MenuEditor(Editor):
 		"""
 		Stores menu in json file
 		"""
-		id = "%s.menu" % (id,)
+		id = f"{id}.menu"
 		path = os.path.join(get_menus_path(), id)
 		data = self._generate_menudata()
 		jstr = Encoder(sort_keys=True, indent=4).encode(data)

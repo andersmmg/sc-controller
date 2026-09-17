@@ -226,7 +226,7 @@ class GyroActionComponent(AEComponent):
 			self.send()
 
 	def on_sclSoftLevel_format_value(self, scale, value):
-		return "%s%%" % (int(value * 100.0),)
+		return f"{int(value * 100.0)}%"
 
 	def update(self, *a):
 		cbMode = self.builder.get_object("cbMode")
@@ -260,9 +260,9 @@ class GyroActionComponent(AEComponent):
 		if match:
 			grps = match.groups()
 			if yawroll == YAW:
-				action = "%s%s%s" % (grps[0], grps[1], grps[3])
+				action = f"{grps[0]}{grps[1]}{grps[3]}"
 			else:
-				action = "%s%s%s" % (grps[0], grps[2], grps[3])
+				action = f"{grps[0]}{grps[2]}{grps[3]}"
 		action = self.parser.restart(action).parse()
 
 		if item and action:

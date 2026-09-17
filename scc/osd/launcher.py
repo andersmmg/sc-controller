@@ -250,7 +250,7 @@ class Launcher(OSDWindow):
 					index2 = i + index2
 					break
 
-		return "%s<span color='#%s'>%s</span>%s" % (
+		return "{}<span color='#{}'>{}</span>{}".format(
 			label[0:index1],
 			self.config["osd_colors"]["menuitem_hilight_text"],
 			label[index1:index2],

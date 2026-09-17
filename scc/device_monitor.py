@@ -145,7 +145,7 @@ class DeviceMonitor(Monitor):
 
 				for i in range(cl.conn_num):
 					ci = cl.conn_info[i]
-					id = "hci%s:%s" % (cl.dev_id, ci.handle)
+					id = f"hci{cl.dev_id}:{ci.handle}"
 					address = ":".join([hex(x).lstrip("0x").zfill(2).upper() for x in reversed(ci.bdaddr)])
 					self.bt_addresses[id] = address
 			finally:
@@ -153,7 +153,7 @@ class DeviceMonitor(Monitor):
 				# every call leaks one and daemon eventually runs out of fds
 				os.close(s)
 		except OSError as e:
-			self._bt_warn("Failed to list bluetooth connections: %s" % (e,))
+			self._bt_warn(f"Failed to list bluetooth connections: {e}")
 
 	def _bt_warn(self, msg):
 		"""Logs bluetooth warning, but at most once per BT_WARN_INTERVAL"""

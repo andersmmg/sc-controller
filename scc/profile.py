@@ -169,7 +169,7 @@ class Profile:
 			for id in data["menus"]:
 				for invalid_char in ".:/":
 					if invalid_char in id:
-						raise ValueError("Invalid character '%s' in menu id '%s'" % (invalid_char, id))
+						raise ValueError(f"Invalid character '{invalid_char}' in menu id '{id}'")
 				self.menus[id] = MenuData.from_json_data(data["menus"][id], self.parser)
 
 		# Conversion

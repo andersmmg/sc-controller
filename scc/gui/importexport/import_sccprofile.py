@@ -86,7 +86,7 @@ class ImportSccprofile:
 			files.clear()
 			# Grab 1st profile
 			name = tar.extractfile(Export.PN_NAME).read()
-			main_profile = "%s.sccprofile" % name
+			main_profile = f"{name}.sccprofile"
 			parser = GuiActionParser()
 			o = GObject.GObject()
 			o.obj = Profile(parser).load_fileobj(tar.extractfile(main_profile))
@@ -188,10 +188,10 @@ class ImportSccprofile:
 			if enabled == 2:
 				importas = main_name
 			elif cbImportHidden.get_active():
-				importas = ".%s:%s" % (main_name, name)
+				importas = f".{main_name}:{name}"
 				enabled = 1
 			elif cbImportVisible.get_active():
-				importas = "%s:%s" % (main_name, name)
+				importas = f"{main_name}:{name}"
 				enabled = 1
 			elif cbImportNone.get_active():
 				enabled = 0
@@ -230,7 +230,7 @@ class ImportSccprofile:
 				if isinstance(obj.obj, Profile):
 					new_profile_names[name] = importas
 				elif isinstance(obj.obj, MenuData):
-					new_menu_names["%s.menu" % (name,)] = "%s.menu" % (importas,)
+					new_menu_names[f"{name}.menu"] = f"{importas}.menu"
 
 		def apply_replacements(obj):
 			for a in obj.get_all_actions():
@@ -248,11 +248,11 @@ class ImportSccprofile:
 				# TODO: update references
 				if isinstance(obj.obj, Profile):
 					apply_replacements(obj.obj)
-					obj.obj.save(os.path.join(get_profiles_path(), "%s.sccprofile" % (importas,)))
+					obj.obj.save(os.path.join(get_profiles_path(), f"{importas}.sccprofile"))
 				elif isinstance(obj.obj, MenuData):
 					apply_replacements(obj.obj)
 					jstr = Encoder(sort_keys=True, indent=4).encode(obj.obj)
-					filename = os.path.join(get_menus_path(), "%s.menu" % (importas,))
+					filename = os.path.join(get_menus_path(), f"{importas}.menu")
 					with open(filename, "w") as fh:
 						fh.write(jstr)
 

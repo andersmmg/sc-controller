@@ -57,7 +57,7 @@ class RingEditor(Editor, ComboSetter):
 		self.radius = scale.get_value()
 
 	def on_sclRadius_format_value(self, scale, value):
-		return "%s%%" % (int(value * 100),)
+		return f"{int(value * 100)}%"
 
 	def on_Dialog_destroy(self, *a):
 		self.remove_added_widget()

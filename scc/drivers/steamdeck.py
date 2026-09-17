@@ -158,7 +158,7 @@ class Deck(USBDevice, SCController):
 		self.read_serial()
 
 	def generate_serial(self):
-		self._serial = "%s:%s" % (self.device.getBusNumber(), self.device.getPortNumber())
+		self._serial = f"{self.device.getBusNumber()}:{self.device.getPortNumber()}"
 
 	def disconnected(self):
 		# Overrided to skip returning serial# to pool.
@@ -176,7 +176,7 @@ class Deck(USBDevice, SCController):
 		return "deck"
 
 	def __repr__(self):
-		return "<Deck %s>" % (self.get_id(),)
+		return f"<Deck {self.get_id()}>"
 
 	def get_gui_config_file(self):
 		return "deck.config.json"
@@ -193,7 +193,7 @@ class Deck(USBDevice, SCController):
 
 	def on_serial_got(self):
 		log.debug("Got SteamDeck with serial %s", self._serial)
-		self._id = "deck%s" % (self._serial,)
+		self._id = f"deck{self._serial}"
 		self.set_input_interrupt(ENDPOINT, 64, self._on_input)
 
 	def _on_input(self, endpoint, data):

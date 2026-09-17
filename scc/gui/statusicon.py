@@ -190,13 +190,13 @@ class StatusIcon(GObject.GObject):
 	def do_get_property(self, property):
 		if property.name == "active":
 			return self.__active
-		raise AttributeError("Unknown property %s" % property.name)
+		raise AttributeError(f"Unknown property {property.name}")
 
 	def do_set_property(self, property, value):
 		if property.name == "active":
 			self.__active = value
 		else:
-			raise AttributeError("unknown property %s" % property.name)
+			raise AttributeError(f"unknown property {property.name}")
 
 
 class StatusIconDummy(StatusIcon):
@@ -423,7 +423,7 @@ class StatusIconProxy(StatusIcon):
 					self._status_fb.connect("notify::active", self._on_notify_active_fb)
 					self._on_notify_active_fb()
 
-					log.warning("StatusIcon: Using backend %s (fallback)" % StatusIconBackend.__name__)
+					log.warning(f"StatusIcon: Using backend {StatusIconBackend.__name__} (fallback)")
 					break
 				except NotImplementedError:
 					continue
@@ -474,16 +474,16 @@ def get_status_icon(*args, **kwargs):
 	if "STATUS_BACKEND" in os.environ:
 		kwargs["force"] = True
 
-		status_icon_backend_name = "StatusIcon%s" % (os.environ.get("STATUS_BACKEND"))
+		status_icon_backend_name = "StatusIcon{}".format(os.environ.get("STATUS_BACKEND"))
 		if status_icon_backend_name in globals():
 			try:
 				status_icon = globals()[status_icon_backend_name](*args, **kwargs)
-				log.info("StatusIcon: Using requested backend %s" % (status_icon_backend_name))
+				log.info(f"StatusIcon: Using requested backend {status_icon_backend_name}")
 				return status_icon
 			except NotImplementedError:
-				log.error("StatusIcon: Requested backend %s is not supported" % (status_icon_backend_name))
+				log.error(f"StatusIcon: Requested backend {status_icon_backend_name} is not supported")
 		else:
-			log.error("StatusIcon: Requested backend %s does not exist" % (status_icon_backend_name))
+			log.error(f"StatusIcon: Requested backend {status_icon_backend_name} does not exist")
 
 		return StatusIconDummy(*args, **kwargs)
 

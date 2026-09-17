@@ -135,7 +135,7 @@ class OSDDaemon:
 		if m.get_exit_code() == 0:
 			# 0 means that user selected item and confirmed selection
 			self.daemon.request(
-				"Selected: %s" % (shjoin([m.get_menuid(), m.get_selected_item_id()]).decode("utf-8")),
+				"Selected: {}".format(shjoin([m.get_menuid(), m.get_selected_item_id()]).decode("utf-8")),
 				lambda *a: False,
 				lambda *a: False,
 			)
@@ -153,7 +153,7 @@ class OSDDaemon:
 		"""Called after on-screen keyboard is hidden from the screen"""
 		self._window = None
 		if gd.get_exit_code() == 0:
-			self.daemon.request("Gestured: %s" % (gd.get_gesture(),), lambda *a: False, lambda *a: False)
+			self.daemon.request(f"Gestured: {gd.get_gesture()}", lambda *a: False, lambda *a: False)
 		else:
 			self.daemon.request("Gestured: x", lambda *a: False, lambda *a: False)
 

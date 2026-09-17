@@ -237,7 +237,7 @@ class Action:
 
 	@override
 	def __str__(self):
-		return "<Action '%s', %s>" % (self.COMMAND, self.parameters)
+		return f"<Action '{self.COMMAND}', {self.parameters}>"
 
 	__repr__ = __str__
 
@@ -411,7 +411,7 @@ class Action:
 		if parameter in PARSER_CONSTANTS:
 			return parameter
 		if type(parameter) in (str, unicode):
-			return "'%s'" % (string_escape(str(parameter)),)
+			return f"'{string_escape(str(parameter))}'"
 		return nameof(parameter)
 
 	def trigger(self, mapper, position, old_position):
@@ -454,7 +454,7 @@ class RangeOP:
 		elif op == "ABS>":
 			self.op_method = self.cmp_gabs
 		else:
-			raise ValueError("Unknown operator: '%s'" % (op,))
+			raise ValueError(f"Unknown operator: '{op}'")
 
 		if what == SCButtons.LT:
 			# TODO: Somehow unify names here, LT button is related to ltrig axis and so on
@@ -475,7 +475,7 @@ class RangeOP:
 			self.min, self.max = float(STICK_PAD_MIN), float(STICK_PAD_MAX)
 			self.op_method = self.cmp_or
 		else:
-			raise ValueError("'%s' is not trigger nor axis" % (nameof(what),))
+			raise ValueError(f"'{nameof(what)}' is not trigger nor axis")
 
 	def cmp_or(self, mapper):
 		return any(x(mapper) for x in self.children)
@@ -521,7 +521,7 @@ class RangeOP:
 
 	@override
 	def __str__(self):
-		return "%s %s %s" % (nameof(self.what), self.op, self.value)
+		return f"{nameof(self.what)} {self.op} {self.value}"
 
 
 class HapticEnabledAction:
@@ -564,13 +564,13 @@ class SpecialAction:
 
 	def execute_named(self, name, mapper, *a):
 		sa = mapper.get_special_actions_handler()
-		h_name = "on_sa_%s" % (name,)
+		h_name = f"on_sa_{name}"
 		if sa is None:
 			log.warning("Mapper can't handle special actions (set_special_actions_handler never called)")
 		elif hasattr(sa, h_name):
 			return getattr(sa, h_name)(mapper, self, *a)
 		else:
-			log.warning("Mapper can't handle '%s' action" % (name,))
+			log.warning(f"Mapper can't handle '{name}' action")
 		return None
 
 	def execute(self, mapper, *a):
@@ -655,7 +655,7 @@ class AxisAction(Action):
 		else:
 			name = str(id)
 		if id in Axes or id in Rels:
-			axis, neg, pos = "%s %s" % (name, _("Axis")), _("Negative"), _("Positive")
+			axis, neg, pos = "{} {}".format(name, _("Axis")), _("Negative"), _("Positive")
 			if id in AxisAction.AXIS_NAMES:
 				axis, neg, pos = [_(x) for x in AxisAction.AXIS_NAMES[id]]
 			if xy:
@@ -680,14 +680,14 @@ class AxisAction(Action):
 			for x in self.parameters:
 				if type(x) in (int, float):
 					if x > 0:
-						return "%s %s" % (axis, pos)
+						return f"{axis} {pos}"
 					if x < 0:
-						return "%s %s" % (axis, neg)
+						return f"{axis} {neg}"
 		if context in (Action.AC_TRIGGER, Action.AC_STICK, Action.AC_PAD):
 			if self.id in AxisAction.Z:  # Trigger
 				return axis
 			xy = "X" if self.id in AxisAction.X else "Y"
-			return "%s %s" % (axis, xy)
+			return f"{axis} {xy}"
 		return axis
 
 	@override
@@ -778,12 +778,12 @@ class HatAction(AxisAction):
 			return self.name
 		axis, neg, pos = AxisAction.get_axis_description(self.id)
 		if self.COMMAND and ("up" in self.COMMAND or "left" in self.COMMAND):
-			return "%s %s" % (axis, neg)
-		return "%s %s" % (axis, pos)
+			return f"{axis} {neg}"
+		return f"{axis} {pos}"
 
 	@override
 	def to_string(self, multiline=False, pad=0):
-		return (" " * pad) + "%s(%s)" % (self.COMMAND, self.id)
+		return (" " * pad) + f"{self.COMMAND}({self.id})"
 
 
 class HatUpAction(HatAction):
@@ -1975,7 +1975,7 @@ class MultiAction(MultichildAction):
 
 	@override
 	def __str__(self):
-		return "<[ %s ]>" % (" and ".join([str(x) for x in self.actions]),)
+		return "<[ {} ]>".format(" and ".join([str(x) for x in self.actions]))
 
 	__repr__ = __str__
 
@@ -2039,7 +2039,7 @@ class DPadAction(MultichildAction, HapticEnabledAction):
 	@override
 	def to_string(self, multiline=False, pad=0, prefixparams=""):
 		if self.diagonal_rage != DPadAction.DEFAULT_DIAGONAL_RANGE:
-			return MultichildAction.to_string(self, multiline, pad, prefixparams="%s, " % (self.diagonal_rage,))
+			return MultichildAction.to_string(self, multiline, pad, prefixparams=f"{self.diagonal_rage}, ")
 		return MultichildAction.to_string(self, multiline, pad)
 
 	@override
@@ -2217,7 +2217,7 @@ class RingAction(MultichildAction):
 	@override
 	def to_string(self, multiline=False, pad=0, prefixparams=""):
 		if self.radius != RingAction.DEFAULT_RADIUS:
-			return MultichildAction.to_string(self, multiline, pad, "%s, " % (self.radius,))
+			return MultichildAction.to_string(self, multiline, pad, f"{self.radius}, ")
 		return MultichildAction.to_string(self, multiline, pad)
 
 	@override
@@ -2468,7 +2468,7 @@ class XYAction(WholeHapticAction, Action):
 
 	@override
 	def __str__(self):
-		return "<%s %s >" % (
+		return "<{} {} >".format(
 			self.COMMAND,
 			", ".join([str(x) for x in self.actions]),
 		)
@@ -2607,7 +2607,7 @@ class TriggerAction(Action, HapticEnabledAction):
 
 	@override
 	def __str__(self):
-		return "<Trigger %s-%s %s >" % (self.press_level, self.release_level, self.action)
+		return f"<Trigger {self.press_level}-{self.release_level} {self.action} >"
 
 	__repr__ = __str__
 
@@ -2811,13 +2811,7 @@ class HipfireAction(Action, HapticEnabledAction):
 
 	@override
 	def __str__(self):
-		return "<Hipfire %s-%s %s %s %s >" % (
-			self.partialpress_level,
-			self.fullpress_level,
-			self.partialpress_action,
-			self.fullpress_action,
-			self.mode,
-		)
+		return f"<Hipfire {self.partialpress_level}-{self.fullpress_level} {self.partialpress_action} {self.fullpress_action} {self.mode} >"
 
 	__repr__ = __str__
 

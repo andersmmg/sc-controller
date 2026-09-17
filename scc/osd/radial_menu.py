@@ -168,7 +168,7 @@ class RadialMenu(Menu):
 				if SVGEditor.get_element(item.widget, "menuitem_text") is not None:
 					l = SVGEditor.get_element(item.widget, "menuitem_text")
 					l.attrib["id"] = "text_" + item.id
-					l.attrib["transform"] = "%s rotate(%s)" % (l.attrib["transform"], -item.a)
+					l.attrib["transform"] = "{} rotate({})".format(l.attrib["transform"], -item.a)
 				# Place up to 3 lines of item label
 				label = item.label.split("\n")
 				first_line = 0
@@ -180,7 +180,7 @@ class RadialMenu(Menu):
 					self.editor.remove_element(SVGEditor.get_element(item.widget, "line0"))
 					first_line = 1
 				for line in range(0, len(label)):
-					l = SVGEditor.get_element(item.widget, "line%s" % (first_line + line,))
+					l = SVGEditor.get_element(item.widget, f"line{first_line + line}")
 					if l is None:
 						break
 					SVGEditor.set_text(l, label[line])

@@ -219,12 +219,7 @@ class Condition:
 		self.empty = not (title or title or regexp or wm_class)
 
 	def __str__(self):
-		return "<Condition title=%s, exact_title=%s, regexp=%s, wm_class=%s>" % (
-			self.title,
-			self.exact_title,
-			self.regexp,
-			self.wm_class,
-		)
+		return f"<Condition title={self.title}, exact_title={self.exact_title}, regexp={self.regexp}, wm_class={self.wm_class}>"
 
 	def describe(self):
 		"""

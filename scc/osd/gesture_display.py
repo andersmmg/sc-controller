@@ -102,7 +102,7 @@ class GestureDisplay(OSDWindow):
 			metavar="option",
 			default=LEFT,
 			choices=(LEFT, RIGHT, CPAD),
-			help="which pad should be used to generate gesture menu (default: %s)" % (LEFT,),
+			help=f"which pad should be used to generate gesture menu (default: {LEFT})",
 		)
 
 	def parse_argumets(self, argv):

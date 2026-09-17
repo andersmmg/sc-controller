@@ -32,7 +32,7 @@ class SimpleChooser(Editor):
 		headerbar(self.builder.get_object("header"))
 
 	def load_component(self, component_name):
-		mod = importlib.import_module("scc.gui.ae.%s" % (component_name,))
+		mod = importlib.import_module(f"scc.gui.ae.{component_name}")
 		for x in dir(mod):
 			cls = getattr(mod, x)
 			if isinstance(cls, (type, types.ClassType)) and issubclass(cls, AEComponent):
@@ -40,7 +40,7 @@ class SimpleChooser(Editor):
 					self.component = cls(self.app, self)
 					break
 		if self.component is None:
-			raise ValueError("Unknown component '%s'" % (component_name,))
+			raise ValueError(f"Unknown component '{component_name}'")
 		self.component.load()
 		if component_name == "buttons":
 			self.component.hide_toggle()

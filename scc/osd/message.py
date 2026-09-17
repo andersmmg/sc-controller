@@ -30,7 +30,7 @@ class Message(OSDWindow):
 
 	def show(self):
 		self.l = Gtk.Label()
-		self.l.set_name("osd-label-%s" % (self.size,))
+		self.l.set_name(f"osd-label-{self.size}")
 		self.l.set_label(self.text)
 
 		self.add(self.l)

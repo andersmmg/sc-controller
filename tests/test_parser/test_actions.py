@@ -18,8 +18,8 @@ class TestActions:
 					# Skip over some hard-coded cases, these have
 					# tests merged together under weird names
 					continue
-				method_name = "test_%s" % (cls.COMMAND,)
-				assert hasattr(self, method_name), "There is no test for %s" % (cls.COMMAND)
+				method_name = f"test_{cls.COMMAND}"
+				assert hasattr(self, method_name), f"There is no test for {cls.COMMAND}"
 
 	def test_none(self):
 		"""

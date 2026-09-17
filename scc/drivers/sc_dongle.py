@@ -185,7 +185,7 @@ class SCController(Controller):
 		return "sc"
 
 	def __repr__(self):
-		return "<SCWireless %s>" % (self.get_id(),)
+		return f"<SCWireless {self.get_id()}>"
 
 	def input(self, idata):
 		old_state, self._old_state = self._old_state, idata
@@ -240,10 +240,7 @@ class SCController(Controller):
 		tp = self.get_type()
 		id = None
 		while id is None or id in self._driver.daemon.get_active_ids():
-			id = "%s%s" % (
-				tp,
-				magic_number,
-			)
+			id = f"{tp}{magic_number}"
 			magic_number += 1
 		return id
 

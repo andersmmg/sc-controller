@@ -268,7 +268,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 	def refresh_daemon_status_icon(self):
 		"""Re-render the daemon status menu button icon to match current inversion"""
 		if getattr(self, "status", None):
-			icon = os.path.join(self.imagepath, "scc-%s.svg" % (self.status,))
+			icon = os.path.join(self.imagepath, f"scc-{self.status}.svg")
 			imgDaemonStatus = self.builder.get_object("imgDaemonStatus")
 			if imgDaemonStatus is not None and os.path.exists(icon):
 				inverted, brightness = self.get_svg_invert()
@@ -283,9 +283,9 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		"""
 		if status is None:
 			status = self.status
-		src = os.path.join(self.imagepath, "scc-statusicon-%s.svg" % (status,))
+		src = os.path.join(self.imagepath, f"scc-statusicon-{status}.svg")
 		if not os.path.exists(src):
-			src = os.path.join(self.imagepath, "scc-%s.svg" % (status,))
+			src = os.path.join(self.imagepath, f"scc-{status}.svg")
 		if not os.path.exists(src):
 			return None
 		mode = self.config.get("gui", {}).get("tray_icon_mode", "system")
@@ -307,7 +307,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 		dst = os.path.join(
 			get_cache_path(),
 			"tray-icons",
-			"%s-%s-dark.svg" % (os.path.basename(src)[:-4], hashlib.sha256(data).hexdigest()[:12]),
+			f"{os.path.basename(src)[:-4]}-{hashlib.sha256(data).hexdigest()[:12]}-dark.svg",
 		)
 		if dst not in self._cached_tray_icons[src] and not os.path.isfile(dst):
 			try:
@@ -508,7 +508,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 			kernel_mods = [line.split(" ")[0] for line in rawlist]
 			# Built-in modules
 			release = platform.uname()[2]
-			with open("/lib/modules/%s/modules.builtin" % release) as fh:
+			with open(f"/lib/modules/{release}/modules.builtin") as fh:
 				rawlist = fh.read().split("\n")
 			kernel_mods += [os.path.split(x)[-1].split(".")[0] for x in rawlist]
 		except Exception:
@@ -1756,7 +1756,7 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 	def set_daemon_status(self, status, daemon_runs):
 		"""Updates image that shows daemon status and menu shown when image is clicked"""
 		log.debug("daemon status: %s", status)
-		icon = os.path.join(self.imagepath, "scc-%s.svg" % (status,))
+		icon = os.path.join(self.imagepath, f"scc-{status}.svg")
 		imgDaemonStatus = self.builder.get_object("imgDaemonStatus")
 		btDaemon = self.builder.get_object("btDaemon")
 		mnuEmulationEnabled = self.builder.get_object("mnuEmulationEnabled")
@@ -1961,11 +1961,11 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 					)
 				name = url_unquote(".".join(uri.split("/")[-1].split(".")[0:-1]))
 				remote = Gio.File.new_for_uri(uri)
-				tmp, stream = Gio.File.new_tmp("%s.XXXXXX" % (name,))
+				tmp, stream = Gio.File.new_tmp(f"{name}.XXXXXX")
 				stream.close()
 				if remote.copy(tmp, Gio.FileCopyFlags.OVERWRITE, None, None):
 					# Sucessfully downloaded
-					log.info("Downloaded '%s'" % (uri,))
+					log.info(f"Downloaded '{uri}'")
 					giofile = tmp
 				else:
 					# Failed. Just do nothing
@@ -1974,14 +1974,14 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 				path = giofile.get_path()
 				filetype = Dialog.determine_type(path)
 				if filetype:
-					log.info("Importing '%s'..." % (filetype))
-					log.debug("(type %s)" % (filetype,))
+					log.info(f"Importing '{filetype}'...")
+					log.debug(f"(type {filetype})")
 					ied = Dialog(self)
 					ied.show(self.window)
 					# Skip first screen and try to import this file
 					ied.import_file(path, filetype=filetype)
 				else:
-					log.error("Unknown file type: '%s'..." % (path,))
+					log.error(f"Unknown file type: '{path}'...")
 
 	def convert_old_profiles(self):
 		"""
@@ -2011,9 +2011,9 @@ class App(Gtk.Application, UserDataManager, BindingEditor):
 			)
 			for name in to_convert:
 				try:
-					to_convert[name].save("%s/%s.convert" % (get_profiles_path(), name))
-					os.rename("%s/%s" % (get_profiles_path(), name), "%s/%s~" % (get_profiles_path(), name))
-					os.rename("%s/%s.convert" % (get_profiles_path(), name), "%s/%s" % (get_profiles_path(), name))
+					to_convert[name].save(f"{get_profiles_path()}/{name}.convert")
+					os.rename(f"{get_profiles_path()}/{name}", f"{get_profiles_path()}/{name}~")
+					os.rename(f"{get_profiles_path()}/{name}.convert", f"{get_profiles_path()}/{name}")
 					log.warning("Converted %s (from v%s)", name, to_convert[name].original_version)
 				except Exception as e:
 					log.warning("Failed to convert %s: %s", name, e)

@@ -271,7 +271,7 @@ class MenuGenerator:
 		"""
 		Returns user-friendly description of MenuItem or MenuGenerator.
 		"""
-		return "[ %s ] " % (self.__class__.__name__,)
+		return f"[ {self.__class__.__name__} ] "
 
 	def encode(self):
 		"""Returns generator data as dict storable in json (profile) file"""

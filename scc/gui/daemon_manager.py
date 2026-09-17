@@ -263,7 +263,7 @@ class DaemonManager(GObject.GObject):
 
 	def set_profile(self, filename):
 		"""Asks daemon to change 1st controller profile"""
-		self.request("Controller.\nProfile: %s" % (filename,), DaemonManager.nocallback, DaemonManager.nocallback)
+		self.request(f"Controller.\nProfile: {filename}", DaemonManager.nocallback, DaemonManager.nocallback)
 
 	def reconfigure(self):
 		"""Asks daemon reload configuration file"""
@@ -360,14 +360,14 @@ class ControllerManager(GObject.GObject):
 		self._flags = 0
 
 	def __repr__(self):
-		return "<ControllerManager for ID '%s'>" % (self._controller_id,)
+		return f"<ControllerManager for ID '{self._controller_id}'>"
 
 	def _send_id(self):
 		"""
 		Sends Controller: message to daemon, so next message goes to correct
 		controller.
 		"""
-		self._dm.request("Controller: %s" % (self._controller_id,), DaemonManager.nocallback, DaemonManager.nocallback)
+		self._dm.request(f"Controller: {self._controller_id}", DaemonManager.nocallback, DaemonManager.nocallback)
 
 	def is_connected(self):
 		"""
@@ -471,19 +471,19 @@ class ControllerManager(GObject.GObject):
 		"""
 		what = " ".join(what_to_lock)
 		self._send_id()
-		self._dm.request("Lock: %s" % (what,), success_cb, error_cb)
+		self._dm.request(f"Lock: {what}", success_cb, error_cb)
 
 	def set_led_level(self, value):
 		"""
 		Sets brightness of controller led.
 		"""
 		self._send_id()
-		self._dm.request("Led: %s" % (int(value),), DaemonManager.nocallback, DaemonManager.nocallback)
+		self._dm.request(f"Led: {int(value)}", DaemonManager.nocallback, DaemonManager.nocallback)
 
 	def set_profile(self, filename):
 		"""Asks daemon to change this controller profile"""
 		self._send_id()
-		self._dm.request("Profile: %s" % (filename,), DaemonManager.nocallback, DaemonManager.nocallback)
+		self._dm.request(f"Profile: {filename}", DaemonManager.nocallback, DaemonManager.nocallback)
 
 	def turnoff(self):
 		"""Asks daemon to turn off this controller"""
@@ -493,7 +493,7 @@ class ControllerManager(GObject.GObject):
 	def feedback(self, position, amplitude):
 		"""Generates feedback effect on controller"""
 		self._send_id()
-		self._dm.request("Feedback: %s %s" % (position, amplitude), DaemonManager.nocallback, DaemonManager.nocallback)
+		self._dm.request(f"Feedback: {position} {amplitude}", DaemonManager.nocallback, DaemonManager.nocallback)
 
 	def observe(self, success_cb, error_cb, *what_to_lock):
 		"""
@@ -505,7 +505,7 @@ class ControllerManager(GObject.GObject):
 		"""
 		what = " ".join(what_to_lock)
 		self._send_id()
-		self._dm.request("Observe: %s" % (what,), success_cb, error_cb)
+		self._dm.request(f"Observe: {what}", success_cb, error_cb)
 
 	def replace(self, success_cb, error_cb, what, action):
 		"""
@@ -515,7 +515,7 @@ class ControllerManager(GObject.GObject):
 		Calls success_cb() on success or error_cb(error) on failure.
 		"""
 		actionstr = action.to_string().replace("\n", " ")
-		self._dm.request("Replace: %s %s" % (what, actionstr), success_cb, error_cb)
+		self._dm.request(f"Replace: {what} {actionstr}", success_cb, error_cb)
 
 	def unlock_all(self):
 		if self._dm.alive:

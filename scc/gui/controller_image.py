@@ -67,7 +67,7 @@ class ControllerImage(SVGWidget):
 			self._controller_image.use_config(config)
 
 	def _make_controller_image_path(self, img):
-		return os.path.join(self.app.imagepath, "controller-images/%s.svg" % (img,))
+		return os.path.join(self.app.imagepath, f"controller-images/{img}.svg")
 
 	def get_config(self):
 		"""
@@ -105,7 +105,7 @@ class ControllerImage(SVGWidget):
 		self.current = self._ensure_config(config or {}, controller)
 		self.axis_positions = {}
 		self.set_image(
-			os.path.join(self.app.imagepath, "controller-images/%s.svg" % (self.current["gui"]["background"],))
+			os.path.join(self.app.imagepath, "controller-images/{}.svg".format(self.current["gui"]["background"]))
 		)
 		if not self.current["gui"]["no_buttons_in_gui"]:
 			self._fill_button_images(self.current["gui"]["buttons"])
@@ -135,7 +135,7 @@ class ControllerImage(SVGWidget):
 			self.hilight(self._last_buttons)
 
 	def get_render_cache_id(self):
-		return "sticks:%r|" % (tuple(sorted(self.axis_positions.items())),)
+		return f"sticks:{tuple(sorted(self.axis_positions.items()))!r}|"
 
 	def is_render_cacheable(self):
 		return not self.axis_positions
@@ -170,7 +170,7 @@ class ControllerImage(SVGWidget):
 			if determinant:
 				dx, dy = ((d * dx - c * dy) / determinant, (-b * dx + a * dy) / determinant)
 			transform = element.attrib.get("transform", "")
-			element.attrib["transform"] = "translate(%s,%s) %s" % (dx, dy, transform)
+			element.attrib["transform"] = f"translate({dx},{dy}) {transform}"
 		return ET.tostring(tree).decode("utf-8")
 
 	def override_background(self, filename):
@@ -180,7 +180,7 @@ class ControllerImage(SVGWidget):
 		"""
 		if self.backup is None:
 			self.backup = copy.deepcopy(self.current)
-		with open(os.path.join(self.app.imagepath, "%s.json" % (filename,))) as fh:
+		with open(os.path.join(self.app.imagepath, f"{filename}.json")) as fh:
 			data = json.loads(fh.read())
 		self.current["gui"]["background"] = data["gui"]["background"]
 		self.use_config(self.current, self.backup)
@@ -192,7 +192,7 @@ class ControllerImage(SVGWidget):
 		"""
 		if self.backup is None:
 			self.backup = copy.deepcopy(self.current)
-		with open(os.path.join(self.app.imagepath, "%s.json" % (filename,))) as fh:
+		with open(os.path.join(self.app.imagepath, f"{filename}.json")) as fh:
 			data = json.loads(fh.read())
 		self.current["gui"]["buttons"] = data["gui"]["buttons"]
 		self.current["buttons"] = data["buttons"]
@@ -230,7 +230,7 @@ class ControllerImage(SVGWidget):
 				i = 16
 			path = None
 			try:
-				elm = SVGEditor.get_element(e, "AREA_%s" % (b,))
+				elm = SVGEditor.get_element(e, f"AREA_{b}")
 				if elm is None:
 					if b in buttons:
 						log.warning("Area for button %s not found", b)
@@ -249,9 +249,9 @@ class ControllerImage(SVGWidget):
 					else:
 						x -= (tw - w) * 0.25
 						y -= (th - h) * 0.25
-				path = os.path.join(self.app.imagepath, "button-images", "%s.svg" % (buttons[i],))
+				path = os.path.join(self.app.imagepath, "button-images", f"{buttons[i]}.svg")
 				img = SVGEditor.get_element(SVGEditor.load_from_file(path), "button")
-				img.attrib["transform"] = "translate(%s, %s) scale(%s)" % (x - target_x, y - target_y, scale)
+				img.attrib["transform"] = f"translate({x - target_x}, {y - target_y}) scale({scale})"
 				img.attrib["id"] = b
 				SVGEditor.add_element(target, img)
 			except Exception as err:

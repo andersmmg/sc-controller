@@ -501,7 +501,7 @@ class TestInputs:
 		x = mapper.gamepad.axes[Axes.ABS_X]
 		y = mapper.gamepad.axes[Axes.ABS_Y]
 		r = sqrt(float(x) * x + float(y) * y)
-		assert abs(r - STICK_PAD_MAX) < 2, "radius %s not on circle" % (r,)
+		assert abs(r - STICK_PAD_MAX) < 2, f"radius {r} not on circle"
 
 	@input_test
 	def test_normalize_passthrough_inside_circle(self, mapper):

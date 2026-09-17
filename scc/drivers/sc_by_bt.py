@@ -167,7 +167,7 @@ class SCByBt(SCController):
 		return "scbt"
 
 	def __repr__(self):
-		return "<SCByBt %s>" % (self.get_id(),)
+		return f"<SCByBt {self.get_id()}>"
 
 	def configure(self, idle_timeout=None, enable_gyros=None, led_level=None):
 		"""

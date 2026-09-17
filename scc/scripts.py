@@ -137,11 +137,11 @@ def cmd_set_profile(argv0, argv):
 			print("Unknown profile:", argv[1], file=sys.stderr)
 
 			return 1
-		print("Controller: %s" % (argv[0],), file=s)
+		print(f"Controller: {argv[0]}", file=s)
 
 		if not check_error(s):
 			return 1
-		print("Profile: %s" % (profile,), file=s)
+		print(f"Profile: {profile}", file=s)
 
 		if not check_error(s):
 			return 1
@@ -151,7 +151,7 @@ def cmd_set_profile(argv0, argv):
 			print("Unknown profile:", argv[0], file=sys.stderr)
 
 			return 1
-		print("Profile: %s" % (profile,), file=s)
+		print(f"Profile: {profile}", file=s)
 
 		if not check_error(s):
 			return 1
@@ -348,7 +348,7 @@ def connect_to_daemon():
 		rfile = s.makefile("rb")
 		wfile = s.makefile("wb")
 	except Exception as e:
-		print("Connection to scc-daemon failed: %s" % (e,), file=sys.stderr)
+		print(f"Connection to scc-daemon failed: {e}", file=sys.stderr)
 
 		return None
 	return DaemonSocket(rfile, wfile)
@@ -418,14 +418,14 @@ def show_help(command=None, out=sys.stdout):
 			lines = hlp.split("\n")
 			if len(lines) > 0:
 				for line in lines:
-					line = line.replace("Usage: scc", "Usage: %s" % (sys.argv[0],))
+					line = line.replace("Usage: scc", f"Usage: {sys.argv[0]}")
 					if line.startswith("\t"):
 						line = line[1:]
 					print(line, file=out)
 
 				return 0
 
-	print("Usage: %s <command> [ arguments ]" % (sys.argv[0],), file=out)
+	print(f"Usage: {sys.argv[0]} <command> [ arguments ]", file=out)
 
 	print("", file=out)
 
@@ -433,7 +433,7 @@ def show_help(command=None, out=sys.stdout):
 
 	for name in sorted(names):
 		hlp = (globals()["cmd_" + name].__doc__ or "").strip("\t \r\n").split("\n")[0]
-		print((" - %%-%ss %%s" % (max_len,)) % (name.replace("_", "-"), hlp), file=out)
+		print((f" - %-{max_len}s %s") % (name.replace("_", "-"), hlp), file=out)
 	return 0
 
 
@@ -456,7 +456,7 @@ def main():
 	try:
 		command = globals()["cmd_" + sys.argv[1].replace("-", "_")]
 	except Exception:
-		print("Unknown command: %s" % (sys.argv[1],), file=sys.stderr)
+		print(f"Unknown command: {sys.argv[1]}", file=sys.stderr)
 
 		sys.exit(show_help(out=sys.stderr))
 

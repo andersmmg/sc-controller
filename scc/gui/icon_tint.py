@@ -84,7 +84,7 @@ def tint_gray(gray_hex, color):
 		return gray_hex
 	l = rgb[0]
 	r, g, b = colorsys.hls_to_rgb(h, l, s)
-	return "#%02x%02x%02x" % (round(r * 255), round(g * 255), round(b * 255))
+	return f"#{round(r * 255):02x}{round(g * 255):02x}{round(b * 255):02x}"
 
 
 _COLOR_PREFIX_RE = r'((?:fill|stroke|stop-color)\s*[:=]\s*["\']?)#([0-9a-fA-F]{6})'
@@ -103,7 +103,7 @@ def tint_svg(svg_text, color):
 		prefix, hexdigits = m.group(1), m.group(2)
 		if hexdigits not in mapping:
 			mapping[hexdigits] = tint_gray("#" + hexdigits, color)[1:]
-		return "%s#%s" % (prefix, mapping[hexdigits])
+		return f"{prefix}#{mapping[hexdigits]}"
 
 	return re.sub(_COLOR_PREFIX_RE, repl, svg_text), mapping
 
@@ -116,7 +116,7 @@ def find_base_icon(controller_type, imagepath=None):
 	Searches user icons dir first, then built-in images dir, mirroring
 	old find_controller_icon()
 	"""
-	name = "%s.svg" % (controller_type,)
+	name = f"{controller_type}.svg"
 	for p in (get_controller_icons_path(), get_default_controller_icons_path()):
 		path = os.path.join(p, name)
 		if os.path.exists(path):

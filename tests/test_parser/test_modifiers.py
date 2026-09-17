@@ -15,8 +15,8 @@ class TestModifiers:
 		"""
 		for cls in Action.ALL.values():
 			if "/modifiers.py" in inspect.getfile(cls):
-				method_name = "test_%s" % (cls.COMMAND,)
-				assert hasattr(self, method_name), "There is no test for %s modifier" % (cls.COMMAND)
+				method_name = f"test_{cls.COMMAND}"
+				assert hasattr(self, method_name), f"There is no test for {cls.COMMAND} modifier"
 
 	def test_name(self):
 		"""

@@ -232,7 +232,7 @@ class MenuActionCofC(UserDataManager):
 				if name.startswith("."):
 					continue
 				if "." in name:
-					name = _("%s (global)" % (name.split(".")[0]))
+					name = _("{} (global)".format(name.split(".")[0]))
 				model.append((name, key))
 				if self._current_menu == key:
 					current_index = i
@@ -481,7 +481,7 @@ class MenuActionCofC(UserDataManager):
 		if menu_type == "radialmenu":
 			if val < 1:
 				return _("default")
-			return "%s%%" % (int(val),)
+			return f"{int(val)}%"
 		# if menu_type == "hmenu"
 		val = int(val)
 		if val < 2:

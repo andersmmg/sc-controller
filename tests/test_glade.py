@@ -25,7 +25,7 @@ def _check_ids(el, filename, parent_id):
 	"""Recursively walks through tree and check if every object has ID"""
 	for child in el:
 		if child.tag == "object":
-			msg = "Widget has no ID in %s; class %s; Parent id: %s" % (filename, child.attrib["class"], parent_id)
+			msg = "Widget has no ID in {}; class {}; Parent id: {}".format(filename, child.attrib["class"], parent_id)
 			assert child.attrib.get("id"), msg
 			for subel in child:
 				if subel.tag == "child":

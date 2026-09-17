@@ -118,7 +118,7 @@ class ImportVdf:
 				break
 			if gameid.isdigit():
 				name = _("Unknown App ID %s") % (gameid)
-				filename = os.path.join(sa_path, "appmanifest_%s.acf" % (gameid,))
+				filename = os.path.join(sa_path, f"appmanifest_{gameid}.acf")
 				self._lock.acquire()
 				if os.path.exists(filename):
 					try:
@@ -302,13 +302,13 @@ class ImportVdf:
 		filename = model.get_value(iter, 3)
 
 		dump = StringIO()
-		dump.write("\nProfile filename: %s\n" % (filename,))
+		dump.write(f"\nProfile filename: {filename}\n")
 		dump.write("\nProfile dump:\n")
 		try:
 			with open(filename) as fh:
 				dump.write(fh.read())
 		except Exception as e:
-			dump.write("(failed to write: %s)" % (e,))
+			dump.write(f"(failed to write: {e})")
 		tvError.get_buffer().set_text(dump.getvalue())
 		swError.set_visible(True)
 		btDump.set_sensitive(False)
@@ -366,13 +366,13 @@ class ImportVdf:
 
 			lblVdfImportFinished.set_text(_("Import failed"))
 
-			error_log.write("\nProfile filename: %s\n" % (filename,))
+			error_log.write(f"\nProfile filename: {filename}\n")
 			error_log.write("\nProfile dump:\n")
 			try:
 				with open(filename) as fh:
 					error_log.write(fh.read())
 			except Exception as e:
-				error_log.write("(failed to write: %s)" % (e,))
+				error_log.write(f"(failed to write: {e})")
 
 			tvError.get_buffer().set_text(error_log.getvalue())
 		else:

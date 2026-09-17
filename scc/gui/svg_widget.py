@@ -158,7 +158,7 @@ class SVGWidget(Gtk.EventBox):
 		a = self.get_area(area_id)
 		if a:
 			return a.x, a.y, a.w, a.h
-		raise ValueError("Area '%s' not found" % (area_id,))
+		raise ValueError(f"Area '{area_id}' not found")
 
 	def get_input_rotation(self, area_id):
 		"""Returns the optional SVG-space rotation for an input-test region."""
@@ -379,9 +379,9 @@ class SVGWidget(Gtk.EventBox):
 		"""Hilights specified button, if same ID is found in svg"""
 		self._last_buttons = dict(buttons)
 		cache_id = (
-			("inv:%s|" % (getattr(self, "brightness", 1.0),) if self.inverted else "")
+			("inv:{}|".format(getattr(self, "brightness", 1.0)) if self.inverted else "")
 			+ self.get_render_cache_id()
-			+ "|".join(["%s:%s" % (x, buttons[x]) for x in buttons])
+			+ "|".join([f"{x}:{buttons[x]}" for x in buttons])
 		)
 		cacheable = self.is_render_cacheable()
 		if not cacheable or cache_id not in self.cache:
@@ -453,7 +453,7 @@ class Area:
 		return x >= self.x and y >= self.y and x <= self.x + self.w and y <= self.y + self.h
 
 	def __str__(self):
-		return "<Area %s,%s %sx%s>" % (self.x, self.y, self.w, self.h)
+		return f"<Area {self.x},{self.y} {self.w}x{self.h}>"
 
 
 class SVGEditor:
@@ -637,7 +637,7 @@ class SVGEditor:
 				style = {y[0]: y[1] for y in [x.split(":", 1) for x in element.attrib["style"].split(";")]}
 				if "fill" in style or "stroke" in style:
 					if len(color.strip("#")) == 8:
-						rgb = "#%s" % (color[-6:],)
+						rgb = f"#{color[-6:]}"
 						alpha = float(int(color.strip("#")[0:2], 16)) / 255.0
 						style["fill-opacity"] = style["opacity"] = str(alpha)
 					else:
@@ -648,7 +648,7 @@ class SVGEditor:
 						style["stroke-opacity"] = "1"
 					elif "fill" in style:
 						style["fill"] = rgb
-					element.attrib["style"] = ";".join(["%s:%s" % (x, style[x]) for x in style])
+					element.attrib["style"] = ";".join([f"{x}:{style[x]}" for x in style])
 					return True
 		elif element.tag.endswith("g"):
 			# Group, needs to find RECT, CIRCLE or PATH, whatever comes first
@@ -670,7 +670,9 @@ class SVGEditor:
 			if not value.startswith("#") or len(value) != 7:
 				return value
 			base = tuple(int(value[i : i + 2], 16) for i in (1, 3, 5))
-			return "#%02x%02x%02x" % tuple(round(base[i] + (target[i] - base[i]) * amount) for i in range(3))
+			return "#{:02x}{:02x}{:02x}".format(
+				*tuple(round(base[i] + (target[i] - base[i]) * amount) for i in range(3))
+			)
 
 		def blend_opacity(value):
 			try:
@@ -693,7 +695,7 @@ class SVGEditor:
 				return False
 			style["fill-opacity"] = blend_opacity(style.get("fill-opacity", 1.0))
 			style["opacity"] = blend_opacity(style.get("opacity", 1.0))
-			element.attrib["style"] = ";".join("%s:%s" % (key, value) for key, value in style.items())
+			element.attrib["style"] = ";".join(f"{key}:{value}" for key, value in style.items())
 			return True
 		if element.tag.endswith("g"):
 			for child in element:
@@ -717,8 +719,8 @@ class SVGEditor:
 
 		Returns self.
 		"""
-		s_from = "fill:#%s" % (change_from,)
-		s_to = "fill:#%s" % (change_to,)
+		s_from = f"fill:#{change_from}"
+		s_to = f"fill:#{change_to}"
 		SVGEditor._recolor(self._tree, s_from, s_to)
 		return self
 
@@ -729,8 +731,8 @@ class SVGEditor:
 
 		Returns self.
 		"""
-		s_from = "stroke:#%s" % (change_from,)
-		s_to = "stroke:#%s" % (change_to,)
+		s_from = f"stroke:#{change_from}"
+		s_to = f"stroke:#{change_to}"
 		SVGEditor._recolor(self._tree, s_from, s_to)
 		return self
 
@@ -747,7 +749,7 @@ class SVGEditor:
 			h_, l, s = colorsys.rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
 			l2 = (1.0 - l) * max(0.0, min(1.0, brightness))
 			r2, g2, b2 = colorsys.hls_to_rgb(h_, l2, s)
-			inv = "%02x%02x%02x" % (round(r2 * 255), round(g2 * 255), round(b2 * 255))
+			inv = f"{round(r2 * 255):02x}{round(g2 * 255):02x}{round(b2 * 255):02x}"
 			return "#" + inv + rest
 		return value
 
@@ -771,7 +773,7 @@ class SVGEditor:
 					else:
 						el.attrib[k] = SVGEditor._invert_color(v, brightness)
 			if style:
-				el.attrib["style"] = ";".join("%s:%s" % (k, v) for k, v in style.items())
+				el.attrib["style"] = ";".join(f"{k}:{v}" for k, v in style.items())
 			for ch in el:
 				walk(ch)
 
@@ -809,7 +811,7 @@ class SVGEditor:
 						style[k] = tint_value(v)
 						changed = True
 				if changed:
-					el.attrib["style"] = ";".join("%s:%s" % (k, v) for k, v in style.items())
+					el.attrib["style"] = ";".join(f"{k}:{v}" for k, v in style.items())
 				for k in ("fill", "stroke", "stop-color"):
 					v = el.attrib.get(k)
 					if v and v.startswith("#"):
@@ -876,13 +878,8 @@ class SVGEditor:
 		"""
 		Sets element transformation matrix
 		"""
-		xml.attrib["transform"] = "matrix(%s,%s,%s,%s,%s,%s)" % (
-			matrix[0][0],
-			matrix[1][0],
-			matrix[0][1],
-			matrix[1][1],
-			matrix[0][2],
-			matrix[1][2],
+		xml.attrib["transform"] = (
+			f"matrix({matrix[0][0]},{matrix[1][0]},{matrix[0][1]},{matrix[1][1]},{matrix[0][2]},{matrix[1][2]})"
 		)
 
 	@staticmethod

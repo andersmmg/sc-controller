@@ -125,16 +125,14 @@ class TestCompress:
 				# Tested along with hold
 				continue
 			if hasattr(cls, "set_speed"):
-				assert cls.COMMAND in CASES, "%s supports setting sensitivity, but there is no test case it" % (
-					cls.COMMAND,
-				)
+				assert cls.COMMAND in CASES, f"{cls.COMMAND} supports setting sensitivity, but there is no test case it"
 				assert "sensitivity" in CASES[cls.COMMAND], (
-					"%s supports setting sensitivity, but case for it has no 'sensitivity' key it" % (cls.COMMAND,)
+					f"{cls.COMMAND} supports setting sensitivity, but case for it has no 'sensitivity' key it"
 				)
 			if hasattr(cls, "set_haptic"):
-				assert cls.COMMAND in CASES, "%s supports feedback, but there is no test case it" % (cls.COMMAND,)
+				assert cls.COMMAND in CASES, f"{cls.COMMAND} supports feedback, but there is no test case it"
 				assert "feedback" in CASES[cls.COMMAND], (
-					"%s supports feedback, but case for it has no 'feedback' key it" % (cls.COMMAND,)
+					f"{cls.COMMAND} supports feedback, but case for it has no 'feedback' key it"
 				)
 
 	def test_hold_doubleclick(self):
@@ -160,7 +158,7 @@ class TestCompress:
 		"""
 		for case in CASES:
 			if "sensitivity" in CASES[case]:
-				print("Testing 'sensitivity' on %s" % (case,))
+				print(f"Testing 'sensitivity' on {case}")
 				a = parser.from_json_data(CASES[case]).compress()
 				assert (
 					a.get_speed() == CASES[case]["sensitivity"] or a.strip().get_speed() == CASES[case]["sensitivity"]
@@ -173,7 +171,7 @@ class TestCompress:
 		"""
 		for case in CASES:
 			if "feedback" in CASES[case]:
-				print("Testing 'feedback' on %s" % (case,))
+				print(f"Testing 'feedback' on {case}")
 				a = parser.from_json_data(CASES[case]).compress()
 				assert a.get_haptic().get_position().name == CASES[case]["feedback"][0]
 

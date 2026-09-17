@@ -207,19 +207,19 @@ class Export(UserDataManager):
 		else:
 			f.set_name("SC-Controller Profile")
 			fmt = "sccprofile"
-		f.add_pattern("*.%s" % (fmt,))
+		f.add_pattern(f"*.{fmt}")
 
 		# Create dialog
 		d = Gtk.FileChooserNative.new(_("Export to File..."), self.window, Gtk.FileChooserAction.SAVE)
 		d.add_filter(f)
 		d.set_do_overwrite_confirmation(True)
 		# Set default filename
-		d.set_current_name("%s.%s" % (model[iter][2], fmt))
+		d.set_current_name(f"{model[iter][2]}.{fmt}")
 		if d.run() == Gtk.ResponseType.ACCEPT:
 			fn = d.get_filename()
 			if len(os.path.split(fn)[-1].split(".")) < 2:
 				# User wrote filename without extension
-				fn = "%s.%s" % (fn, fmt)
+				fn = f"{fn}.{fmt}"
 
 			if self._needs_package():
 				if self._export_package(model[iter][1], fn):

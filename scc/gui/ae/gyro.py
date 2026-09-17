@@ -139,7 +139,7 @@ class GyroComponent(AEComponent):
 			self.send()
 
 	def on_sclSoftLevel_format_value(self, scale, value):
-		return "%s%%" % (int(value * 100.0),)
+		return f"{int(value * 100.0)}%"
 
 	def update(self, *a):
 		for i in range(0, 3):

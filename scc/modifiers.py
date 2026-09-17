@@ -94,19 +94,19 @@ class Modifier(Action):
 		if multiline:
 			childstr = self.action.to_string(True, pad + 2)
 			if len(params) > 0:
-				return "%s%s(%s,%s%s)" % (
+				return "{}{}({},{}{})".format(
 					" " * pad,
 					self.COMMAND,
 					", ".join([nameof(s) for s in params]),
 					"\n" if "\n" in childstr else " ",
 					childstr,
 				)
-			return "%s%s(%s)" % (" " * pad, self.COMMAND, childstr.strip())
+			return "{}{}({})".format(" " * pad, self.COMMAND, childstr.strip())
 		childstr = self.action.to_string(False, pad)
 		if len(params) > 0:
-			return "%s%s(%s, %s)" % (" " * pad, self.COMMAND, ", ".join([nameof(s) for s in params]), childstr)
+			return "{}{}({}, {})".format(" " * pad, self.COMMAND, ", ".join([nameof(s) for s in params]), childstr)
 
-		return "%s%s(%s)" % (" " * pad, self.COMMAND, childstr)
+		return "{}{}({})".format(" " * pad, self.COMMAND, childstr)
 
 	@override
 	def strip_defaults(self):
@@ -134,7 +134,7 @@ class Modifier(Action):
 
 	@override
 	def __str__(self):
-		return "<Modifier '%s', %s>" % (self.COMMAND, self.action)
+		return f"<Modifier '{self.COMMAND}', {self.action}>"
 
 	__repr__ = __str__
 
@@ -183,7 +183,7 @@ class NameModifier(Modifier):
 
 	@override
 	def to_string(self, multiline=False, pad=0):
-		return "%s(%s, %s)" % (self.COMMAND, repr(self.name).strip("u"), self.action.to_string(multiline, pad))
+		return "{}({}, {})".format(self.COMMAND, repr(self.name).strip("u"), self.action.to_string(multiline, pad))
 
 
 class ClickModifier(Modifier):
@@ -205,8 +205,8 @@ class ClickModifier(Modifier):
 		if multiline:
 			childstr = self.action.to_string(True, pad + 2)
 			if "\n" in childstr:
-				return "%s%s(\n%s\n%s)" % (" " * pad, self.COMMAND, childstr, " " * pad)
-		return "%s(%s)" % (self.COMMAND, self.action.to_string())
+				return "{}{}(\n{}\n{})".format(" " * pad, self.COMMAND, childstr, " " * pad)
+		return f"{self.COMMAND}({self.action.to_string()})"
 
 	@override
 	def strip(self):
@@ -304,8 +304,8 @@ class TouchedModifier(Modifier):
 	@override
 	def describe(self, context):
 		if context in (Action.AC_STICK, Action.AC_PAD):
-			return _("(when %s)" % (self.COMMAND,)) + "\n" + self.action.describe(context)
-		return _("(when %s)" % (self.COMMAND,)) + " " + self.action.describe(context)
+			return _(f"(when {self.COMMAND})") + "\n" + self.action.describe(context)
+		return _(f"(when {self.COMMAND})") + " " + self.action.describe(context)
 
 	@override
 	def strip(self):
@@ -758,7 +758,7 @@ class DeadzoneModifier(Modifier):
 
 	@override
 	def __str__(self):
-		return "<Modifier '%s', %s>" % (self.COMMAND, self.action)
+		return f"<Modifier '{self.COMMAND}', {self.action}>"
 
 	__repr__ = __str__
 
@@ -766,8 +766,8 @@ class DeadzoneModifier(Modifier):
 	def describe(self, context):
 		dsc = self.action.describe(context)
 		if "\n" in dsc:
-			return "%s\n(with deadzone)" % (dsc,)
-		return "%s (with deadzone)" % (dsc,)
+			return f"{dsc}\n(with deadzone)"
+		return f"{dsc} (with deadzone)"
 
 	@override
 	def to_string(self, multiline=False, pad=0):
@@ -779,7 +779,7 @@ class DeadzoneModifier(Modifier):
 			params.append(str(self.upper))
 		params.append(self.action.to_string(multiline))
 
-		return "deadzone(%s)" % (", ".join(params),)
+		return "deadzone({})".format(", ".join(params))
 
 	@override
 	def trigger(self, mapper, position, old_position):
@@ -846,7 +846,7 @@ class ModeModifier(Modifier):
 			elif isinstance(i, RangeOP) or i in SCButtons:
 				button = i
 			else:
-				raise ValueError("Invalid parameter for 'mode': %s" % (i,))
+				raise ValueError(f"Invalid parameter for 'mode': {i}")
 		self.make_checks()
 		if self.default is None:
 			if isinstance(button, ShellCommandAction):
@@ -922,7 +922,7 @@ class ModeModifier(Modifier):
 			rv += [nameof(check), self.mods[check]]
 		if self.default is not None:
 			rv += [self.default]
-		return "<Modifier '%s', %s>" % (self.COMMAND, rv)
+		return f"<Modifier '{self.COMMAND}', {rv}>"
 
 	__repr__ = __str__
 
@@ -1182,12 +1182,7 @@ class DoubleclickModifier(Modifier, HapticEnabledAction):
 		l = [self.action]
 		if self.normalaction:
 			l += [self.normalaction]
-		return "<Modifier %s dbl='%s' hold='%s' normal='%s'>" % (
-			self.COMMAND,
-			self.action,
-			self.holdaction,
-			self.normalaction,
-		)
+		return f"<Modifier {self.COMMAND} dbl='{self.action}' hold='{self.holdaction}' normal='{self.normalaction}'>"
 
 	__repr__ = __str__
 
@@ -1206,30 +1201,17 @@ class DoubleclickModifier(Modifier, HapticEnabledAction):
 	def to_string(self, multiline=False, pad=0):
 		timeout = ""
 		if self.timeout != DoubleclickModifier.DEAFAULT_TIMEOUT:
-			timeout = ", %s" % (self.timeout)
+			timeout = f", {self.timeout}"
 		if self.action and self.normalaction and self.holdaction:
-			return "doubleclick(%s, hold(%s, %s)%s)" % (
-				NameModifier.unstrip(self.action).to_string(multiline, pad),
-				NameModifier.unstrip(self.holdaction).to_string(multiline, pad),
-				NameModifier.unstrip(self.normalaction).to_string(multiline, pad),
-				timeout,
-			)
+			return f"doubleclick({NameModifier.unstrip(self.action).to_string(multiline, pad)}, hold({NameModifier.unstrip(self.holdaction).to_string(multiline, pad)}, {NameModifier.unstrip(self.normalaction).to_string(multiline, pad)}){timeout})"
 		if self.action and self.normalaction and not self.holdaction:
-			return "doubleclick(%s, %s%s)" % (
-				NameModifier.unstrip(self.action).to_string(multiline, pad),
-				NameModifier.unstrip(self.normalaction).to_string(multiline, pad),
-				timeout,
-			)
+			return f"doubleclick({NameModifier.unstrip(self.action).to_string(multiline, pad)}, {NameModifier.unstrip(self.normalaction).to_string(multiline, pad)}{timeout})"
 		if not self.action and self.normalaction and self.holdaction:
-			return "hold(%s, %s%s)" % (
-				NameModifier.unstrip(self.holdaction).to_string(multiline, pad),
-				NameModifier.unstrip(self.normalaction).to_string(multiline, pad),
-				timeout,
-			)
+			return f"hold({NameModifier.unstrip(self.holdaction).to_string(multiline, pad)}, {NameModifier.unstrip(self.normalaction).to_string(multiline, pad)}{timeout})"
 		if not self.action and not self.normalaction and self.holdaction:
-			return "hold(None, %s%s)" % (NameModifier.unstrip(self.holdaction).to_string(multiline, pad), timeout)
+			return f"hold(None, {NameModifier.unstrip(self.holdaction).to_string(multiline, pad)}{timeout})"
 		if self.action and not self.normalaction and not self.holdaction:
-			return "doubleclick(None, %s%s)" % (NameModifier.unstrip(self.action).to_string(multiline, pad), timeout)
+			return f"doubleclick(None, {NameModifier.unstrip(self.action).to_string(multiline, pad)}{timeout})"
 		return NameModifier.unstrip(self.action or self.normalaction or self.holdaction).to_string(multiline, pad)
 
 	@override
@@ -1392,7 +1374,7 @@ class SensitivityModifier(Modifier):
 
 	@override
 	def __str__(self):
-		return "<Sensitivity=%s, %s>" % (self.speeds, self.action)
+		return f"<Sensitivity={self.speeds}, {self.action}>"
 
 
 class FeedbackModifier(Modifier):
@@ -1450,7 +1432,7 @@ class FeedbackModifier(Modifier):
 
 	@override
 	def __str__(self):
-		return "<with Feedback %s>" % (self.action,)
+		return f"<with Feedback {self.action}>"
 
 	@override
 	def strip(self):
@@ -1530,13 +1512,13 @@ class SmoothModifier(Modifier):
 
 	@override
 	def __str__(self):
-		return "<Smooth %s>" % (self.action,)
+		return f"<Smooth {self.action}>"
 
 	@override
 	def describe(self, context):
 		if self.name:
 			return self.name
-		return "%s (smooth)" % (self.action.describe(context),)
+		return f"{self.action.describe(context)} (smooth)"
 
 	@staticmethod
 	def decode(data, a, *b):

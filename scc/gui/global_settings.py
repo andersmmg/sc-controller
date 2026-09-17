@@ -168,7 +168,7 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 
 	def load_drivers(self):
 		for key, value in self.app.config["drivers"].items():
-			w = self.builder.get_object("cbEnableDriver_%s" % (key,))
+			w = self.builder.get_object(f"cbEnableDriver_{key}")
 			if w:
 				w.set_active(value)
 
@@ -176,17 +176,17 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		"""Common part of load_colors"""
 		if w:
 			rgba = Gdk.RGBA()
-			rgba.parse("#%s" % (self.app.config[dct][key],))
+			rgba.parse(f"#{self.app.config[dct][key]}")
 			w.set_rgba(rgba)
 
 	def load_colors(self):
 		cbOSDStyle = self.builder.get_object("cbOSDStyle")
 		cbOSDColorPreset = self.builder.get_object("cbOSDColorPreset")
 		for k in self.app.config["osd_colors"]:
-			w = self.builder.get_object("cb%s" % (k,))
+			w = self.builder.get_object(f"cb{k}")
 			self._load_color(w, "osd_colors", k)
 		for k in self.app.config["osk_colors"]:
-			w = self.builder.get_object("cbosk_%s" % (k,))
+			w = self.builder.get_object(f"cbosk_{k}")
 			self._load_color(w, "osk_colors", k)
 		theme = self.app.config.get("osd_color_theme", "None")
 		self.set_cb(cbOSDColorPreset, theme)
@@ -218,7 +218,7 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		self._recursing = True
 
 		# Load triggers
-		triggers = "%s|%s" % (profile.triggers[LEFT].to_string(), profile.triggers[RIGHT].to_string())
+		triggers = f"{profile.triggers[LEFT].to_string()}|{profile.triggers[RIGHT].to_string()}"
 		if not self.set_cb(cbTriggersAction, triggers, keyindex=1):
 			self.add_custom(cbTriggersAction, triggers)
 
@@ -288,11 +288,11 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		striphex = lambda a: hex(a).strip("0x").zfill(2)
 		tohex = lambda a: "".join([striphex(int(x * 0xFF)) for x in (a.red, a.green, a.blue)])
 		for k in self.app.config["osd_colors"]:
-			w = self.builder.get_object("cb%s" % (k,))
+			w = self.builder.get_object(f"cb{k}")
 			if w:
 				self.app.config["osd_colors"][k] = tohex(w.get_rgba())
 		for k in self.app.config["osk_colors"]:
-			w = self.builder.get_object("cbosk_%s" % (k,))
+			w = self.builder.get_object(f"cbosk_{k}")
 			if w:
 				self.app.config["osk_colors"][k] = tohex(w.get_rgba())
 		self.app.config["osd_color_theme"] = None
@@ -385,7 +385,7 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 				# Nothing is, make everything active just to be sure
 				self._recursing = True
 				for x in self.DRIVER_DEPS[drv]:
-					w = self.builder.get_object("cbEnableDriver_%s" % (x,))
+					w = self.builder.get_object(f"cbEnableDriver_{x}")
 					if w:
 						w.set_active(True)
 					self.app.config["drivers"][x] = True
@@ -396,7 +396,7 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 			# disable anything that has no dependent drivers active
 			self._recursing = True
 			for x in self.DRIVER_DEPS:
-				w = self.builder.get_object("cbEnableDriver_%s" % (x,))
+				w = self.builder.get_object(f"cbEnableDriver_{x}")
 				one_active = any(self.app.config["drivers"].get(y) for y in self.DRIVER_DEPS[x])
 				if not one_active and w:
 					w.set_active(False)
@@ -691,8 +691,8 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 				used_colors = None  # None means "all"
 
 		for key in color_keys:
-			cb = self.builder.get_object("cb%s" % (key,))
-			lbl = self.builder.get_object("lbl%s" % (key,))
+			cb = self.builder.get_object(f"cb{key}")
+			lbl = self.builder.get_object(f"lbl{key}")
 			if cb:
 				cb.set_sensitive((used_colors is None) or (key in used_colors))
 			if lbl:
@@ -706,7 +706,7 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		# label,				class, icon, *init_parameters
 		label, order, cls, icon, parameter = GlobalSettings.DEFAULT_MENU_OPTIONS[index]
 		if cls == MenuItem:
-			instance = MenuItem("item_i%s" % (index,), label, parameter, icon=icon)
+			instance = MenuItem(f"item_i{index}", label, parameter, icon=icon)
 		elif cls == Submenu:
 			instance = Submenu(parameter, label, icon=icon)
 		else:
@@ -791,7 +791,7 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 		self._recursing = True
 
 		for index in range(0, len(GlobalSettings.DEFAULT_MENU_OPTIONS)):
-			id = "cbMI_%s" % (index,)
+			id = f"cbMI_{index}"
 			instance = GlobalSettings._make_mi_instance(index)
 			present = instance.describe().strip(" >") in [x.describe().strip(" >") for x in data]
 			self.builder.get_object(id).set_active(present)
@@ -846,7 +846,7 @@ class GlobalSettings(Editor, UserDataManager, ComboSetter):
 			if filename.endswith(".json"):
 				if filename.startswith("hid-"):
 					drv, usbid, name = filename.split("-", 2)
-					name = "%s <i>(%s)</i>" % (name[0:-5], usbid.upper())
+					name = f"{name[0:-5]} <i>({usbid.upper()})</i>"
 				elif "-" in filename:
 					drv, name = filename.split("-", 1)
 					name = name[0:-5]

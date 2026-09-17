@@ -166,7 +166,7 @@ class GestureComponent(AEComponent):
 		self._grabber.grab(grabbed)
 
 	def on_sclPrecision_format_value(self, scl, value):
-		return "%s%%" % (int(value * 100.0),)
+		return f"{int(value * 100.0)}%"
 
 	def on_sclPrecision_value_changed(self, *a):
 		self.update()

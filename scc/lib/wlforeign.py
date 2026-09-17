@@ -96,7 +96,7 @@ class WlForeignToplevels:
 		if not self._connected_evt.wait(self.CONNECT_TIMEOUT):
 			self._set_failed("compositor did not respond in time")
 		elif not self._supported:
-			self._set_failed("compositor does not support %s" % IFACE_MANAGER.decode())
+			self._set_failed(f"compositor does not support {IFACE_MANAGER.decode()}")
 
 	@staticmethod
 	def _socket_path():
@@ -117,7 +117,7 @@ class WlForeignToplevels:
 			self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 			self._sock.connect(path)
 		except Exception as e:
-			self._set_failed("failed to connect to %s: %s" % (path, e))
+			self._set_failed(f"failed to connect to {path}: {e}")
 			return
 		# Object 1 is wl_display; create registry
 		registry_id = self._alloc_id()
@@ -147,7 +147,7 @@ class WlForeignToplevels:
 		try:
 			self._sock.sendall(header + payload)
 		except Exception as e:
-			self._set_failed("failed to send request: %s" % e)
+			self._set_failed(f"failed to send request: {e}")
 			return False
 		return True
 
@@ -158,7 +158,7 @@ class WlForeignToplevels:
 			obj_id = reader.u()
 			code = reader.u()
 			message = reader.s()
-			self._set_failed("wayland protocol error %s on object %s: %s" % (code, obj_id, message))
+			self._set_failed(f"wayland protocol error {code} on object {obj_id}: {message}")
 		elif opcode == WL_DISPLAY_DELETE_ID:
 			obj_id = reader.u()
 			with self._lock:
@@ -246,7 +246,7 @@ class WlForeignToplevels:
 				try:
 					handler(obj_id, opcode, _Reader(buf[8:size]))
 				except Exception as e:
-					self._set_failed("failed to parse wayland message: %s" % e)
+					self._set_failed(f"failed to parse wayland message: {e}")
 					return
 			buf = buf[size:]
 		self._buf = buf

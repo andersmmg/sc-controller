@@ -128,14 +128,14 @@ class Macro(Action):
 	def to_string(self, multiline=False, pad=0):
 		lst = "; ".join([x.to_string() for x in self.actions])
 		if self.repeat:
-			return (" " * pad) + ("repeat(%s)" % (lst,))
+			return (" " * pad) + (f"repeat({lst})")
 		return (" " * pad) + lst
 
 	@override
 	def __str__(self):
 		if self.repeat:
-			return "<[repeat %s ]>" % ("; ".join([str(x) for x in self.actions]),)
-		return "<[ %s ]>" % ("; ".join([str(x) for x in self.actions]),)
+			return "<[repeat {} ]>".format("; ".join([str(x) for x in self.actions]))
+		return "<[ {} ]>".format("; ".join([str(x) for x in self.actions]))
 
 	__repr__ = __str__
 
@@ -174,7 +174,7 @@ class Type(Macro):
 						shift = True
 					params.append(ButtonAction(getattr(Keys, "KEY_" + letter)))
 					continue
-			raise ValueError("Invalid character for type(): '%s'" % (letter,))
+			raise ValueError(f"Invalid character for type(): '{letter}'")
 		Macro.__init__(self, *params)
 		self.letters = string
 
@@ -223,7 +223,7 @@ class Cycle(Macro):
 
 	@override
 	def __str__(self):
-		return "<cycle %s >" % ("; ".join([str(x) for x in self.actions]),)
+		return "<cycle {} >".format("; ".join([str(x) for x in self.actions]))
 
 	__repr__ = __str__
 
@@ -262,12 +262,12 @@ class SleepAction(Action):
 			return self.name
 		if self.delay < 1.0:
 			return _("Wait %sms") % (int(self.delay * 1000),)
-		s = ("%0.2f" % (self.delay,)).strip(".0")
+		s = (f"{self.delay:0.2f}").strip(".0")
 		return _("Wait %ss") % (s,)
 
 	@override
 	def to_string(self, multiline=False, pad=0):
-		return (" " * pad) + "%s(%0.3f)" % (self.COMMAND, self.delay)
+		return (" " * pad) + f"{self.COMMAND}({self.delay:0.3f})"
 
 	@override
 	def button_press(self, mapper):
@@ -425,10 +425,10 @@ class TapAction(PressAction):
 	def describe_short(self):
 		"""Used in macro editor"""
 		if self.count <= 1:
-			return "%s %s" % (_("Tap"), ButtonAction.describe_button(self.button))
+			return "{} {}".format(_("Tap"), ButtonAction.describe_button(self.button))
 		if self.count == 2:
-			return "%s %s" % (_("DblTap"), ButtonAction.describe_button(self.button))
-		return "%s%s %s" % (self.count, _("-tap"), ButtonAction.describe_button(self.button))
+			return "{} {}".format(_("DblTap"), ButtonAction.describe_button(self.button))
+		return "{}{} {}".format(self.count, _("-tap"), ButtonAction.describe_button(self.button))
 
 	@override
 	def describe(self, context):
@@ -439,5 +439,5 @@ class TapAction(PressAction):
 	@override
 	def to_string(self, multiline=False, pad=0):
 		if self.count <= 1:
-			return "%s(%s)" % (self.COMMAND, self.button)
-		return "%s(%s, %s)" % (self.COMMAND, self.button, self.count)
+			return f"{self.COMMAND}({self.button})"
+		return f"{self.COMMAND}({self.button}, {self.count})"

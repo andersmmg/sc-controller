@@ -158,8 +158,8 @@ class EvdevController(Controller):
 		magic_number = 0
 		id = None
 		while id is None or id in self.daemon.get_active_ids():
-			crc32 = binascii.crc32(("%s%s" % (self.device.name, magic_number)).encode("utf-8"))
-			id = "ev%s" % (hex(crc32).upper().strip("-0X"),)
+			crc32 = binascii.crc32((f"{self.device.name}{magic_number}").encode())
+			id = "ev{}".format(hex(crc32).upper().strip("-0X"))
 			magic_number += 1
 		return id
 
@@ -167,7 +167,7 @@ class EvdevController(Controller):
 		return self.config_file
 
 	def __repr__(self):
-		return "<Evdev %s>" % (self.device.name,)
+		return f"<Evdev {self.device.name}>"
 
 	def input(self, *a):
 		new_state = self._state
@@ -407,11 +407,11 @@ class EvdevDriver:
 	def get_event_node(syspath):
 		filename = syspath.split("/")[-1]
 		if filename.startswith("event"):
-			return "/dev/input/%s" % (filename,)
+			return f"/dev/input/{filename}"
 		if filename.startswith("input") and os.path.exists(syspath):
 			for f in os.listdir(syspath):
 				if f.startswith("event"):
-					return "/dev/input/%s" % (f,)
+					return f"/dev/input/{f}"
 		return None
 
 	def handle_new_device(self, syspath, *bunchofnones):
@@ -426,7 +426,7 @@ class EvdevDriver:
 		try:
 			dev = evdev.InputDevice(eventnode)
 			assert dev.fn == eventnode
-			config_fn = "evdev-%s.json" % (dev.name.strip().replace("/", ""),)
+			config_fn = "evdev-{}.json".format(dev.name.strip().replace("/", ""))
 			config_file = os.path.join(get_config_path(), "devices", config_fn)
 		except OSError as ose:
 			if ose.errno == 13:
@@ -453,9 +453,9 @@ class EvdevDriver:
 					if eventnode not in self._busy_devices:
 						self._busy_devices.add(eventnode)
 						self.daemon.add_error(
-							"evdev:%s" % eventnode,
-							'Could not take exclusive control of evdev device "%s" '
-							"(%s): another application is using it." % (dev.name, eventnode),
+							f"evdev:{eventnode}",
+							f'Could not take exclusive control of evdev device "{dev.name}" '
+							f"({eventnode}): another application is using it.",
 						)
 					log.warning("Evdev device is busy: %s (%s)", dev.name, eventnode)
 					dev.close()
@@ -473,7 +473,7 @@ class EvdevDriver:
 			self.daemon.add_controller(controller)
 			if eventnode in self._busy_devices:
 				self._busy_devices.remove(eventnode)
-				self.daemon.remove_error("evdev:%s" % eventnode)
+				self.daemon.remove_error(f"evdev:{eventnode}")
 			log.debug("Evdev device added: %s", dev.name)
 			return True
 		return None
@@ -485,7 +485,7 @@ class EvdevDriver:
 	def device_removed(self, eventnode):
 		if eventnode in self._busy_devices:
 			self._busy_devices.remove(eventnode)
-			self.daemon.remove_error("evdev:%s" % eventnode)
+			self.daemon.remove_error(f"evdev:{eventnode}")
 		if eventnode in self._devices:
 			controller = self._devices[eventnode]
 			del self._devices[eventnode]

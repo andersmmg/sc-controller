@@ -295,7 +295,7 @@ class UInput:
 			c_name,
 		)
 		if self._fd < 0:
-			raise CannotCreateUInputException("Failed to create uinput device. Error code: %s" % (self._fd,))
+			raise CannotCreateUInputException(f"Failed to create uinput device. Error code: {self._fd}")
 
 	def getDescriptor(self) -> int:
 		return int(self._fd)

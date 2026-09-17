@@ -1,5 +1,4 @@
 import pkgutil
-
 import tomllib
 
 import scc
@@ -30,7 +29,7 @@ class TestSetup:
 		packages = self._pyproject()["tool"]["setuptools"]["packages"]
 		for importer, modname, ispkg in pkgutil.walk_packages(path=scc.__path__, prefix="scc.", onerror=lambda x: None):
 			if ispkg:
-				assert modname in packages, "Package '%s' is not being installed by pyproject.toml" % (modname,)
+				assert modname in packages, f"Package '{modname}' is not being installed by pyproject.toml"
 
 	def test_version_matches_pyproject(self):
 		config = self._pyproject()

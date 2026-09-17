@@ -247,7 +247,7 @@ class USBDriver:
 						self._fail_cbs[tp](syspath, *tp)
 						return None
 					if self.daemon:
-						self.daemon.add_error("usb:%s:%s" % (tp[0], tp[1]), "Failed to open USB device: %s" % (e,))
+						self.daemon.add_error(f"usb:{tp[0]}:{tp[1]}", f"Failed to open USB device: {e}")
 					return None
 		else:
 			return None
@@ -263,7 +263,7 @@ class USBDriver:
 				self._fail_cbs[tp](*tp)
 				return False
 			if self.daemon:
-				self.daemon.add_error("usb:%s:%s" % (tp[0], tp[1]), "Failed to claim USB device: %s" % (e,))
+				self.daemon.add_error(f"usb:{tp[0]}:{tp[1]}", f"Failed to claim USB device: {e}")
 			self._retry_devices.append((syspath, tp))
 			device.close()
 			return True
@@ -271,7 +271,7 @@ class USBDriver:
 			handled_device.syspath = syspath
 			self._devices[syspath] = handled_device
 			log.debug("USB device added: %.4x:%.4x", *tp)
-			self.daemon.remove_error("usb:%s:%s" % (tp[0], tp[1]))
+			self.daemon.remove_error(f"usb:{tp[0]}:{tp[1]}")
 			return True
 		log.warning("Known USB device ignored: %.4x:%.4x", *tp)
 		device.close()

@@ -114,7 +114,7 @@ class BindingEditor:
 			elif id == Profile.CPAD:
 				before, profile.pads[Profile.CPAD] = profile.pads[Profile.CPAD], action
 			else:
-				raise ValueError("unknown id %s" % (id,))
+				raise ValueError(f"unknown id {id}")
 			self.button_widgets[id].update()
 		return before
 
@@ -144,7 +144,7 @@ class BindingEditor:
 				return profile.pads[Profile.RIGHT]
 			if id == Profile.CPAD:
 				return profile.pads[Profile.CPAD]
-			raise ValueError("unknown id %s" % (id,))
+			raise ValueError(f"unknown id {id}")
 		return None
 
 	def choose_editor(self, action, title, id=None):

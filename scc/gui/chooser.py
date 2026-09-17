@@ -78,7 +78,7 @@ class Chooser(Editor):
 				return
 			self.area_action_selected(area, cls(*params))
 		else:
-			log.warning("Click on unknown area: %s" % (area,))
+			log.warning(f"Click on unknown area: {area}")
 
 	def area_action_selected(self, area, action):
 		raise Exception("Override me!")

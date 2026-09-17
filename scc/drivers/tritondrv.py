@@ -297,7 +297,7 @@ class TritonDevice(USBDevice):
 		"""
 		if slot not in self._controllers:
 			iface, in_ep, out_ep = self._slots[slot]
-			serial = "%s:%s" % (self.device.getBusNumber(), self.device.getPortNumber())
+			serial = f"{self.device.getBusNumber()}:{self.device.getPortNumber()}"
 			c = SC2Controller(self, iface, out_ep, serial)
 			self._controllers[slot] = c
 			c.configure()
@@ -386,7 +386,7 @@ class SC2Controller(Controller):
 		self._led_level = None
 		self._old_state = SC2_NULL
 		self._battery_level = None
-		self._id = "sc2-%s" % (serial,)
+		self._id = f"sc2-{serial}"
 
 	def get_type(self):
 		return "sc2"
@@ -403,7 +403,7 @@ class SC2Controller(Controller):
 		self._driver.rumble(self._out_ep, data)
 
 	def __repr__(self):
-		return "<SC2 %s>" % (self.get_id(),)
+		return f"<SC2 {self.get_id()}>"
 
 	def configure(self):
 		"""Keeps lizard mode off on freshly connected controller"""
@@ -707,7 +707,7 @@ class SC2BTDevice(SC2Controller):
 		self._last_diagnostic = 0.0
 		self._read_errors = 0
 		self._empty_reads = 0
-		self._id = "sc2bt:%s" % (hidrawdev.getPhysicalAddress().decode("utf-8", "ignore").replace(":", ""),)
+		self._id = "sc2bt:{}".format(hidrawdev.getPhysicalAddress().decode("utf-8", "ignore").replace(":", ""))
 		try:
 			self.configure()
 		except Exception:
@@ -724,7 +724,7 @@ class SC2BTDevice(SC2Controller):
 		return "sc2"
 
 	def __repr__(self):
-		return "<SC2BT %s>" % (self.get_id(),)
+		return f"<SC2BT {self.get_id()}>"
 
 	def _io_error(self, op):
 		if self._closed or self._probing:

@@ -152,20 +152,20 @@ class ActionEditor(Editor):
 		for i in (0, 1, 2):
 			self.sens_widgets.append(
 				(
-					self.builder.get_object("sclSens%s" % (XYZ[i],)),
-					self.builder.get_object("lblSens%s" % (XYZ[i],)),
-					self.builder.get_object("btClearSens%s" % (XYZ[i],)),
-					self.builder.get_object("cbSensInvert%s" % (XYZ[i],)),
+					self.builder.get_object(f"sclSens{XYZ[i]}"),
+					self.builder.get_object(f"lblSens{XYZ[i]}"),
+					self.builder.get_object(f"btClearSens{XYZ[i]}"),
+					self.builder.get_object(f"cbSensInvert{XYZ[i]}"),
 				)
 			)
 		for key in AFP:
 			i = AFP.index(key)
-			self.feedback[i] = self.builder.get_object("sclF%s" % (key,)).get_value()
+			self.feedback[i] = self.builder.get_object(f"sclF{key}").get_value()
 			self.feedback_widgets.append(
 				(
-					self.builder.get_object("sclF%s" % (key,)),
-					self.builder.get_object("lblF%s" % (key,)),
-					self.builder.get_object("btClearF%s" % (key,)),
+					self.builder.get_object(f"sclF{key}"),
+					self.builder.get_object(f"lblF{key}"),
+					self.builder.get_object(f"btClearF{key}"),
 					self.feedback[i],  # default value
 				)
 			)
@@ -173,20 +173,20 @@ class ActionEditor(Editor):
 			i = SMT.index(key)
 			self.smoothing_widgets.append(
 				(
-					self.builder.get_object("lblSmooth%s" % (key,)),
-					self.builder.get_object("sclSmooth%s" % (key,)),
-					self.builder.get_object("btClearSmooth%s" % (key,)),
-					self.builder.get_object("sclSmooth%s" % (key,)).get_value(),
+					self.builder.get_object(f"lblSmooth{key}"),
+					self.builder.get_object(f"sclSmooth{key}"),
+					self.builder.get_object(f"btClearSmooth{key}"),
+					self.builder.get_object(f"sclSmooth{key}").get_value(),
 				)
 			)
 		for key in DZN:
 			i = DZN.index(key)
-			self.deadzone[i] = self.builder.get_object("sclDZ%s" % (key,)).get_value()
+			self.deadzone[i] = self.builder.get_object(f"sclDZ{key}").get_value()
 			self.deadzone_widgets.append(
 				(
-					self.builder.get_object("lblDZ%s" % (key,)),
-					self.builder.get_object("sclDZ%s" % (key,)),
-					self.builder.get_object("btClearDZ%s" % (key,)),
+					self.builder.get_object(f"lblDZ{key}"),
+					self.builder.get_object(f"sclDZ{key}"),
+					self.builder.get_object(f"btClearDZ{key}"),
 					self.deadzone[i],  # default value
 				)
 			)
@@ -208,7 +208,7 @@ class ActionEditor(Editor):
 		"""
 		if class_name in self.loaded_components:
 			return self.loaded_components[class_name]
-		mod = importlib.import_module("scc.gui.ae.%s" % (class_name,))
+		mod = importlib.import_module(f"scc.gui.ae.{class_name}")
 		for x in mod.__all__:
 			cls = getattr(mod, x)
 			if isinstance(cls, type) and issubclass(cls, AEComponent):
@@ -1126,14 +1126,14 @@ class ActionEditor(Editor):
 	def on_sclFFrequency_format_value(self, scale, value):
 		if value == 1:
 			# Special case
-			return " %0.2fHz" % (1.0 / value,)
-		return "%0.2fmHz" % (100.0 / value,)
+			return f" {1.0 / value:0.2f}Hz"
+		return f"{100.0 / value:0.2f}mHz"
 
 	def on_sclFriction_format_value(self, scale, value):
 		if value <= 0:
-			return "%0.3f" % (0,)
+			return f"{0:0.3f}"
 		if value >= 6:
-			return "%0.3f" % (1000.00,)
+			return f"{1000.00:0.3f}"
 		return "%0.3f" % ((10.0**value) / 1000.0)
 
 	def on_btClearFriction_clicked(self, *a):
@@ -1169,7 +1169,7 @@ class ActionEditor(Editor):
 			self.hide_ring()
 		elif id in STICKS:
 			if id not in (Profile.DPAD, Profile.RSTICK, Profile.STICK):
-				raise ValueError("unknown id %s" % (id,))
+				raise ValueError(f"unknown id {id}")
 			self.set_title(self._input_name(id))
 			self._set_mode(action, mode or Action.AC_STICK)
 			self.set_action(action)
